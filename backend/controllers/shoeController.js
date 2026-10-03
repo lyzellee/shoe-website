@@ -94,9 +94,15 @@ export const getUserOrder = async (req, res) => {};
 export const getAllOrder = async (req, res) => {
   try {
     const orders = await Order.find();
-    res.status(200).json(orders);
+
     console.log("All orders fetched successfully:", orders);
+
+    res.status(200).json(orders);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("GET ALL ORDER ERROR:", err);
+
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };

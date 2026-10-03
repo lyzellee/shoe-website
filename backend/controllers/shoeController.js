@@ -1,4 +1,5 @@
 import Shoe from "../models/shoe.js";
+import Order from "../models/order.js";
 
 export const createShoe = async (req, res) => {
   const { name, brand, price, gender, category, stock } = req.body;
@@ -90,4 +91,12 @@ export const getSingleShoe = async (req, res) => {
 };
 export const createOrder = async (req, res) => {};
 export const getUserOrder = async (req, res) => {};
-export const getAllOrder = async (req, res) => {};
+export const getAllOrder = async (req, res) => {
+  try {
+    const orders = await Order.find();
+    res.status(200).json(orders);
+    console.log("All orders fetched successfully:", orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

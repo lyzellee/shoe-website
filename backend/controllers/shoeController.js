@@ -29,7 +29,6 @@ export const getMenShoes = async (req, res) => {
     const { category } = req.params;
     const menShoes = await Shoe.find({
       gender: "men",
-      category: category,
     });
     res.status(200).json(menShoes);
   } catch (err) {
@@ -41,11 +40,10 @@ export const getMenShoes = async (req, res) => {
 
 export const getWomenShoes = async (req, res) => {
   try {
-    const { category } = req.params;
     const womenShoes = await Shoe.find({
       gender: "women",
-      category: category,
     });
+    console.log("Women's shoes fetched successfully:", womenShoes);
     res.status(200).json(womenShoes);
   } catch (err) {
     res.status(500).json({
@@ -93,4 +91,3 @@ export const getSingleShoe = async (req, res) => {
 export const createOrder = async (req, res) => {};
 export const getUserOrder = async (req, res) => {};
 export const getAllOrder = async (req, res) => {};
-

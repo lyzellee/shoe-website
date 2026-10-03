@@ -27,6 +27,16 @@ export default function CategoryMen() {
     }
   };
 
+  const handleCategoryWomen = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/women");
+      setShoes(response.data);
+      console.log("Women's shoes fetched successfully:", response.data);
+    } catch (e) {
+      console.error("Error fetching women's shoes:", e);
+    }
+  };
+
   return (
     <div>
       <Navbar className="bg-body-tertiary mb-3">
@@ -37,6 +47,9 @@ export default function CategoryMen() {
 
           <Button variant="primary" onClick={handleCategoryMen}>
             Men
+          </Button>
+          <Button variant="primary" onClick={handleCategoryWomen}>
+            Women
           </Button>
         </Container>
       </Navbar>

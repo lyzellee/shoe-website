@@ -11,11 +11,10 @@ import {
 const router = express.Router();
 router.get("/all", getAllShoes);
 router.post("/shoes", createShoe);
-router.get("/men/:category", getMenShoes);
-router.get("/women/:category", getWomenShoes);
+router.get("/men", getMenShoes);
+router.get("/women", getWomenShoes);
 router.delete("/:id", deleteById);
 router.get("/:id", getSingleShoe);
 router.put("/update/:id", updateById);
 
 export default router;
-

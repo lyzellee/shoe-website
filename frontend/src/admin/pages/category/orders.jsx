@@ -30,9 +30,9 @@ export default function Orders() {
     <Table striped bordered hover>
       <thead>
         <tr>
-          <th>Order ID</th>
-          <th>Customer </th>
-          <th>items</th>
+          <th>Order Reference</th>
+          <th>Customer</th>
+          <th>Items</th>
           <th>Status</th>
           <th>Total</th>
           <th>Date</th>
@@ -42,12 +42,12 @@ export default function Orders() {
       <tbody>
         {orders.map((order) => (
           <tr key={order._id}>
-            <td>{order._id}</td>
+            <td>{order.orderReference}</td>
             <td>{order.customer}</td>
             <td>{order.items?.length || 0}</td>
-            <td>{order.status}</td>
+            <td>{order.orderStatus}</td>
             <td>${order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}</td>
-            <td>{order.date}</td>
+            <td>{order.orderDate}</td>
             <td>
               <button className="btn btn-sm btn-primary">View</button>
             </td>

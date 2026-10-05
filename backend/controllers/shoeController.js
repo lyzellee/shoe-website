@@ -89,8 +89,64 @@ export const getSingleShoe = async (req, res) => {
     res.status(500).json({ message: "error" });
   }
 };
-export const createOrder = async (req, res) => {};
+export const createOrder = async (req, res) => {
+  try {
+    const { orderReference, items } = req.body;
+
+    if (!orderReference || orderReference.trim() === "") {
+      return res.status(400).json({
+        message: "Order reference is required",
+      });
+    }
+    const existingOrder = await Order.findOne({ orderReference });
+    if (existingOrder) {
+      return res.status(409).json({
+        message: "Order reference already exists",
+      });
+    }
+
+    if (!orderReference || orderReference.trim() === "") {
+      return res.status(400).json({
+        message: "Order reference is required",
+      });
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        message: "Order must contain at least one item",
+      });
+    }
+    let computedTotalPrice = 0;
+    for (const item of items) {
+      if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+        return res.status(400).json({
+          message: "Quantity must be a positive whole number",
+        });
+      }
+      console.log("ITEMS CHECK PASSED");
+      const shoe = await Shoe.findById(item.shoeId);
+      if (!shoe) {
+        return res.status(404).json({
+          message: "Shoe not found",
+        });
+      }
+      item.price = shoe.price;
+      computedTotalPrice += shoe.price * item.quantity;
+    }
+    const newOrder = await Order.create({
+      orderReference,
+      items,
+      totalPrice: computedTotalPrice,
+    });
+
+    res
+      .status(201)
+      .json({ message: "Order created successfully!", data: newOrder });
+  } catch (err) {
+    res.status(500).json({ message: "Error creating order" });
+  }
+};
 export const getUserOrder = async (req, res) => {};
+
 export const getAllOrder = async (req, res) => {
   try {
     const orders = await Order.find();

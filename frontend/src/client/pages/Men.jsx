@@ -1,74 +1,275 @@
-import { useState } from "react";
-import { Card, Button, Navbar, Container } from "react-bootstrap";
+import { useState, useEffect } from "react";
+import { Card, Button, Dropdown, Navbar, Container } from "react-bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
+import { faHeart as faHeartSolid } from "@fortawesome/free-solid-svg-icons";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import "./Men.css";
+
+const featuredImages = [
+  "/featured-images/featured 1.jpg",
+  "/featured-images/featured 2.jpg",
+  "/featured-images/featured 3.jpg",
+  "/featured-images/featured 4.jpg",
+];
 
 export default function CategoryMen() {
   const [shoes, setShoes] = useState([]);
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [favorites, setFavorites] = useState([]);
+  const [favoriteMessage, setFavoriteMessage] = useState("");
+  const [addCard, setAddCard] = useState([]);
+  const [addCardMessage, setAddCardMessage] = useState("");
+  const navigate = useNavigate();
 
-  const handleCategoryMen = async () => {
-    try {
-      const response = await axios.get("http://localhost:5000/api/men");
+  // AUTOMATIC CAROUSEL
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFeaturedIndex((index) => {
+        if (index === featuredImages.length - 1) {
+          return 0;
+        }
 
-      setShoes(response.data);
-      console.log("Men's shoes fetched successfully:", response.data);
-    } catch (e) {
-      console.error("Error fetching men's shoes:", e);
-    }
+        return index + 1;
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // FETCH SHOES WHEN PAGE LOADS
+  useEffect(() => {
+    const fetchShoes = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/all");
+        setShoes(response.data);
+      } catch (error) {
+        console.error("Error fetching shoes:", error);
+      }
+    };
+
+    fetchShoes();
+  }, []);
+
+  //heart button functionality
+
+  const handleFavorite = (shoeId) => {
+    setFavorites((currentFavorites) => {
+      if (currentFavorites.includes(shoeId)) {
+        setFavoriteMessage("Removed from favorites");
+
+        return currentFavorites.filter((id) => id !== shoeId);
+      }
+
+      setFavoriteMessage("Added to favorite!");
+
+      return [...currentFavorites, shoeId];
+    });
+
+    setTimeout(() => {
+      setFavoriteMessage("");
+    }, 2000);
+  };
+
+  // add to cart button functionality
+
+  const handleAddToCart = (shoeId) => {
+    setAddCard((currentAddCard) => {
+      if (currentAddCard.includes(shoeId)) {
+        setAddCardMessage("Removed from cart");
+
+        return currentAddCard.filter((id) => id !== shoeId);
+      }
+      setAddCardMessage("Added to cart");
+
+      return [...currentAddCard, shoeId];
+    });
+
+    setTimeout(() => {
+      setAddCardMessage("");
+    }, 2000);
   };
 
   const handleListAll = async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/all");
-
       setShoes(response.data);
-      console.log("All shoes fetched successfully:", response.data);
     } catch (e) {
       console.error("Error fetching shoes:", e);
     }
   };
 
-  const handleCategoryWomen = async () => {
-    try {
-      const response = await axios.get("http://localhost:5000/api/women");
-      setShoes(response.data);
-      console.log("Women's shoes fetched successfully:", response.data);
-    } catch (e) {
-      console.error("Error fetching women's shoes:", e);
-    }
-  };
-
   return (
     <div>
-      <Navbar className="bg-body-tertiary mb-3">
-        <Container>
-          <Button variant="primary" onClick={handleListAll}>
-            All
-          </Button>
+      {favoriteMessage && (
+        <div className="favorite-notification">{favoriteMessage}</div>
+      )}
 
-          <Button variant="primary" onClick={handleCategoryMen}>
-            Men
-          </Button>
-          <Button variant="primary" onClick={handleCategoryWomen}>
-            Women
-          </Button>
+      {addCardMessage && (
+        <div className="add-card-notification">{addCardMessage}</div>
+      )}
+
+      <h1 className="title-page">MEN SECTION</h1>
+
+      <h2 className="title-description">
+        Find your everyday pair. Built to move, styled to last.
+      </h2>
+
+      {/* category buttons */}
+
+      <Navbar className="category-navbar">
+        <Container>
+          <div className="category-buttons">
+            <Button
+              className={`category-button ${
+                activeCategory === "all" ? "active" : ""
+              }`}
+              onClick={() => {
+                setActiveCategory("all");
+                handleListAll();
+              }}
+            >
+              All
+            </Button>
+
+            <Button
+              className={`category-button ${
+                activeCategory === "popular" ? "active" : ""
+              }`}
+              onClick={() => {
+                setActiveCategory("popular");
+                handleListAll();
+              }}
+            >
+              Popular
+            </Button>
+
+            <Button
+              className={`category-button ${
+                activeCategory === "new" ? "active" : ""
+              }`}
+              onClick={() => {
+                setActiveCategory("new");
+                handleListAll();
+              }}
+            >
+              New
+            </Button>
+          </div>
+
+          <Dropdown>
+            <Dropdown.Toggle className="category-dropdown">
+              Category
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu className="category-dropdown-option">
+              <Dropdown.Item href="#">Running</Dropdown.Item>
+              <Dropdown.Item href="#">Casual</Dropdown.Item>
+              <Dropdown.Item href="#">Lifestyle</Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
         </Container>
       </Navbar>
 
-      <div className="d-flex flex-wrap gap-3">
+      {/* featured */}
+
+      <section className="featured-section">
+        <h2 className="featured-title">Featured</h2>
+
+        <div className="featured-carousel">
+          <div
+            className="featured-track"
+            style={{
+              transform: `translateX(-${featuredIndex * 25}%)`,
+            }}
+          >
+            {[...featuredImages, ...featuredImages].map((image, index) => (
+              <div className="featured-card" key={index}>
+                <img src={image} alt={`Featured ${index + 1}`} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* dots */}
+
+        <div className="featured-dots">
+          {featuredImages.map((_, index) => (
+            <button
+              key={index}
+              className={featuredIndex === index ? "active" : ""}
+              onClick={() => setFeaturedIndex(index)}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* PRODUCTS */}
+
+      <div className="product-card-container">
         {shoes.map((shoe) => (
-          <Card key={shoe._id} style={{ width: "18rem" }}>
-            <Card.Img variant="top" src="holder.js/100px180" />
+          <div
+            className="product-card"
+            key={shoe._id}
+            onClick={() => navigate(`/product/${shoe._id}`)}
+          >
+            {/* IMAGE SECTION */}
+            <div className="product-image-container">
+              {/* TAGS */}
+              <div className="product-tags">
+                <span className="product-tag">NEW</span>
+                <span className="product-tag">{shoe.category}</span>
+              </div>
 
-            <Card.Body>
-              <Card.Title>{shoe.name}</Card.Title>
+              {/* ACTION BUTTONS */}
+              <div className="product-actions">
+                <button
+                  className={`wishlist-button ${
+                    favorites.includes(shoe._id) ? "favorite" : ""
+                  }`}
+                  onClick={() => handleFavorite(shoe._id)}
+                >
+                  <FontAwesomeIcon
+                    icon={
+                      favorites.includes(shoe._id)
+                        ? faHeartSolid
+                        : faHeartRegular
+                    }
+                  />
+                </button>
 
-              <Card.Text>
-                Brand: {shoe.brand}
-                <br />
-                Price: ${shoe.price}
-              </Card.Text>
-            </Card.Body>
-          </Card>
+                <button
+                  className={`add-cart-button ${
+                    addCard.includes(shoe._id) ? "added" : ""
+                  }`}
+                  onClick={() => handleAddToCart(shoe._id)}
+                >
+                  <FontAwesomeIcon icon={faPlus} size="sm" />
+                </button>
+              </div>
+
+              {/* SHOE IMAGE */}
+              <img
+                className="product-image"
+                src="/product-images/product 1.png"
+                alt={shoe.name}
+              />
+            </div>
+
+            {/* PRODUCT INFORMATION */}
+            <div className="product-info">
+              <p className="product-gender">{shoe.gender}</p>
+
+              <div className="product-bottom">
+                <p className="product-name">{shoe.name}</p>
+
+                <p className="product-price">₱{shoe.price}</p>
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </div>

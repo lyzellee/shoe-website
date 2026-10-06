@@ -12,6 +12,7 @@ export default function Orders() {
   const [date, setDate] = useState("");
   const [customer, setCustomer] = useState("");
   const [orderId, setOrderId] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const fetchOrders = async () => {
     try {
       const response = await fetch("http://localhost:5000/api/orders");
@@ -25,6 +26,11 @@ export default function Orders() {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const handleViewOrder = (order) => {
+    setSelectedOrder(order);
+    console.log("Selected Order:", order);
+  };
 
   return (
     <Table striped bordered hover>
@@ -44,12 +50,19 @@ export default function Orders() {
           <tr key={order._id}>
             <td>{order.orderReference}</td>
             <td>{order.customer}</td>
-            <td>{order.items?.length || 0}</td>
+            <td>
+              {order.items?.reduce((total, item) => total + item.quantity, 0)}
+            </td>
             <td>{order.orderStatus}</td>
             <td>${order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}</td>
             <td>{order.orderDate}</td>
             <td>
-              <button className="btn btn-sm btn-primary">View</button>
+              <button
+                className="btn btn-sm btn-primary"
+                onClick={() => handleViewOrder(order)}
+              >
+                View
+              </button>
             </td>
           </tr>
         ))}

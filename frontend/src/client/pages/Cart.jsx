@@ -1,27 +1,59 @@
-import { useState } from "react";
-import { Card, Button, Navbar, Container } from "react-bootstrap";
-import axios from "axios";
+import Card from "react-bootstrap/Card";
+import Button from "react-bootstrap/Button";
+import { useState, useEffect } from "react";
 
-export default function getCartOrder(){
+export default function Cart() {
+  const [orders, setOrders] = useState([]);
 
-  const [shoes, setShoes] = useState([]);
-  const handleCartOrder = async () => {
+  const fetchOrders = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/cart");
-      setShoes(response.data);
-      console.log("Cart order fetched successfully:", response.data);
-    } catch (e) {
-      console.error("Error fetching cart order:", e);
+      const response = await fetch("http://localhost:5000/api/orders");
+      const data = await response.json();
+      setOrders(data);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
     }
   };
-    return(
-      <div>
-        <Navbar className="bg-body-tertiary mb-3">
-          <Container>
-            <Button variant="primary" onClick={handleCartOrder}>
-              Cart Order
-            </Button>
-          </Container>
-        </Navbar>
-    );
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  return (
+    <div className="container mt-4">
+      <h2>Shopping Cart</h2>
+
+      {orders.map((order) =>
+        order.items.map((item) => (
+          <Card key={item._id} className="mb-3">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h5>{item.shoeId.name}</h5>
+                  <p className="mb-0">{item.shoeId.brand}</p>
+                  <p className="mb-0">₱{item.shoeId.price.toFixed(2)}</p>
+                </div>
+
+                <div>
+                  <Button variant="outline-secondary">-</Button>
+
+                  <span className="mx-3">{item.quantity}</span>
+
+                  <Button variant="outline-secondary">+</Button>
+                </div>
+
+                <div>
+                  <h5>₱{(item.shoeId.price * item.quantity).toFixed(2)}</h5>
+
+                  <Button variant="danger" size="sm">
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        )),
+      )}
+    </div>
+  );
 }

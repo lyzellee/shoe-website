@@ -149,11 +149,12 @@ export const getUserOrder = async (req, res) => {};
 
 export const getAllOrder = async (req, res) => {
   try {
-    const orders = await Order.find();
+    const orders = await Order.find().populate("items.shoeId");
 
     console.log("All orders fetched successfully:", orders);
 
     res.status(200).json(orders);
+    console.log("All orders fetched successfully:", orders);
   } catch (err) {
     console.error("GET ALL ORDER ERROR:", err);
 

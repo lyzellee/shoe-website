@@ -1,93 +1,58 @@
 import { useState } from "react";
 
 export default function Checkout() {
-  // Payment method
+  // Dito natin ise-save kung anong payment method ang pinili
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [orderId, setOrderId] = useState("6ac35bf37a02e2a95afa0bb6"); // Example orderId, dapat galing sa order na ginawa mo
 
-  // Customer information
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
+  const handlePayment = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderId: orderId, // Assuming you have an orderId to send
+          paymentMethod: paymentMethod,
+        }),
+      });
 
+      const result = await response.json();
+      console.log(result);
+      const redirectUrl = result.nextAction.redirect.url;
+      window.location.href = redirectUrl;
+    } catch (error) {
+      console.error("Error creating payment:", error);
+    }
+  };
+  const checkPaymentStatus = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/payment/${paymentIntentId}`,
+      );
+
+      const result = await response.json();
+
+      console.log("Payment Status:", result);
+    } catch (error) {
+      console.error("Error checking payment status:", error);
+    }
+  };
+
+  const params = new URLSearchParams(window.location.search);
+  const paymentIntentId = params.get("payment_intent_id");
+  console.log("Payment Intent ID:", paymentIntentId);
+
+  const testFetch = async () => {};
   return (
-    <div className="container mt-4">
-      <h2>Checkout</h2>
-
-      {/* Customer Information */}
-      <h4>Customer Information</h4>
-
-      <div className="mb-3">
-        <label className="form-label">Name</label>
-
-        <input
-          type="text"
-          className="form-control"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Enter your name"
-        />
-      </div>
-
-      <div className="mb-3">
-        <label className="form-label">Email</label>
-
-        <input
-          type="email"
-          className="form-control"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Enter your email"
-        />
-      </div>
-
-      <div className="mb-3">
-        <label className="form-label">Address</label>
-
-        <textarea
-          className="form-control"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          placeholder="Enter your address"
-        />
-      </div>
-
-      {/* Payment Method */}
-      <h4>Payment Method</h4>
-
-      <div className="mb-2">
-        <input
-          type="radio"
-          name="payment"
-          value="COD"
-          onChange={(e) => setPaymentMethod(e.target.value)}
-        />
-
-        <label className="ms-2">Cash on Delivery</label>
-      </div>
-
-      <div className="mb-2">
-        <input
-          type="radio"
-          name="payment"
-          value="GCash"
-          onChange={(e) => setPaymentMethod(e.target.value)}
-        />
-
-        <label className="ms-2">GCash</label>
-      </div>
-
-      <div className="mb-3">
-        <input
-          type="radio"
-          name="payment"
-          value="Card"
-          onChange={(e) => setPaymentMethod(e.target.value)}
-        />
-
-        <label className="ms-2">Credit/Debit Card</label>
-      </div>
-
-      <button className="btn btn-primary">Place Order</button>
+    <div>
+      <input type="radio" name="payment" value="COD" /> COD
+      <input type="radio" name="payment" value="GCash" /> GCash
+      <input type="radio" name="payment" value="Card" /> Card
+      <br />
+      <button onClick={handlePayment}>Continue Payment</button>
+      <button onClick={checkPaymentStatus}>Check Payment Status</button>
     </div>
   );
 }

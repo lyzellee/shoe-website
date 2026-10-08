@@ -16,16 +16,14 @@ import ProductDetails from "./client/pages/ProductDetails.jsx";
 import Wishlist from "./client/pages/Wishlist.jsx";
 import Women from "./client/pages/Women.jsx";
 import Navbar from "./components/Navbar";
+import Orders from "./admin/pages/category/orders.jsx";
 
 function App() {
   return (
     <Router>
-
-          <Navbar />
+      <Navbar />
 
       <Routes>
-        <Route path="/" element={<Home />} />
-
         <Route path="/" element={<Home />} />
 
         <Route path="/cart" element={<Cart />} />
@@ -35,10 +33,14 @@ function App() {
         <Route path="/women" element={<Women />} />
 
         <Route path="/product/:id" element={<ProductDetails />} />
-      
+
         <Route path="/shoes/add" element={<AddShoes />} />
 
         <Route path="/stock" element={<StockShoe />} />
+
+        <Route path="/orders" element={<Orders />} />
+
+        <Route path="/checkout" element={<Checkout />} />
       </Routes>
     </Router>
   );

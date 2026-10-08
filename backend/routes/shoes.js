@@ -9,6 +9,9 @@ import {
   updateById,
   getAllOrder,
   createOrder,
+  createPayment,
+  testFetch,
+  getPaymentStatus,
 } from "../controllers/shoeController.js";
 const router = express.Router();
 router.get("/all", getAllShoes);
@@ -17,6 +20,9 @@ router.get("/men", getMenShoes);
 router.get("/women", getWomenShoes);
 router.post("/orders", createOrder);
 router.get("/orders", getAllOrder);
+router.post("/payment", createPayment);
+router.get("/payment/:paymentIntentId", getPaymentStatus);
+router.get("test-fetch", testFetch);
 router.delete("/:id", deleteById);
 router.delete("/orders/:id", deleteById);
 router.get("/:id", getSingleShoe);

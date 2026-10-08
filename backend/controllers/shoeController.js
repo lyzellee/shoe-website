@@ -1,5 +1,6 @@
 import Shoe from "../models/shoe.js";
 import Order from "../models/order.js";
+import Payment from "../models/payment.js";
 
 export const createShoe = async (req, res) => {
   const { name, brand, price, gender, category, stock } = req.body;
@@ -175,5 +176,146 @@ export const deleteOrderById = async (req, res) => {
     res.status(200).json({ message: "Order Deleted succesfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+export const createPayment = async (req, res) => {
+  try {
+    const { orderId, paymentMethod } = req.body;
+    const response = await fetch(
+      "https://api.paymongo.com/v1/payment_intents",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization:
+            "Basic " +
+            Buffer.from(process.env.PAYMONGO_SECRET_KEY + ":").toString(
+              "base64",
+            ),
+        },
+        body: JSON.stringify({
+          data: {
+            attributes: {
+              amount: 750000,
+              currency: "PHP",
+              payment_method_allowed: ["gcash"],
+            },
+          },
+        }),
+      },
+    );
+    const result = await response.json();
+    const paymentIntentId = result.data.id;
+    console.log("Payment Intent ID:", paymentIntentId);
+
+    const paymentMethodResponse = await fetch(
+      "https://api.paymongo.com/v1/payment_methods",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization:
+            "Basic " +
+            Buffer.from(process.env.PAYMONGO_SECRET_KEY + ":").toString(
+              "base64",
+            ),
+        },
+        body: JSON.stringify({
+          data: {
+            attributes: {
+              type: "gcash",
+            },
+          },
+        }),
+      },
+    );
+
+    const paymentMethodResult = await paymentMethodResponse.json();
+    const paymentMethodId = paymentMethodResult.data.id;
+
+    console.log("Payment Method ID:", paymentMethodId);
+
+    const attachResponse = await fetch(
+      `https://api.paymongo.com/v1/payment_intents/${paymentIntentId}/attach`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization:
+            "Basic " +
+            Buffer.from(process.env.PAYMONGO_SECRET_KEY + ":").toString(
+              "base64",
+            ),
+        },
+        body: JSON.stringify({
+          data: {
+            attributes: {
+              payment_method: paymentMethodId,
+              return_url: "http://localhost:5173/checkout",
+            },
+          },
+        }),
+      },
+    );
+
+    const attachResult = await attachResponse.json();
+    console.log("Attach Result:", attachResult);
+    const paymentStatus = attachResult.data.attributes.status;
+    const nextAction = attachResult.data.attributes.next_action;
+    if (paymentStatus === "awaiting_next_action") {
+      console.log("Customer action is required.");
+    } else if (paymentStatus === "succeeded") {
+      console.log("Payment succeeded!");
+    }
+
+    if (nextAction) {
+      console.log("Next action:", nextAction);
+    }
+
+    res.status(201).json({
+      paymentIntent: result,
+      paymentMethod: paymentMethodResult,
+      attachResult: attachResult,
+      paymentStatus: paymentStatus,
+      nextAction: nextAction,
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error connecting to PayMongo", error: err.message });
+  }
+};
+
+export const testFetch = async (req, res) => {
+  res.json({ message: "Test fetch successful!" });
+};
+
+export const getPaymentStatus = async (req, res) => {
+  try {
+    const { paymentIntentId } = req.params;
+    const response = await fetch(
+      `https://api.paymongo.com/v1/payment_intents/${paymentIntentId}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization:
+            "Basic " +
+            Buffer.from(process.env.PAYMONGO_SECRET_KEY + ":").toString(
+              "base64",
+            ),
+        },
+      },
+    );
+
+    const result = await response.json();
+
+    // Ibalik ang response ni PayMongo
+    res.status(response.status).json(result);
+  } catch (err) {
+    console.log("PayMongo Error:", err);
+    res
+      .status(500)
+      .json({ message: "Error checking payment status", error: err.message });
   }
 };

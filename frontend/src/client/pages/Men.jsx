@@ -76,7 +76,7 @@ export default function CategoryMen() {
 
   // add to cart button functionality
 
-  const handleAddToCart = (shoeId) => {
+  const handleAddToCard = (shoeId) => {
     setAddCard((currentAddCard) => {
       if (currentAddCard.includes(shoeId)) {
         setAddCardMessage("Removed from cart");
@@ -92,7 +92,6 @@ export default function CategoryMen() {
       setAddCardMessage("");
     }, 2000);
   };
-
   const handleListAll = async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/all");
@@ -230,7 +229,10 @@ export default function CategoryMen() {
                   className={`wishlist-button ${
                     favorites.includes(shoe._id) ? "favorite" : ""
                   }`}
-                  onClick={() => handleFavorite(shoe._id)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleFavorite(shoe._id);
+                  }}
                 >
                   <FontAwesomeIcon
                     icon={
@@ -245,7 +247,10 @@ export default function CategoryMen() {
                   className={`add-cart-button ${
                     addCard.includes(shoe._id) ? "added" : ""
                   }`}
-                  onClick={() => handleAddToCart(shoe._id)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleAddToCard(shoe._id);
+                  }}
                 >
                   <FontAwesomeIcon icon={faPlus} size="sm" />
                 </button>

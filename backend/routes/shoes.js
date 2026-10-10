@@ -12,6 +12,7 @@ import {
   createPayment,
   testFetch,
   getPaymentStatus,
+  deleteOrderById,
 } from "../controllers/shoeController.js";
 const router = express.Router();
 router.get("/all", getAllShoes);
@@ -24,7 +25,7 @@ router.post("/payment", createPayment);
 router.get("/payment/:paymentIntentId", getPaymentStatus);
 router.get("test-fetch", testFetch);
 router.delete("/:id", deleteById);
-router.delete("/orders/:id", deleteById);
+router.delete("/orders/:id", deleteOrderById);
 router.get("/:id", getSingleShoe);
 router.put("/update/:id", updateById);
 

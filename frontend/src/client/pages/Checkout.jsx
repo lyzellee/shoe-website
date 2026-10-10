@@ -20,8 +20,20 @@ export default function Checkout() {
 
       const result = await response.json();
       console.log(result);
-      const redirectUrl = result.nextAction.redirect.url;
-      window.location.href = redirectUrl;
+      if (!response.ok) {
+        console.error("Backend Error:", result);
+        return;
+      }
+      const redirectUrl = result.nextAction?.redirect?.url;
+
+      console.log("Redirect URL:", redirectUrl);
+      console.log("Next Action:", result.nextAction);
+
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      } else {
+        console.log("No direct URL:", redirectUrl);
+      }
     } catch (error) {
       console.error("Error creating payment:", error);
     }
@@ -34,25 +46,59 @@ export default function Checkout() {
 
       const result = await response.json();
 
-      console.log("Payment Status:", result);
+      console.log("Payment Status:", result.data?.attributes?.status);
     } catch (error) {
       console.error("Error checking payment status:", error);
     }
   };
 
+  // Kunin ang Payment Intent ID mula sa URL
   const params = new URLSearchParams(window.location.search);
   const paymentIntentId = params.get("payment_intent_id");
+
+  // Tingnan kung may nakuha tayong ID
+  console.log("Current URL:", window.location.href);
   console.log("Payment Intent ID:", paymentIntentId);
 
-  const testFetch = async () => {};
   return (
     <div>
-      <input type="radio" name="payment" value="COD" /> COD
-      <input type="radio" name="payment" value="GCash" /> GCash
-      <input type="radio" name="payment" value="Card" /> Card
-      <br />
-      <button onClick={handlePayment}>Continue Payment</button>
-      <button onClick={checkPaymentStatus}>Check Payment Status</button>
+      {" "}
+      {/* Piliin ang payment method; ise-save ng onChange ang value */}{" "}
+      <label>
+        {" "}
+        <input
+          type="radio"
+          name="payment"
+          value="COD"
+          checked={paymentMethod === "COD"}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+        />{" "}
+        COD{" "}
+      </label>{" "}
+      <label>
+        {" "}
+        <input
+          type="radio"
+          name="payment"
+          value="GCash"
+          checked={paymentMethod === "GCash"}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+        />{" "}
+        GCash{" "}
+      </label>{" "}
+      <label>
+        {" "}
+        <input
+          type="radio"
+          name="payment"
+          value="Card"
+          checked={paymentMethod === "Card"}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+        />{" "}
+        Card{" "}
+      </label>{" "}
+      <br /> <button onClick={handlePayment}> Continue Payment </button>{" "}
+      <button onClick={checkPaymentStatus}> Check Payment Status </button>{" "}
     </div>
   );
 }

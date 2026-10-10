@@ -76,17 +76,40 @@ export default function CategoryMen() {
 
   // add to cart button functionality
 
-  const handleAddToCard = (shoeId) => {
-    setAddCard((currentAddCard) => {
-      if (currentAddCard.includes(shoeId)) {
-        setAddCardMessage("Removed from cart");
+  const handleAddToCard = async (shoeId) => {
+    try {
+      // 1. Gumawa ng order reference
+      const orderReference = `ORD-${Date.now()}`;
 
-        return currentAddCard.filter((id) => id !== shoeId);
-      }
+      // 2. Ipadala ang order sa backend
+      const response = await axios.post("http://localhost:5000/api/orders", {
+        orderReference,
+        items: [
+          {
+            shoeId: shoeId,
+            quantity: 1,
+          },
+        ],
+      });
+
+      // 3. Kapag successful ang pag-save sa MongoDB
+      console.log("Order saved:", response.data);
+
+      // 4. I-update ang cart state
+      setAddCard((currentAddCard) => {
+        if (currentAddCard.includes(shoeId)) {
+          return currentAddCard;
+        }
+
+        return [...currentAddCard, shoeId];
+      });
+
       setAddCardMessage("Added to cart");
+    } catch (err) {
+      console.error("ADD TO CART ERROR:", err.response?.data || err.message);
 
-      return [...currentAddCard, shoeId];
-    });
+      setAddCardMessage("Failed to add to cart");
+    }
 
     setTimeout(() => {
       setAddCardMessage("");

@@ -262,6 +262,13 @@ export const createPayment = async (req, res) => {
     const attachResult = await attachResponse.json();
     console.log("Attach Result:", attachResult);
     const paymentStatus = attachResult.data.attributes.status;
+
+    await Payment.create({
+      orderId: orderId,
+      paymentIntentId: paymentIntentId,
+      paymentMethod: paymentMethod,
+      paymentStatus: "pending",
+    });
     const nextAction = attachResult.data.attributes.next_action;
     if (paymentStatus === "awaiting_next_action") {
       console.log("Customer action is required.");
@@ -309,6 +316,22 @@ export const getPaymentStatus = async (req, res) => {
     );
 
     const result = await response.json();
+    // 3. Ibalik ang error kung pumalya ang PayMongo request
+    if (!response.ok) {
+      return res.status(response.status).json(result);
+    }
+
+    // 4. Kunin ang status na galing sa PayMongo
+    const paymentStatus = result.data.attributes.status;
+
+    // 5. I-update ang local Payment record kapag successful
+    if (paymentStatus === "succeeded") {
+      await Payment.findOneAndUpdate(
+        { paymentIntentId: paymentIntentId },
+        { paymentStatus: "completed" },
+        { new: true },
+      );
+    }
 
     // Ibalik ang response ni PayMongo
     res.status(response.status).json(result);

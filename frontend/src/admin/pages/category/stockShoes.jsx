@@ -75,6 +75,7 @@ export default function stockShoes() {
             <th>Price</th>
             <th>Gender</th>
             <th>Category</th>
+            <th>Stocks</th>
             <th> Function</th>
           </tr>
         </thead>
@@ -87,8 +88,10 @@ export default function stockShoes() {
               <td>₱{shoe.price}</td>
               <td>{shoe.gender}</td>
               <td>{shoe.category}</td>
+              <td>{shoe.stock}</td>
               <td>
                 <Button
+                  className="m-2"
                   onClick={() => {
                     setSelectedShoe(shoe);
                     setName(shoe.name);
@@ -99,8 +102,6 @@ export default function stockShoes() {
                 >
                   updates
                 </Button>
-              </td>
-              <td>
                 <Button
                   variant="danger"
                   onClick={() => handleDeleteShoes(shoe._id)}

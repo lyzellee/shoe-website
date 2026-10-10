@@ -1,6 +1,8 @@
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
 import { useState, useEffect } from "react";
+import { use } from "react";
+import axios from "axios";
 
 export default function Cart() {
   const [orders, setOrders] = useState([]);
@@ -12,6 +14,18 @@ export default function Cart() {
       setOrders(data);
     } catch (error) {
       console.error("Error fetching orders:", error);
+    }
+  };
+
+  const handleDeleteByOrder = async (id) => {
+    try {
+      const response = await axios.delete(
+        `http://localhost:5000/api/orders/${id}`,
+      );
+      console.log("Delete Shoes!", response.data);
+      fetchOrders();
+    } catch (e) {
+      console.error("Error deleting shoes", e);
     }
   };
 
@@ -45,7 +59,11 @@ export default function Cart() {
                 <div>
                   <h5>₱{(item.shoeId.price * item.quantity).toFixed(2)}</h5>
 
-                  <Button variant="danger" size="sm">
+                  <Button
+                    onClick={() => handleDeleteByOrder(order._id)}
+                    variant="danger"
+                    size="sm"
+                  >
                     Remove
                   </Button>
                 </div>

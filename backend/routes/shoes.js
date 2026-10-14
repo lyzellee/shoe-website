@@ -23,10 +23,9 @@ router.post("/orders", createOrder);
 router.get("/orders", getAllOrder);
 router.post("/payment", createPayment);
 router.get("/payment/:paymentIntentId", getPaymentStatus);
-router.get("test-fetch", testFetch);
 router.delete("/:id", deleteById);
 router.delete("/orders/:id", deleteOrderById);
-router.get("/:id", getSingleShoe);
+router.get("/single/:id", getSingleShoe);
 router.put("/update/:id", updateById);
 
 export default router;

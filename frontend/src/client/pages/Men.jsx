@@ -124,6 +124,10 @@ export default function CategoryMen() {
     }
   };
 
+  const handleViewShoe = (id) => {
+    navigate(`/product/${id}`);
+  };
+
   return (
     <div>
       {favoriteMessage && (
@@ -236,7 +240,7 @@ export default function CategoryMen() {
           <div
             className="product-card"
             key={shoe._id}
-            onClick={() => navigate(`/product/${shoe._id}`)}
+            onClick={() => handleViewShoe(shoe._id)}
           >
             {/* IMAGE SECTION */}
             <div className="product-image-container">
@@ -295,6 +299,11 @@ export default function CategoryMen() {
                 <p className="product-name">{shoe.name}</p>
 
                 <p className="product-price">₱{shoe.price}</p>
+                <div onClick={() => handleViewShoe(shoe._id)}>
+                  <img src={shoe.image} alt={shoe.name} />
+                  <h5>{shoe.brand}</h5>
+                  <p>₱{shoe.price}</p>
+                </div>
               </div>
             </div>
           </div>

@@ -10,7 +10,6 @@ import {
   getAllOrder,
   createOrder,
   createPayment,
-  testFetch,
   getPaymentStatus,
   deleteOrderById,
 } from "../controllers/shoeController.js";

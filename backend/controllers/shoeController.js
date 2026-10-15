@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Shoe from "../models/shoe.js";
 import Order from "../models/order.js";
 import Payment from "../models/payment.js";
@@ -91,31 +92,42 @@ export const getSingleShoe = async (req, res) => {
   }
 };
 export const createOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
     const { orderReference, items } = req.body;
 
+    // 1. Validate muna bago simulan ang transaction.
     if (!orderReference || orderReference.trim() === "") {
       return res.status(400).json({
         message: "Order reference is required",
       });
     }
-    const existingOrder = await Order.findOne({ orderReference });
+
+    if (!Array.isArray(items) || items.length === 0) {
+      await session.abortTransaction();
+
+      return res.status(400).json({
+        message: "Order must contain at least one item",
+      });
+    }
+
+    // 2. Isang beses lang sisimulan ang transaction.
+    session.startTransaction();
+
+    // 3. Check kung existing na ang order reference.
+    const existingOrder = await Order.findOne({ orderReference }, null, {
+      session,
+    });
+
     if (existingOrder) {
+      await session.abortTransaction();
+
       return res.status(409).json({
         message: "Order reference already exists",
       });
     }
 
-    if (!orderReference || orderReference.trim() === "") {
-      return res.status(400).json({
-        message: "Order reference is required",
-      });
-    }
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({
-        message: "Order must contain at least one item",
-      });
-    }
     let computedTotalPrice = 0;
     for (const item of items) {
       if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
@@ -124,29 +136,70 @@ export const createOrder = async (req, res) => {
         });
       }
       console.log("ITEMS CHECK PASSED");
-      const shoe = await Shoe.findById(item.shoeId);
+      const shoe = await Shoe.findById(item.shoeId).session(session);
       if (!shoe) {
         return res.status(404).json({
           message: "Shoe not found",
         });
       }
+      if (shoe.stock < item.quantity) {
+        return res.status(400).json({
+          message: `Insufficient stock for ${shoe.name}. Available: ${shoe.stock}`,
+        });
+      }
+      const updatedShoe = await Shoe.findOneAndUpdate(
+        {
+          _id: item.shoeId,
+          stock: { $gte: item.quantity },
+        },
+        {
+          $inc: { stock: -item.quantity },
+        },
+        {
+          new: true,
+          session,
+        },
+      );
+
+      if (!updatedShoe) {
+        return res.status(400).json({
+          message: "Insufficient stock",
+        });
+      }
       item.price = shoe.price;
       computedTotalPrice += shoe.price * item.quantity;
     }
-    const newOrder = await Order.create({
-      orderReference,
-      items,
-      totalPrice: computedTotalPrice,
-    });
+    const newOrder = await Order.create(
+      [
+        {
+          orderReference,
+          items,
+          totalPrice: computedTotalPrice,
+        },
+      ],
+      { session },
+    );
+
+    // Kumpirmahin ang stock deduction at order creation.
+    await session.commitTransaction();
 
     res
       .status(201)
       .json({ message: "Order created successfully!", data: newOrder });
   } catch (err) {
-    res.status(500).json({ message: "Error creating order" });
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+
+    console.error("Create order error:", err);
+
+    res.status(500).json({
+      message: "Error creating order",
+    });
+  } finally {
+    await session.endSession();
   }
 };
-export const getUserOrder = async (req, res) => {};
 
 export const getAllOrder = async (req, res) => {
   try {
@@ -155,7 +208,6 @@ export const getAllOrder = async (req, res) => {
     console.log("All orders fetched successfully:", orders);
 
     res.status(200).json(orders);
-    console.log("All orders fetched successfully:", orders);
   } catch (err) {
     console.error("GET ALL ORDER ERROR:", err);
 
@@ -166,6 +218,7 @@ export const getAllOrder = async (req, res) => {
 };
 
 export const getSingleOrder = async (req, res) => {};
+
 export const deleteOrderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -292,10 +345,6 @@ export const createPayment = async (req, res) => {
       .status(500)
       .json({ message: "Error connecting to PayMongo", error: err.message });
   }
-};
-
-export const testFetch = async (req, res) => {
-  res.json({ message: "Test fetch successful!" });
 };
 
 export const getPaymentStatus = async (req, res) => {

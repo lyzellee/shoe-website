@@ -3,6 +3,7 @@ const orderSchema = new mongoose.Schema({
   orderReference: {
     type: String,
     required: true,
+    unique: true,
   },
 
   items: [

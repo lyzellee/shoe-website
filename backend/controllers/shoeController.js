@@ -4,16 +4,130 @@ import Order from "../models/order.js";
 import Payment from "../models/payment.js";
 
 export const createShoe = async (req, res) => {
-  const { name, brand, price, gender, category, stock } = req.body;
-  const newShoe = await Shoe.create({
-    name,
-    brand,
-    price: Number(price),
-    gender,
-    category,
-    stock: Number(stock),
-  });
-  res.status(201).json({ message: " Saved successfully!", data: newShoe });
+  try {
+    const { name, brand, price, stock } = req.body;
+    const shoeGender =
+      typeof req.body.gender === "string"
+        ? req.body.gender.trim().toLowerCase()
+        : req.body.gender;
+
+    const shoeCategory =
+      typeof req.body.category === "string"
+        ? req.body.category.trim().toLowerCase()
+        : req.body.category;
+
+    // STEP 1: Check required fields
+    if (
+      !name ||
+      !brand ||
+      price === undefined ||
+      !shoeGender ||
+      !shoeCategory ||
+      stock === undefined
+    ) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
+    }
+
+    // STEP 2: Validate name and brand
+    if (
+      typeof name !== "string" ||
+      typeof brand !== "string" ||
+      name.trim() === "" ||
+      brand.trim() === ""
+    ) {
+      return res.status(400).json({
+        message: "Name and brand must not be empty",
+      });
+    }
+
+    // STEP 3: Check empty price and stock
+    if (
+      (typeof price === "string" && price.trim() === "") ||
+      (typeof stock === "string" && stock.trim() === "")
+    ) {
+      return res.status(400).json({
+        message: "Price and stock must not be empty",
+      });
+    }
+
+    // STEP 4: Check if price and stock are numbers or numeric strings
+    if (
+      (typeof price !== "number" && typeof price !== "string") ||
+      (typeof stock !== "number" && typeof stock !== "string")
+    ) {
+      return res.status(400).json({
+        message: "Price and stock must be numbers",
+      });
+    }
+
+    // STEP 5: Convert and validate price and stock
+    const shoePrice = Number(price);
+    const shoeStock = Number(stock);
+
+    if (
+      !Number.isFinite(shoePrice) ||
+      !Number.isFinite(shoeStock) ||
+      shoePrice <= 0 ||
+      shoeStock < 0
+    ) {
+      return res.status(400).json({
+        message:
+          "Price must be greater than zero and stock must be non-negative",
+      });
+    }
+
+    // STEP 6: Stock must be a whole number
+    if (!Number.isInteger(shoeStock)) {
+      return res.status(400).json({
+        message: "Stock must be a whole number",
+      });
+    }
+
+    // STEP 7: Validate gender
+    if (!["men", "women"].includes(shoeGender)) {
+      return res.status(400).json({
+        message: "Gender must be men or women",
+      });
+    }
+
+    // STEP 8: Validate category
+    if (!["running", "sports"].includes(shoeCategory)) {
+      return res.status(400).json({
+        message: "Category must be running or sports",
+      });
+    }
+    // STEP 9: Check duplicate shoe
+    const existingShoe = await Shoe.findOne({
+      name: { $regex: `^${name.trim()}$`, $options: "i" },
+    });
+
+    if (existingShoe) {
+      return res.status(409).json({
+        message: "Shoe with the same name already exists",
+      });
+    }
+
+    // STEP 10: Save shoe to database
+    const newShoe = await Shoe.create({
+      name: name.trim(),
+      brand: brand.trim(),
+      price: shoePrice,
+      gender: shoeGender,
+      category: shoeCategory,
+      stock: shoeStock,
+    });
+
+    return res.status(201).json({
+      message: "Saved successfully!",
+      data: newShoe,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: err.message,
+    });
+  }
 };
 
 export const getAllShoes = async (req, res) => {
@@ -70,13 +184,23 @@ export const deleteById = async (req, res) => {
 export const updateById = async (req, res) => {
   try {
     const { id } = req.params;
+    const { price, category } = req.body;
     const updateShoes = await Shoe.findByIdAndUpdate(id, req.body, {
       new: true,
     });
+    // STEP 3: Validate price and stock
+    if (
+      (price !== undefined && price < 0) ||
+      (stock !== undefined && stock < 0)
+    ) {
+      return res.status(400).json({
+        message: "Price and stock must not be negative",
+      });
+    }
     if (!updateShoes) {
       return res.status(404).json({ message: "Shoe not Found" });
     }
-    res.status(200).json({ message: "Shoe Updated!" });
+    res.status(200).json({ message: "Shoe Updated!", data: updateShoes });
   } catch (e) {
     res.status(500).json({ message: "error" });
   }
@@ -97,13 +221,14 @@ export const createOrder = async (req, res) => {
   try {
     const { orderReference, items } = req.body;
 
-    // 1. Validate muna bago simulan ang transaction.
+    // Validate order reference
     if (!orderReference || orderReference.trim() === "") {
       return res.status(400).json({
         message: "Order reference is required",
       });
     }
 
+    // Validate order items
     if (!Array.isArray(items) || items.length === 0) {
       await session.abortTransaction();
 
@@ -112,10 +237,10 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    // 2. Isang beses lang sisimulan ang transaction.
+    // Start transaction
     session.startTransaction();
 
-    // 3. Check kung existing na ang order reference.
+    // Check duplicate order reference
     const existingOrder = await Order.findOne({ orderReference }, null, {
       session,
     });
@@ -129,24 +254,35 @@ export const createOrder = async (req, res) => {
     }
 
     let computedTotalPrice = 0;
+
+    // Validate each order item
     for (const item of items) {
+      // Validate quantity
       if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
         return res.status(400).json({
           message: "Quantity must be a positive whole number",
         });
       }
+
       console.log("ITEMS CHECK PASSED");
+
+      // Find shoe
       const shoe = await Shoe.findById(item.shoeId).session(session);
+
       if (!shoe) {
         return res.status(404).json({
           message: "Shoe not found",
         });
       }
+
+      // Check available stock
       if (shoe.stock < item.quantity) {
         return res.status(400).json({
           message: `Insufficient stock for ${shoe.name}. Available: ${shoe.stock}`,
         });
       }
+
+      // Deduct stock
       const updatedShoe = await Shoe.findOneAndUpdate(
         {
           _id: item.shoeId,
@@ -166,9 +302,15 @@ export const createOrder = async (req, res) => {
           message: "Insufficient stock",
         });
       }
+
+      // Set shoe price
       item.price = shoe.price;
+
+      // Compute total price
       computedTotalPrice += shoe.price * item.quantity;
     }
+
+    // Create order
     const newOrder = await Order.create(
       [
         {
@@ -180,27 +322,38 @@ export const createOrder = async (req, res) => {
       { session },
     );
 
-    // Kumpirmahin ang stock deduction at order creation.
+    // Commit transaction
     await session.commitTransaction();
 
-    res
-      .status(201)
-      .json({ message: "Order created successfully!", data: newOrder });
+    // Return success response
+    res.status(201).json({
+      message: "Order created successfully!",
+      data: newOrder,
+    });
   } catch (err) {
+    // Abort transaction if an error occurs
     if (session.inTransaction()) {
       await session.abortTransaction();
     }
 
     console.error("Create order error:", err);
 
+    // Handle duplicate order reference
+    if (err.code === 11000) {
+      return res.status(409).json({
+        message: "Order reference already exists",
+      });
+    }
+
+    // Handle other errors
     res.status(500).json({
       message: "Error creating order",
     });
   } finally {
+    // End session
     await session.endSession();
   }
 };
-
 export const getAllOrder = async (req, res) => {
   try {
     const orders = await Order.find().populate("items.shoeId");

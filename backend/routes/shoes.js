@@ -12,6 +12,7 @@ import {
   createPayment,
   getPaymentStatus,
   deleteOrderById,
+  updateOrderItemQuantity,
 } from "../controllers/shoeController.js";
 const router = express.Router();
 router.get("/all", getAllShoes);
@@ -26,5 +27,6 @@ router.delete("/:id", deleteById);
 router.delete("/orders/:id", deleteOrderById);
 router.get("/single/:id", getSingleShoe);
 router.put("/update/:id", updateById);
+router.patch("/orders/quantity", updateOrderItemQuantity);
 
 export default router;

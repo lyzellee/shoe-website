@@ -184,11 +184,40 @@ export const deleteById = async (req, res) => {
 export const updateById = async (req, res) => {
   try {
     const { id } = req.params;
-    const { price, category } = req.body;
-    const updateShoes = await Shoe.findByIdAndUpdate(id, req.body, {
-      new: true,
-    });
-    // STEP 3: Validate price and stock
+    // Validate request body
+    if (Object.keys(req.body).length === 0) {
+      return res.status(400).json({
+        message: "Please provide at least one field to update",
+      });
+    }
+    // Validate allowed fields
+    const allowedFields = [
+      "name",
+      "brand",
+      "price",
+      "stock",
+      "gender",
+      "category",
+    ];
+
+    const invalidFields = Object.keys(req.body).filter(
+      (field) => !allowedFields.includes(field),
+    );
+
+    if (invalidFields.length > 0) {
+      return res.status(400).json({
+        message: `Invalid field: ${invalidFields.join(", ")}`,
+      });
+    }
+    // Validate shoe ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid shoe ID",
+      });
+    }
+    const { price, stock } = req.body;
+
+    // Validate price and stock
     if (
       (price !== undefined && price < 0) ||
       (stock !== undefined && stock < 0)
@@ -197,15 +226,119 @@ export const updateById = async (req, res) => {
         message: "Price and stock must not be negative",
       });
     }
-    if (!updateShoes) {
-      return res.status(404).json({ message: "Shoe not Found" });
+    // Validate price and stock numbers
+    if (
+      (price !== undefined &&
+        (price === "" ||
+          typeof price === "boolean" ||
+          !Number.isFinite(Number(price)))) ||
+      (stock !== undefined &&
+        (stock === "" ||
+          typeof stock === "boolean" ||
+          !Number.isFinite(Number(stock))))
+    ) {
+      return res.status(400).json({
+        message: "Price and stock must be valid numbers",
+      });
     }
-    res.status(200).json({ message: "Shoe Updated!", data: updateShoes });
+    // Validate price and stock values
+    if (
+      (price !== undefined && Number(price) <= 0) ||
+      (stock !== undefined && !Number.isInteger(Number(stock)))
+    ) {
+      return res.status(400).json({
+        message:
+          "Price must be greater than 0 and stock must be a whole number",
+      });
+    }
+    // Validate name and brand
+    if (
+      (req.body.name !== undefined &&
+        (typeof req.body.name !== "string" || req.body.name.trim() === "")) ||
+      (req.body.brand !== undefined &&
+        (typeof req.body.brand !== "string" || req.body.brand.trim() === ""))
+    ) {
+      return res.status(400).json({
+        message: "Name and brand must be valid text",
+      });
+    }
+    // Check duplicate shoe name
+    if (req.body.name !== undefined) {
+      const escapedName = req.body.name
+        .trim()
+        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+      const existingShoe = await Shoe.findOne({
+        name: { $regex: `^${escapedName}$`, $options: "i" },
+        _id: { $ne: id },
+      });
+
+      if (existingShoe) {
+        return res.status(409).json({
+          message: "Shoe name already exists",
+        });
+      }
+    }
+
+    // Validate gender and category
+    if (
+      (req.body.gender !== undefined &&
+        (typeof req.body.gender !== "string" ||
+          !["men", "women"].includes(req.body.gender.trim().toLowerCase()))) ||
+      (req.body.category !== undefined &&
+        (typeof req.body.category !== "string" ||
+          !["running", "sports"].includes(
+            req.body.category.trim().toLowerCase(),
+          )))
+    ) {
+      return res.status(400).json({
+        message: "Invalid gender or category",
+      });
+    }
+    // Normalize shoe data
+    if (req.body.name !== undefined) {
+      req.body.name = req.body.name.trim();
+    }
+
+    if (req.body.brand !== undefined) {
+      req.body.brand = req.body.brand.trim();
+    }
+
+    if (req.body.gender !== undefined) {
+      req.body.gender = req.body.gender.trim().toLowerCase();
+    }
+
+    if (req.body.category !== undefined) {
+      req.body.category = req.body.category.trim().toLowerCase();
+    }
+    const updateShoes = await Shoe.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updateShoes) {
+      return res.status(404).json({
+        message: "Shoe not Found",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Shoe Updated!",
+      data: updateShoes,
+    });
   } catch (e) {
-    res.status(500).json({ message: "error" });
+    // Handle errors
+    if (e.name === "ValidationError" || e.name === "CastError") {
+      return res.status(400).json({
+        message: e.message,
+      });
+    }
+
+    return res.status(500).json({
+      message: "error",
+    });
   }
 };
-
 export const getSingleShoe = async (req, res) => {
   try {
     const { id } = req.params;
@@ -542,5 +675,16 @@ export const getPaymentStatus = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error checking payment status", error: err.message });
+  }
+};
+export const updateOrderItemQuantity = async (req, res) => {
+  try {
+    const { orderId, shoeId, quantity } = req.body;
+  } catch (err) {
+    console.error("Message:", err);
+
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 };

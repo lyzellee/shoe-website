@@ -21,5 +21,13 @@ const shoeSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
-export default mongoose.model("Shoe", shoeSchema);
+// Prevent duplicate shoe names (case-insensitive)
+shoeSchema.index(
+  { name: 1 },
+  {
+    unique: true,
+    collation: { locale: "en", strength: 2 },
+  },
+);
 
+export default mongoose.model("Shoe", shoeSchema);

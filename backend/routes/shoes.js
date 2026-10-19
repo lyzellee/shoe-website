@@ -1,4 +1,5 @@
 import express from "express";
+
 import {
   createShoe,
   deleteById,
@@ -7,13 +8,21 @@ import {
   getSingleShoe,
   getWomenShoes,
   updateById,
-  getAllOrder,
+} from "../controllers/shoeController.js";
+
+import {
   createOrder,
-  createPayment,
-  getPaymentStatus,
+  getAllOrder,
+  getSingleOrder,
   deleteOrderById,
   updateOrderItemQuantity,
-} from "../controllers/shoeController.js";
+} from "../controllers/orderController.js";
+
+import {
+  createPayment,
+  getPaymentStatus,
+} from "../controllers/paymentController.js";
+
 const router = express.Router();
 router.get("/all", getAllShoes);
 router.post("/shoes", createShoe);

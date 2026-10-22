@@ -1,4 +1,5 @@
 import Table from "react-bootstrap/Table";
+import Badge from "react-bootstrap/Badge"; // Add this line
 import { useState, useEffect } from "react";
 
 export default function Orders() {
@@ -26,6 +27,22 @@ export default function Orders() {
   useEffect(() => {
     fetchOrders();
   }, []);
+  const getPaymentBadge = (status) => {
+    switch (status) {
+      case "completed":
+        return <Badge bg="success">Completed</Badge>; // Green
+      case "pending":
+        return (
+          <Badge bg="warning" text="dark">
+            Pending
+          </Badge>
+        ); // Yellow / Orange
+      case "failed":
+        return <Badge bg="danger">Failed</Badge>; // Red
+      default:
+        return <Badge bg="secondary">{status}</Badge>; // Gray
+    }
+  };
 
   const handleViewOrder = (order) => {
     setSelectedOrder(order);
@@ -40,6 +57,7 @@ export default function Orders() {
           <th>Customer</th>
           <th>Items</th>
           <th>Status</th>
+          <th>Payment Status</th>
           <th>Total</th>
           <th>Date</th>
           <th>Actions</th>
@@ -53,7 +71,8 @@ export default function Orders() {
             <td>
               {order.items?.reduce((total, item) => total + item.quantity, 0)}
             </td>
-            <td>{order.orderStatus}</td>
+            <td>{getPaymentBadge(order.orderStatus)}</td>
+            <td>{getPaymentBadge(order.paymentStatus)}</td>
             <td>${order.totalPrice ? order.totalPrice.toFixed(2) : "0.00"}</td>
             <td>{order.orderDate}</td>
             <td>

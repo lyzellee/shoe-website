@@ -595,3 +595,16 @@
   }
 }
 
+/*  LOADING AND ERROR */
+
+.product-page-container .product-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  margin: 0;
+  padding: 30px;
+  color: #55534e;
+  font-size: 12px;
+  text-align: center;
+}

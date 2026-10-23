@@ -12,23 +12,23 @@ import "./ProductDetails.css";
 
 const API_URL = "http://localhost:5000/api";
 
-// Get the product from different possible API response formats.
+// Get the product from different possible API response formats
 function unwrapProduct(data) {
   return data?.shoe || data?.product || data?.data || data;
 }
 
-// Get the product list from the API response.
+// Get the product list from the API response
 function unwrapProducts(data) {
   const result = data?.shoes || data?.products || data?.data || data;
   return Array.isArray(result) ? result : [];
 }
 
-// Get the product name.
+// Get the product name
 function getName(item) {
   return item?.name || item?.shoeName || item?.title || "Unnamed Shoe";
 }
 
-// Get the product image.
+// Get the product image
 function getImage(item) {
   return (
     item?.image ||
@@ -38,7 +38,7 @@ function getImage(item) {
   );
 }
 
-// Get and format the product price.
+// Get and format the product price
 function getPrice(item) {
   const price = Number(item?.price ?? item?.sellingPrice ?? 0);
   return Number.isFinite(price) ? price : 0;
@@ -180,12 +180,12 @@ function ProductDetails() {
     };
   }, [id]);
 
-  // Exclude the current product from recommendations.
+  // Exclude the current product from recommendations
   const recommendations = allShoes
     .filter((item) => String(item._id) !== String(shoe?._id))
     .slice(0, 4);
 
-  // Open another product.
+  // Open another product
   function viewShoe(shoeId) {
     navigate(`/product/${shoeId}`, {
       state: { from: sectionPath },

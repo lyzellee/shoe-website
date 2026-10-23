@@ -1,11 +1,16 @@
 import { useState, useEffect } from "react";
-import { Card, Button, Dropdown, Navbar, Container } from "react-bootstrap";
+import { Button, Dropdown, Navbar, Container } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
 import { faHeart as faHeartSolid } from "@fortawesome/free-solid-svg-icons";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import {
+  getFavoriteId,
+  readFavorites,
+  toggleFavorite,
+} from "../favorites.js";
 import "./Men.css";
 
 const featuredImages = [
@@ -19,11 +24,27 @@ export default function CategoryMen() {
   const [shoes, setShoes] = useState([]);
   const [activeCategory, setActiveCategory] = useState("all");
   const [featuredIndex, setFeaturedIndex] = useState(0);
-  const [favorites, setFavorites] = useState([]);
+  const [favorites, setFavorites] = useState(() =>
+    readFavorites().map(getFavoriteId).filter(Boolean),
+  );
   const [favoriteMessage, setFavoriteMessage] = useState("");
   const [addCard, setAddCard] = useState([]);
   const [addCardMessage, setAddCardMessage] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const updateFavorites = () => {
+      setFavorites(readFavorites().map(getFavoriteId).filter(Boolean));
+    };
+
+    window.addEventListener("favoritesUpdated", updateFavorites);
+    window.addEventListener("storage", updateFavorites);
+
+    return () => {
+      window.removeEventListener("favoritesUpdated", updateFavorites);
+      window.removeEventListener("storage", updateFavorites);
+    };
+  }, []);
 
   // AUTOMATIC CAROUSEL
   useEffect(() => {
@@ -56,18 +77,13 @@ export default function CategoryMen() {
 
   //heart button functionality
 
-  const handleFavorite = (shoeId) => {
-    setFavorites((currentFavorites) => {
-      if (currentFavorites.includes(shoeId)) {
-        setFavoriteMessage("Removed from favorites");
-
-        return currentFavorites.filter((id) => id !== shoeId);
-      }
-
-      setFavoriteMessage("Added to favorite!");
-
-      return [...currentFavorites, shoeId];
-    });
+  const handleFavorite = (shoe) => {
+    const wasFavorite = favorites.includes(getFavoriteId(shoe));
+    const updatedFavorites = toggleFavorite(shoe);
+    setFavorites(updatedFavorites.map(getFavoriteId).filter(Boolean));
+    setFavoriteMessage(
+      wasFavorite ? "Removed from favorites" : "Added to favorites",
+    );
 
     setTimeout(() => {
       setFavoriteMessage("");
@@ -125,7 +141,11 @@ export default function CategoryMen() {
   };
 
   const handleViewShoe = (id) => {
-    navigate(`/product/${id}`);
+    navigate(`/product/${id}`, {
+      state: {
+        from: "/men",
+      },
+    });
   };
 
   return (
@@ -254,16 +274,23 @@ export default function CategoryMen() {
               <div className="product-actions">
                 <button
                   className={`wishlist-button ${
-                    favorites.includes(shoe._id) ? "favorite" : ""
+                    favorites.includes(getFavoriteId(shoe)) ? "favorite" : ""
                   }`}
+                  type="button"
+                  aria-label={`${
+                    favorites.includes(getFavoriteId(shoe))
+                      ? "Remove"
+                      : "Add"
+                  } ${shoe.name} ${favorites.includes(getFavoriteId(shoe)) ? "from" : "to"} favorites`}
+                  aria-pressed={favorites.includes(getFavoriteId(shoe))}
                   onClick={(event) => {
                     event.stopPropagation();
-                    handleFavorite(shoe._id);
+                    handleFavorite(shoe);
                   }}
                 >
                   <FontAwesomeIcon
                     icon={
-                      favorites.includes(shoe._id)
+                      favorites.includes(getFavoriteId(shoe))
                         ? faHeartSolid
                         : faHeartRegular
                     }
@@ -298,12 +325,11 @@ export default function CategoryMen() {
               <div className="product-bottom">
                 <p className="product-name">{shoe.name}</p>
 
-                <p className="product-price">₱{shoe.price}</p>
-                <div onClick={() => handleViewShoe(shoe._id)}>
-                  <img src={shoe.image} alt={shoe.name} />
-                  <h5>{shoe.brand}</h5>
-                  <p>₱{shoe.price}</p>
-                </div>
+                <p className="product-price">
+                  ₱{Number(shoe.price).toLocaleString("en-PH")}
+                </p>
+
+                <div onClick={() => handleViewShoe(shoe._id)}></div>
               </div>
             </div>
           </div>

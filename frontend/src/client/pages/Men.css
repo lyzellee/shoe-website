@@ -265,10 +265,13 @@
     font-size: 18px;
 }
 
-/* PRODUCT INFO */
 
+
+/* PRODUCT INFO */
 .product-info {
     padding: 8px 5px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .product-gender {
@@ -281,6 +284,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 100%;
 }
 
 .product-name {
@@ -293,4 +297,6 @@
     margin: 0;
     font-size: 12px;
     font-weight: 700;
+    text-align: right;
+    margin-left: auto;
 }

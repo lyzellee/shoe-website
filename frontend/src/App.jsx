@@ -17,7 +17,7 @@ import Wishlist from "./client/pages/Wishlist.jsx";
 import Women from "./client/pages/Women.jsx";
 import Navbar from "./components/Navbar";
 import Orders from "./admin/pages/category/orders.jsx";
-import P from "./client/pages/Placeorder.jsx";
+//import P from "./client/pages/Placeorder.jsx";
 
 function App() {
   return (
@@ -41,9 +41,11 @@ function App() {
 
         <Route path="/orders" element={<Orders />} />
 
+        <Route path="/wishlist" element={<Wishlist />} />
+
         <Route path="/checkout" element={<Checkout />} />
 
-        <Route path="/p" element={<P />} />
+        {/*<Route path="/p" element={<P />} />*/}
       </Routes>
     </Router>
   );

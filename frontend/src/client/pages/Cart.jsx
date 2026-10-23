@@ -162,7 +162,9 @@ export default function Cart() {
 
                       {/* Product details and quantity */}
                       <div className="cart-product-details">
-                        <p className="card-category">MEN</p>
+                        <p className="card-category">
+                          {(shoe?.gender || "SHOES").toUpperCase()}
+                        </p>
 
                         <h5 className="card-name">
                           {shoe?.name || "Product unavailable"}
@@ -171,8 +173,8 @@ export default function Cart() {
                         <p className="card-brand">{shoe?.brand || ""}</p>
 
                         <p className="card-size">
-                          Size: {shoe?.size || "N/A"}
-                          {shoe?.color ? ` · ${shoe.color}` : ""}
+                          Size: {item.size || "N/A"}
+                          {item.color ? ` · ${item.color}` : ""}
                         </p>
 
                         <div className="quantity-controls">

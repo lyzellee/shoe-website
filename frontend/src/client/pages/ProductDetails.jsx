@@ -445,3 +445,4 @@ function ProductDetails() {
     </main>
   );
 }
+export default ProductDetails;

@@ -6,11 +6,7 @@ import { faHeart as faHeartSolid } from "@fortawesome/free-solid-svg-icons";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import {
-  getFavoriteId,
-  readFavorites,
-  toggleFavorite,
-} from "../favorites.js";
+import { getFavoriteId, readFavorites, toggleFavorite } from "../favorites.js";
 import "./Men.css";
 
 const featuredImages = [
@@ -92,45 +88,23 @@ export default function CategoryMen() {
 
   // add to cart button functionality
 
-  const handleAddToCard = async (shoeId) => {
-    try {
-      // 1. Gumawa ng order reference
-      const orderReference = `ORD-${Date.now()}`;
-
-      // 2. Ipadala ang order sa backend
-      const response = await axios.post("http://localhost:5000/api/orders", {
-        orderReference,
-        items: [
-          {
-            shoeId: shoeId,
-            quantity: 1,
-          },
-        ],
-      });
-
-      // 3. Kapag successful ang pag-save sa MongoDB
-      console.log("Order saved:", response.data);
-
-      // 4. I-update ang cart state
-      setAddCard((currentAddCard) => {
-        if (currentAddCard.includes(shoeId)) {
-          return currentAddCard;
-        }
-
-        return [...currentAddCard, shoeId];
-      });
+  const handleAddToCard = (shoeId) => {
+    // Check kung nasa cart na ang shoe
+    if (addCard.includes(shoeId)) {
+      setAddCardMessage("Already in cart");
+    } else {
+      // Idagdag lang sa cart state, hindi sa MongoDB
+      setAddCard((currentAddCard) => [...currentAddCard, shoeId]);
 
       setAddCardMessage("Added to cart");
-    } catch (err) {
-      console.error("ADD TO CART ERROR:", err.response?.data || err.message);
-
-      setAddCardMessage("Failed to add to cart");
     }
 
+    // Alisin ang notification pagkatapos ng 2 seconds
     setTimeout(() => {
       setAddCardMessage("");
     }, 2000);
   };
+
   const handleListAll = async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/all");
@@ -278,9 +252,7 @@ export default function CategoryMen() {
                   }`}
                   type="button"
                   aria-label={`${
-                    favorites.includes(getFavoriteId(shoe))
-                      ? "Remove"
-                      : "Add"
+                    favorites.includes(getFavoriteId(shoe)) ? "Remove" : "Add"
                   } ${shoe.name} ${favorites.includes(getFavoriteId(shoe)) ? "from" : "to"} favorites`}
                   aria-pressed={favorites.includes(getFavoriteId(shoe))}
                   onClick={(event) => {

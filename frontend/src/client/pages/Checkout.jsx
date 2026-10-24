@@ -1,5 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Form, Button, Row, Col } from "react-bootstrap";
+import "./Checkout.css";
+
+const paymentOptions = [
+  { value: "COD", label: "Cash on Delivery (COD)" },
+  { value: "GCash", label: "GCash" },
+  { value: "Card", label: "Card" },
+];
 
 export default function Checkout() {
   // =====================================================
@@ -188,168 +195,341 @@ export default function Checkout() {
   // =====================================================
 
   return (
-    <div className="container py-4">
-      <h2 className="h4 fw-bold mb-3">Delivery</h2>
+    <div className="checkout-page">
+      <div className="checkout-containter">
+        <p className="checkout-label"> CHECKOUT </p>
+        <p className="checkout-title">Almost there</p>
 
-      <Form>
-        {/* FIRST NAME AND LAST NAME */}
-        <Row className="mb-3">
-          <Col md={6}>
-            <Form.Control
-              type="text"
-              name="firstName"
-              placeholder="First Name"
-              value={formData.firstName}
-              onChange={handleChange}
-              className="rounded-pill bg-light"
-            />
-          </Col>
+        <div className="checkout-layout">
+          <section className="checkout-form-section">
+            <h2 className="checkout-section-title">Delivery</h2>
 
-          <Col md={6} className="mt-2 mt-md-0">
-            <Form.Control
-              type="text"
-              name="lastName"
-              placeholder="Last Name"
-              value={formData.lastName}
-              onChange={handleChange}
-              className="rounded-pill bg-light"
-            />
-          </Col>
-        </Row>
+            <Form className="checkout-form">
+              {/* First Name & Last Name */}
+              <Row className="checkout-row">
+                <Col xs={6}>
+                  <Form.Control
+                    type="text"
+                    name="firstName"
+                    placeholder="First Name"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    className="checkout-input"
+                  />
+                </Col>
 
-        {/* COMPLETE DELIVERY ADDRESS */}
-        <Form.Group className="mb-3">
-          <Form.Control
-            type="text"
-            name="address"
-            placeholder="Complete Address"
-            value={formData.address}
-            onChange={handleChange}
-            className="rounded-pill bg-light"
-          />
-        </Form.Group>
+                <Col xs={6}>
+                  <Form.Control
+                    type="text"
+                    name="lastName"
+                    placeholder="Last Name"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    className="checkout-input"
+                  />
+                </Col>
+              </Row>
 
-        {/* CITY, PROVINCE, AND ZIP CODE */}
-        <Row className="mb-3">
-          <Col md={4}>
-            <Form.Control
-              type="text"
-              name="city"
-              placeholder="City"
-              value={formData.city}
-              onChange={handleChange}
-              className="rounded-pill bg-light"
-            />
-          </Col>
+              {/* Address */}
+              <Form.Control
+                type="text"
+                name="address"
+                placeholder="Address"
+                value={formData.address}
+                onChange={handleChange}
+                className="checkout-input checkout-address"
+                required
+              />
 
-          <Col md={4} className="mt-2 mt-md-0">
-            <Form.Control
-              type="text"
-              name="province"
-              placeholder="Province"
-              value={formData.province}
-              onChange={handleChange}
-              className="rounded-pill bg-light"
-            />
-          </Col>
+              {/* City, Province & ZIP Code */}
+              <Row className="checkout-row">
+                <Col xs={4}>
+                  <Form.Control
+                    type="text"
+                    name="city"
+                    placeholder="City"
+                    value={formData.city}
+                    onChange={handleChange}
+                    className="checkout-input"
+                    required
+                  />
+                </Col>
 
-          <Col md={4} className="mt-2 mt-md-0">
-            <Form.Control
-              type="text"
-              name="zipCode"
-              placeholder="ZIP Code"
-              value={formData.zipCode}
-              onChange={handleChange}
-              className="rounded-pill bg-light"
-            />
-          </Col>
-        </Row>
+                <Col xs={4}>
+                  <Form.Control
+                    type="text"
+                    name="province"
+                    placeholder="Province"
+                    value={formData.province}
+                    onChange={handleChange}
+                    className="checkout-input"
+                    required
+                  />
+                </Col>
 
-        {/* PHONE NUMBER AND EMAIL */}
-        <Row className="mb-4">
-          <Col md={6}>
-            <Form.Control
-              type="tel"
-              name="phone"
-              placeholder="Phone Number"
-              value={formData.phone}
-              onChange={handleChange}
-              className="rounded-pill bg-light"
-            />
-          </Col>
+                <Col xs={4}>
+                  <Form.Control
+                    type="text"
+                    name="zipCode"
+                    placeholder="ZIP code"
+                    value={formData.zipCode}
+                    onChange={handleChange}
+                    className="checkout-input"
+                    required
+                  />
+                </Col>
+              </Row>
 
-          <Col md={6} className="mt-2 mt-md-0">
-            <Form.Control
-              type="email"
-              name="email"
-              placeholder="Email Address"
-              value={formData.email}
-              onChange={handleChange}
-              className="rounded-pill bg-light"
-            />
-          </Col>
-        </Row>
+              {/* Phone & Email */}
+              <Row className="checkout-row">
+                <Col xs={6}>
+                  <Form.Control
+                    type="tel"
+                    name="phone"
+                    placeholder="Phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="checkout-input"
+                    required
+                  />
+                </Col>
 
-        {/* PAYMENT METHOD SELECTION */}
-        <h2 className="h5 fw-bold mb-3">Payment Method</h2>
+                <Col xs={6}>
+                  <Form.Control
+                    type="email"
+                    name="email"
+                    placeholder="Email Address"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="checkout-input"
+                    required
+                  />
+                </Col>
+              </Row>
 
-        <div className="d-flex flex-wrap gap-4 mb-4">
-          {/* COD = Cash on Delivery */}
-          <Form.Check
-            type="radio"
-            name="payment"
-            label="Cash on Delivery (COD)"
-            value="COD"
-            checked={paymentMethod === "COD"}
-            onChange={(e) => setPaymentMethod(e.target.value)}
-          />
+              {/* Payment Method */}
+              <h2 className="heckout-section-title payment-title">Payment</h2>
 
-          {/* GCash = payment method currently accepted
-              by your createPayment backend */}
-          <Form.Check
-            type="radio"
-            name="payment"
-            label="GCash"
-            value="GCash"
-            checked={paymentMethod === "GCash"}
-            onChange={(e) => setPaymentMethod(e.target.value)}
-          />
+              <div
+                className="checkout-payment-dropdown"
+                ref={paymentDropdownRef}
+                onBlur={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget)) {
+                    setIsPaymentMenuOpen(false);
+                  }
+                }}
+              >
+                <button
+                  ref={paymentTriggerRef}
+                  type="button"
+                  className="checkout-input checkout-payment-trigger"
+                  aria-label="Payment method"
+                  aria-haspopup="listbox"
+                  aria-expanded={isPaymentMenuOpen}
+                  aria-controls={
+                    isPaymentMenuOpen ? "checkout-payment-options" : undefined
+                  }
+                  onClick={() => {
+                    setActivePaymentIndex(
+                      Math.max(
+                        0,
+                        paymentOptions.findIndex(
+                          (option) => option.value === paymentMethod,
+                        ),
+                      ),
+                    );
+                    setIsPaymentMenuOpen((open) => !open);
+                  }}
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === "ArrowDown" ||
+                      event.key === "ArrowUp" ||
+                      event.key === "Enter" ||
+                      event.key === " "
+                    ) {
+                      event.preventDefault();
+                      setActivePaymentIndex(
+                        Math.max(
+                          0,
+                          paymentOptions.findIndex(
+                            (option) => option.value === paymentMethod,
+                          ),
+                        ),
+                      );
+                      setIsPaymentMenuOpen(true);
+                    }
+                  }}
+                >
+                  <span>
+                    {paymentOptions.find(
+                      (option) => option.value === paymentMethod,
+                    )?.label || "Choose payment method"}
+                  </span>
+                  <span
+                    className="checkout-payment-chevron"
+                    aria-hidden="true"
+                  />
+                </button>
+                {isPaymentMenuOpen && (
+                  <div
+                    id="checkout-payment-options"
+                    ref={paymentListboxRef}
+                    className="checkout-payment-options"
+                    role="listbox"
+                    aria-label="Payment method"
+                    aria-activedescendant={`checkout-payment-option-${activePaymentIndex}`}
+                    tabIndex={0}
+                    onKeyDown={handlePaymentMenuKeyDown}
+                  >
+                    {paymentOptions.map((option, index) => (
+                      <div
+                        id={`checkout-payment-option-${index}`}
+                        key={option.value}
+                        className={`checkout-payment-option${
+                          paymentMethod === option.value ? " is-selected" : ""
+                        }${activePaymentIndex === index ? " is-active" : ""}`}
+                        role="option"
+                        aria-selected={paymentMethod === option.value}
+                        onMouseEnter={() => setActivePaymentIndex(index)}
+                        onClick={() => {
+                          setPaymentMethod(option.value);
+                          setIsPaymentMenuOpen(false);
+                          paymentTriggerRef.current?.focus();
+                        }}
+                      >
+                        {option.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-          {/* Card is displayed in the UI, but your current
-              backend rejects it because only GCash is supported. */}
-          <Form.Check
-            type="radio"
-            name="payment"
-            label="Card"
-            value="Card"
-            checked={paymentMethod === "Card"}
-            onChange={(e) => setPaymentMethod(e.target.value)}
-          />
+              {/* Place Order */}
+              <Button
+                type="button"
+                className="checkout-place-order"
+                onClick={handlePayment}
+              >
+                {paymentMethod === "COD"
+                  ? "Place Order"
+                  : "Continue to Payment"}
+              </Button>
+
+              {/* Check Payment Status */}
+              {paymentMethod !== "COD" && (
+                <Button
+                  type="button"
+                  variant="outline-dark"
+                  className="checkout-status-button"
+                  onClick={checkPaymentStatus}
+                >
+                  Check Payment Status
+                </Button>
+              )}
+            </Form>
+          </section>
+
+          {/* RIGHT: Order summary */}
+          <aside className="checkout-order-card">
+            <h2 className="checkout-order-title">Your order</h2>
+
+            <div className="checkout-order-items">
+              {orderItems.map((item, index) => (
+                <div
+                  className="checkout-order-item"
+                  key={item._id || item.shoeId || index}
+                >
+                  <div className="checkout-product-image-wrapper">
+                    <img
+                      src={
+                        item.image ||
+                        item.imageUrl ||
+                        item.img ||
+                        "/placeholder-shoe.png"
+                      }
+                      alt={item.name || "Shoe"}
+                      className="checkout-product-image"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/placeholder-shoe.png";
+                      }}
+                    />
+                  </div>
+
+                  <div className="checkout-product-details">
+                    <p className="checkout-product-name">
+                      {item.name || item.shoeName || "Shoe"}
+                      {" x "}
+                      {item.quantity || 1}
+                    </p>
+
+                    <p className="checkout-product-variant">
+                      Size: {item.size || "N/A"}
+                      {" · "}
+                      {item.color || item.brand || ""}
+                    </p>
+                  </div>
+
+                  <p className="checkout-product-price">
+                    P{" "}
+                    {(
+                      Number(item.price || 0) * Number(item.quantity || 1)
+                    ).toFixed(2)}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="checkout-summary-divider" />
+
+            {/* Subtotal */}
+            <div className="checkout-summary-row">
+              <span>Subtotal</span>
+              <strong>
+                P{" "}
+                {orderItems
+                  .reduce(
+                    (sum, item) =>
+                      sum +
+                      Number(item.price || 0) * Number(item.quantity || 1),
+                    0,
+                  )
+                  .toFixed(2)}
+              </strong>
+            </div>
+
+            {/* Shipping */}
+            <div className="checkout-summary-row">
+              <span>Shipping Fee</span>
+              <strong>Free</strong>
+            </div>
+
+            {/* Voucher */}
+            <div className="checkout-summary-row">
+              <span>Voucher</span>
+              <strong></strong>
+            </div>
+
+            <div className="checkout-summary-divider checkout-total-divider" />
+
+            {/* Total */}
+            <div className="checkout-summary-row checkout-total-row">
+              <span>Total</span>
+              <strong>
+                P{" "}
+                {orderItems
+                  .reduce(
+                    (sum, item) =>
+                      sum +
+                      Number(item.price || 0) * Number(item.quantity || 1),
+                    0,
+                  )
+                  .toFixed(2)}
+              </strong>
+            </div>
+          </aside>
         </div>
-
-        {/* BUTTON TO START THE PAYMENT FLOW */}
-        <Button
-          type="button"
-          className="w-100 rounded-pill btn-dark py-2 mb-3"
-          onClick={handlePayment}
-        >
-          {paymentMethod === "COD" ? "Place Order" : "Continue to Payment"}
-        </Button>
-
-        {/* MANUAL PAYMENT STATUS CHECK */}
-        {/* Sa kasalukuyang backend, COD at Card ay hindi
-            supported ng createPayment. */}
-        {paymentMethod !== "COD" && (
-          <Button
-            type="button"
-            variant="outline-dark"
-            className="w-100 rounded-pill py-2"
-            onClick={checkPaymentStatus}
-          >
-            Check Payment Status
-          </Button>
-        )}
-      </Form>
+      </div>
     </div>
   );
 }

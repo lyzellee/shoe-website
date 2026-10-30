@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import Shoe from "../models/shoe.js";
 import Order from "../models/order.js";
-
+import OrderSchemaInformation from "../models/orderInformation.js"; // Match exact case & name
 export const createOrder = async (req, res) => {
   const session = await mongoose.startSession();
 
@@ -21,7 +21,12 @@ export const createOrder = async (req, res) => {
         message: "Order must contain at least one item",
       });
     }
-
+    // Limit the number of different item entries per order
+    if (items.length > 5) {
+      return res.status(400).json({
+        message: "An order cannot contain more than 50 item entries",
+      });
+    }
     // Start transaction
     session.startTransaction();
 
@@ -293,13 +298,216 @@ export const deleteOrderById = async (req, res) => {
 };
 
 export const updateOrderItemQuantity = async (req, res) => {
+  const session = await mongoose.startSession();
   try {
     const { orderId, shoeId, quantity } = req.body;
-  } catch (err) {
-    console.error("Message:", err);
 
-    res.status(500).json({
+    // STEP 1: Validate order ID
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({
+        message: "Invalid order ID",
+      });
+    }
+
+    // STEP 2: Validate shoe ID
+    if (!mongoose.Types.ObjectId.isValid(shoeId)) {
+      return res.status(400).json({
+        message: "Invalid shoe ID",
+      });
+    }
+
+    // STEP 3: Validate quantity
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return res.status(400).json({
+        message: "Quantity must be a positive whole number",
+      });
+    }
+    // Simulan ang transaction pagkatapos ng validations
+    session.startTransaction();
+
+    // STEP 4: Hanapin ang order sa database
+    const order = await Order.findById(orderId).session(session);
+
+    if (!order) {
+      await session.abortTransaction();
+
+      return res.status(404).json({
+        message: "Order not found",
+      });
+    }
+    // STEP 5: Hanapin ang shoe sa loob ng order
+    const orderItem = order.items.find(
+      (item) => item.shoeId.toString() === shoeId,
+    );
+
+    if (!orderItem) {
+      await session.abortTransaction();
+
+      return res.status(404).json({
+        message: "Shoe not found in this order",
+      });
+    }
+    // STEP 6: Pending orders lang ang puwedeng i-update
+    if (order.orderStatus !== "pending") {
+      await session.abortTransaction();
+
+      return res.status(400).json({
+        message: "Only pending orders can be updated",
+      });
+    }
+    // STEP 7: Hanapin ang actual shoe sa database
+    const shoe = await Shoe.findById(shoeId).session(session);
+
+    if (!shoe) {
+      await session.abortTransaction();
+
+      return res.status(404).json({
+        message: "Shoe not found",
+      });
+    }
+    // STEP 8: Kunin ang dating quantity at difference
+    const oldQuantity = orderItem.quantity;
+    const difference = quantity - oldQuantity;
+    // STEP 9: I-adjust ang stock
+
+    if (difference > 0) {
+      // Nadagdagan ang quantity, kaya kailangan ng dagdag na stock
+      const updatedShoe = await Shoe.findOneAndUpdate(
+        {
+          _id: shoeId,
+          stock: { $gte: difference },
+        },
+        {
+          $inc: { stock: -difference },
+        },
+        {
+          returnDocument: "after",
+          session,
+        },
+      );
+
+      // Kapag kulang ang stock, huwag ituloy ang update
+      if (!updatedShoe) {
+        await session.abortTransaction();
+
+        return res.status(400).json({
+          message: `Insufficient stock. Available: ${shoe.stock}`,
+        });
+      }
+    } else if (difference < 0) {
+      // Nabawasan ang quantity, kaya ibalik ang sobrang pairs
+      await Shoe.findByIdAndUpdate(
+        shoeId,
+        {
+          $inc: { stock: Math.abs(difference) },
+        },
+        { session },
+      );
+    }
+    // STEP 10: I-update ang quantity sa order
+    orderItem.quantity = quantity;
+    // STEP 11: I-compute ulit ang total price ng order
+    order.totalPrice = order.items.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0,
+    );
+    // STEP 12: I-save ang order at i-commit ang transaction
+    await order.save({ session });
+
+    await session.commitTransaction();
+
+    return res.status(200).json({
+      message: "Order quantity updated successfully",
+      data: {
+        orderId: order._id,
+        shoeId,
+        oldQuantity,
+        newQuantity: quantity,
+        totalPrice: order.totalPrice,
+      },
+    });
+  } catch (err) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    console.error("Update order quantity error:", err);
+
+    return res.status(500).json({
       message: "Server error",
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+export const createOrderInformation = async (req, res) => {
+  try {
+    const {
+      orderId,
+      firstName,
+      lastName,
+      address,
+      city,
+      province,
+      zipCode,
+      phone,
+      email,
+    } = req.body;
+
+    // 1. I-check kung valid ang Order ID
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({
+        message: "Invalid order ID",
+      });
+    }
+
+    // 2. Hanapin ang existing order
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found",
+      });
+    }
+
+    // 3. I-check kung kumpleto ang customer details
+    if (
+      !firstName ||
+      !lastName ||
+      !address ||
+      !city ||
+      !province ||
+      !zipCode ||
+      !phone ||
+      !email
+    ) {
+      return res.status(400).json({
+        message: "All customer information fields are required",
+      });
+    }
+
+    // 4. I-save ang customer details
+    const orderInformation = await OrderSchemaInformation.create({
+      orderId,
+      firstName,
+      lastName,
+      address,
+      city,
+      province,
+      zipCode,
+      phone,
+      email,
+    });
+
+    // 5. Ibalik ang saved information
+    return res.status(201).json({
+      message: "Customer information saved successfully",
+      data: orderInformation,
+    });
+  } catch (error) {
+    console.error("Create order information error:", error);
+
+    return res.status(500).json({
+      message: "Error saving customer information",
     });
   }
 };

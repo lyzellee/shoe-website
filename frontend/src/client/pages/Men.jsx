@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getFavoriteId, readFavorites, toggleFavorite } from "../favorites.js";
 import "./Men.css";
-
+import { addToCart, getCart } from "../../components/AddToCartItems.jsx";
 const featuredImages = [
   "/featured-images/featured 1.jpg",
   "/featured-images/featured 2.jpg",
@@ -24,7 +24,9 @@ export default function CategoryMen() {
     readFavorites().map(getFavoriteId).filter(Boolean),
   );
   const [favoriteMessage, setFavoriteMessage] = useState("");
-  const [addCard, setAddCard] = useState([]);
+  const [addCard, setAddCard] = useState(() =>
+    getCart().map((item) => item._id),
+  );
   const [addCardMessage, setAddCardMessage] = useState("");
   const navigate = useNavigate();
 
@@ -88,18 +90,26 @@ export default function CategoryMen() {
 
   // add to cart button functionality
 
-  const handleAddToCard = (shoeId) => {
-    // Check kung nasa cart na ang shoe
-    if (addCard.includes(shoeId)) {
+  const handleAddToCard = (shoe) => {
+    // Kunin ang existing cart.
+    const savedCart = getCart();
+
+    // Check kung nasa cart na ang shoe.
+    const existingShoe = savedCart.some((item) => item._id === shoe._id);
+
+    if (existingShoe) {
       setAddCardMessage("Already in cart");
     } else {
-      // Idagdag lang sa cart state, hindi sa MongoDB
-      setAddCard((currentAddCard) => [...currentAddCard, shoeId]);
+      // Gamitin ang reusable function mula sa AddToCartItems.jsx.
+      const updatedCart = addToCart(shoe);
+
+      // I-update ang React state.
+      setAddCard(updatedCart.map((item) => item._id));
 
       setAddCardMessage("Added to cart");
     }
 
-    // Alisin ang notification pagkatapos ng 2 seconds
+    // Alisin ang notification pagkatapos ng 2 seconds.
     setTimeout(() => {
       setAddCardMessage("");
     }, 2000);
@@ -275,7 +285,7 @@ export default function CategoryMen() {
                   }`}
                   onClick={(event) => {
                     event.stopPropagation();
-                    handleAddToCard(shoe._id);
+                    handleAddToCard(shoe);
                   }}
                 >
                   <FontAwesomeIcon icon={faPlus} size="sm" />

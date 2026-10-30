@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import Shoe from "../models/shoe.js";
 import Order from "../models/order.js";
-import OrderSchemaInformation from "../models/orderInformation.js"; // Match exact case & name
+import OrderSchemaInformation from "../models/orderInformation.js";
+
 export const createOrder = async (req, res) => {
   const session = await mongoose.startSession();
 
@@ -24,7 +25,7 @@ export const createOrder = async (req, res) => {
     // Limit the number of different item entries per order
     if (items.length > 5) {
       return res.status(400).json({
-        message: "An order cannot contain more than 50 item entries",
+        message: "An order cannot contain more than 5 item entries",
       });
     }
     // Start transaction
@@ -63,8 +64,6 @@ export const createOrder = async (req, res) => {
           message: "Quantity must be a positive whole number",
         });
       }
-
-      console.log("ITEMS CHECK PASSED");
 
       // Find shoe
       const shoe = await Shoe.findById(item.shoeId).session(session);
@@ -164,14 +163,12 @@ export const getAllOrder = async (req, res) => {
   try {
     const orders = await Order.find().populate("items.shoeId");
 
-    console.log("All orders fetched successfully:", orders);
-
     res.status(200).json(orders);
   } catch (err) {
     console.error("GET ALL ORDER ERROR:", err);
 
     res.status(500).json({
-      message: err.message,
+      message: "Internal server error",
     });
   }
 };
@@ -237,7 +234,14 @@ export const deleteOrderById = async (req, res) => {
         message: "Order not found",
       });
     }
+    // STEP 4.1: Prevent deletion of paid orders
+    if (order.paymentStatus === "completed") {
+      await session.abortTransaction();
 
+      return res.status(400).json({
+        message: "Paid orders cannot be deleted",
+      });
+    }
     // STEP 4: Only pending orders can be deleted
     if (order.orderStatus !== "pending") {
       await session.abortTransaction();
@@ -347,12 +351,15 @@ export const updateOrderItemQuantity = async (req, res) => {
         message: "Shoe not found in this order",
       });
     }
-    // STEP 6: Pending orders lang ang puwedeng i-update
-    if (order.orderStatus !== "pending") {
+    // STEP 6: Only unpaid, pending orders can be updated
+    if (
+      order.orderStatus !== "pending" ||
+      order.paymentStatus === "completed"
+    ) {
       await session.abortTransaction();
 
       return res.status(400).json({
-        message: "Only pending orders can be updated",
+        message: "Only unpaid, pending orders can be updated",
       });
     }
     // STEP 7: Hanapin ang actual shoe sa database

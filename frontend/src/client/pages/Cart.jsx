@@ -1,125 +1,75 @@
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState } from "react";
 import "./Cart.css";
 
 export default function Cart() {
-  const [orders, setOrders] = useState([]);
+  // Kunin ang cart items mula sa localStorage
+  const [cartItems, setCartItems] = useState(() => {
+    const savedCart = localStorage.getItem("cart");
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
 
-  // Fetch orders from the backend
-  const fetchOrders = async () => {
-    try {
-      const response = await fetch("http://localhost:5000/api/orders");
+  // I-save ang updated cart sa state at localStorage
+  const updateCart = (updatedCart) => {
+    setCartItems(updatedCart);
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+  };
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch orders");
+  // Baguhin ang quantity
+  const handleQuantityChange = (shoeId, change) => {
+    const updatedCart = cartItems.map((item) => {
+      if (item._id !== shoeId) {
+        return item;
       }
 
-      const data = await response.json();
+      const currentQuantity = Number(item.quantity) || 1;
+      const newQuantity = currentQuantity + change;
 
-      // Keep only valid orders and items
-      const validOrders = Array.isArray(data)
-        ? data
-            .filter((order) => order != null)
-            .map((order) => ({
-              ...order,
-              items: Array.isArray(order.items)
-                ? order.items.filter((item) => item != null)
-                : [],
-            }))
-        : [];
+      // Hindi puwedeng mas mababa sa 1
+      if (newQuantity < 1) {
+        return item;
+      }
 
-      // Newest orders first
-      validOrders.sort(
-        (a, b) =>
-          new Date(b.orderDate || b.createdAt || 0).getTime() -
-          new Date(a.orderDate || a.createdAt || 0).getTime(),
-      );
+      // Huwag lumampas sa available stock
+      const stock = Number(item.stock) || 0;
 
-      setOrders(validOrders);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    }
+      if (change > 0 && newQuantity > stock) {
+        return item;
+      }
+
+      return {
+        ...item,
+        quantity: newQuantity,
+      };
+    });
+
+    updateCart(updatedCart);
   };
 
-  // Update quantity in the frontend only
-  const handleQuantityChange = (orderId, itemId, change) => {
-    setOrders((previousOrders) =>
-      previousOrders.map((order) => {
-        if (order._id !== orderId) {
-          return order;
-        }
+  // Alisin ang shoe sa cart
+  const handleRemove = (shoeId) => {
+    const updatedCart = cartItems.filter((item) => item._id !== shoeId);
 
-        return {
-          ...order,
-          items: order.items.map((item) => {
-            if (item._id !== itemId) {
-              return item;
-            }
-
-            const newQuantity = item.quantity + change;
-
-            // Quantity cannot go below 1
-            if (newQuantity < 1) {
-              return item;
-            }
-
-            // Do not increase quantity if the shoe is unavailable
-            const availableStock = item.shoeId?.stock ?? 0;
-
-            if (change > 0 && newQuantity > availableStock) {
-              return item;
-            }
-
-            return {
-              ...item,
-              quantity: newQuantity,
-            };
-          }),
-        };
-      }),
-    );
+    updateCart(updatedCart);
   };
 
-  // Delete an order
-  const handleDeleteByOrder = async (id) => {
-    try {
-      const response = await axios.delete(
-        `http://localhost:5000/api/orders/${id}`,
-      );
+  // Kalkulahin ang subtotal
+  const subtotal = cartItems.reduce((total, item) => {
+    const price = Number(item.price) || 0;
+    const quantity = Number(item.quantity) || 1;
 
-      console.log("Order deleted:", response.data);
-      await fetchOrders();
-    } catch (error) {
-      console.error("Error deleting order:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  // Calculate subtotal safely
-  const subtotal = orders.reduce((total, order) => {
-    return (
-      total +
-      order.items.reduce((orderTotal, item) => {
-        const price = Number(item.shoeId?.price) || 0;
-        const quantity = Number(item.quantity) || 0;
-
-        return orderTotal + price * quantity;
-      }, 0)
-    );
+    return total + price * quantity;
   }, 0);
 
-  // Format prices with commas and two decimal places
+  // Format ng presyo
   const formatPrice = (price) =>
     Number(price || 0).toLocaleString("en-PH", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
 
+  // IMPORTANT: Dito natin ibinabalik ang UI
   return (
     <div className="cart-page">
       <h1 className="title-page">Shopping Cart</h1>
@@ -128,29 +78,26 @@ export default function Cart() {
         <section className="cart-items-section">
           <h5 className="subtitle-page">YOUR BAG</h5>
 
-          {orders.map((order) =>
-            order.items.map((item) => {
-              if (!item) {
-                return null;
-              }
-
-              const shoe = item.shoeId;
+          {cartItems.length === 0 ? (
+            <p className="mt-3">Your shopping cart is empty.</p>
+          ) : (
+            cartItems.map((item) => {
+              const shoe = item;
               const quantity = Number(item.quantity) || 1;
 
               return (
                 <Card key={item._id} className="card-item">
                   <Card.Body>
                     <div className="card-info">
-                      {/* Shoe image */}
                       <div className="card-image-box">
                         <img
                           src={
-                            shoe?.image ||
-                            shoe?.imageUrl ||
-                            shoe?.img ||
+                            shoe.image ||
+                            shoe.imageUrl ||
+                            shoe.img ||
                             "/product-images/product%201.png"
                           }
-                          alt={shoe?.name || "Product unavailable"}
+                          alt={shoe.name || "Product"}
                           className="cart-product-image"
                           onError={(event) => {
                             event.currentTarget.onerror = null;
@@ -160,30 +107,20 @@ export default function Cart() {
                         />
                       </div>
 
-                      {/* Product details and quantity */}
                       <div className="cart-product-details">
                         <p className="card-category">
-                          {(shoe?.gender || "SHOES").toUpperCase()}
+                          {(shoe.gender || "SHOES").toUpperCase()}
                         </p>
 
-                        <h5 className="card-name">
-                          {shoe?.name || "Product unavailable"}
-                        </h5>
+                        <h5 className="card-name">{shoe.name || "Product"}</h5>
 
-                        <p className="card-brand">{shoe?.brand || ""}</p>
-
-                        <p className="card-size">
-                          Size: {item.size || "N/A"}
-                          {item.color ? ` · ${item.color}` : ""}
-                        </p>
+                        <p className="card-brand">{shoe.brand}</p>
 
                         <div className="quantity-controls">
                           <Button
                             variant="outline-secondary"
-                            onClick={() =>
-                              handleQuantityChange(order._id, item._id, -1)
-                            }
                             disabled={quantity <= 1}
+                            onClick={() => handleQuantityChange(item._id, -1)}
                           >
                             −
                           </Button>
@@ -192,51 +129,35 @@ export default function Cart() {
 
                           <Button
                             variant="outline-secondary"
-                            onClick={() =>
-                              handleQuantityChange(order._id, item._id, 1)
-                            }
-                            disabled={
-                              !shoe || quantity >= (Number(shoe.stock) || 0)
-                            }
+                            disabled={quantity >= (Number(shoe.stock) || 0)}
+                            onClick={() => handleQuantityChange(item._id, 1)}
                           >
                             +
                           </Button>
                         </div>
                       </div>
 
-                      {/* Price and Remove button */}
                       <div className="cart-product-actions">
                         <h5>
-                          ₱{formatPrice((Number(shoe?.price) || 0) * quantity)}
+                          ₱{formatPrice((Number(shoe.price) || 0) * quantity)}
                         </h5>
 
                         <Button
                           variant="link"
-                          onClick={() => handleDeleteByOrder(order._id)}
                           className="remove-button"
+                          onClick={() => handleRemove(item._id)}
                         >
                           Remove
                         </Button>
                       </div>
                     </div>
-
-                    {!shoe && (
-                      <p className="text-muted mt-2">
-                        This shoe is no longer available in the product catalog.
-                      </p>
-                    )}
                   </Card.Body>
                 </Card>
               );
-            }),
-          )}
-
-          {orders.every((order) => order.items.length === 0) && (
-            <p className="mt-3">Your shopping cart is empty.</p>
+            })
           )}
         </section>
 
-        {/* Order summary */}
         <aside className="cart-summary">
           <h2>Summary</h2>
 
@@ -250,10 +171,6 @@ export default function Cart() {
             <strong>Free</strong>
           </div>
 
-          <div className="summary-row voucher-row">
-            <span>Voucher</span>
-          </div>
-
           <div className="summary-total">
             <span>Total</span>
             <strong>₱{formatPrice(subtotal)}</strong>
@@ -261,6 +178,7 @@ export default function Cart() {
 
           <Button
             className="checkout-button"
+            disabled={cartItems.length === 0}
             onClick={() => {
               window.location.href = "/checkout";
             }}

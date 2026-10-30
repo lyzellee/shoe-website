@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Form, Button, Row, Col } from "react-bootstrap";
 import "./Checkout.css";
+import { getCart } from "../../components/AddToCartItems.jsx";
+import SuccessfulPayment from "../../components/SuccessfulPayment.jsx";
 
 const paymentOptions = [
   { value: "COD", label: "Cash on Delivery (COD)" },
@@ -9,19 +11,16 @@ const paymentOptions = [
 ];
 
 export default function Checkout() {
-  // =====================================================
-  // STEP 1: STATES
-  // =====================================================
-
-  // Dito naka-save ang payment method na pinili ng customer.
-  // Possible values: "", "COD", "GCash", "Card".
   const [paymentMethod, setPaymentMethod] = useState("");
-
-  // ID ng order na babayaran.
-  // NOTE: Example ID lang ito. Sa actual application,
-  // dapat manggaling ito sa order na ginawa ng customer.
+  const [orderItems, setOrderItems] = useState(() => getCart());
+  const paymentDropdownRef = useRef(null);
+  const paymentTriggerRef = useRef(null);
+  const paymentListboxRef = useRef(null);
+  const [isPaymentMenuOpen, setIsPaymentMenuOpen] = useState(false);
+  const [activePaymentIndex, setActivePaymentIndex] = useState(0);
   const [orderId, setOrderId] = useState("");
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
   // Delivery information na tina-type ng customer.
   // Bawat property ay katumbas ng isang input field.
   const [formData, setFormData] = useState({
@@ -59,68 +58,95 @@ export default function Checkout() {
   // =====================================================
 
   const handlePayment = async () => {
-    // Check muna kung pumili ng payment method.
-    // Kapag walang pinili, ititigil ang function.
+    // STEP 1: Check kung may napiling payment method
     if (!paymentMethod) {
       alert("Please select a payment method.");
       return;
     }
 
-    try {
-      // Ipapadala ang request sa backend.
-      // Ang backend route na ito ay dapat naka-connect
-      // sa createPayment controller.
-      const response = await fetch("http://localhost:5000/api/payment", {
-        method: "POST",
+    // STEP 2: Kunin ang cart items sa localStorage
+    const savedCart = localStorage.getItem("cart");
+    const cartItems = savedCart ? JSON.parse(savedCart) : [];
 
-        // Sinasabi sa backend na JSON ang request body.
+    // Check kung may laman ang cart
+    if (cartItems.length === 0) {
+      alert("Your cart is empty.");
+      return;
+    }
+
+    try {
+      // STEP 3: Gumawa muna ng order sa MongoDB
+      const orderResponse = await fetch("http://localhost:5000/api/orders", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-
-        // Ginagawang JSON string ang data na ipapadala.
-        // orderId = order na babayaran.
-        // paymentMethod = piniling paraan ng pagbabayad.
         body: JSON.stringify({
-          orderId: orderId,
+          // Gumawa ng unique order reference
+          orderReference: `ORD-${Date.now()}`,
+
+          // I-convert ang cart items sa format na kailangan ng backend
+          items: cartItems.map((item) => ({
+            shoeId: item._id,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+
+      const orderResult = await orderResponse.json();
+
+      console.log("Create Order Response:", orderResult);
+
+      // Itigil kapag hindi nagtagumpay ang paggawa ng order
+      if (!orderResponse.ok) {
+        console.error("Create Order Error:", orderResult);
+        alert(orderResult.message || "Failed to create order.");
+        return;
+      }
+
+      // STEP 4: Kunin ang MongoDB order ID
+      const newOrderId = orderResult.data._id;
+
+      setOrderId(newOrderId);
+
+      console.log("New Order ID:", newOrderId);
+
+      // STEP 5: Ipadala ang valid order ID sa payment backend
+      const paymentResponse = await fetch("http://localhost:5000/api/payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderId: newOrderId,
           paymentMethod: paymentMethod,
         }),
       });
 
-      // Kino-convert ang JSON response ng backend
-      // para magamit natin ang values nito sa JavaScript.
-      const result = await response.json();
+      const paymentResult = await paymentResponse.json();
 
-      // Ipinapakita ang buong response sa browser console.
-      // Useful ito sa debugging.
-      console.log(result);
+      console.log("Payment Response:", paymentResult);
 
-      // Kapag error ang HTTP response, huwag nang mag-redirect.
-      if (!response.ok) {
-        console.error("Backend Error:", result);
+      // Check kung may error sa payment
+      if (!paymentResponse.ok) {
+        console.error("Payment Error:", paymentResult);
+        alert(paymentResult.message || "Failed to create payment.");
         return;
       }
 
-      // Kinukuha ang redirect URL mula sa response ng backend.
-      // Ang backend naman ay kumukuha nito mula sa PayMongo.
-      const redirectUrl = result.nextAction?.redirect?.url;
+      // STEP 6: Pumunta sa PayMongo payment page kung may redirect URL
+      const redirectUrl = paymentResult.nextAction?.redirect?.url;
 
       console.log("Redirect URL:", redirectUrl);
-      console.log("Next Action:", result.nextAction);
 
-      // Kapag may valid redirect URL, dadalhin ang customer
-      // sa payment page na ibinigay ng PayMongo.
       if (redirectUrl) {
         window.location.href = redirectUrl;
       } else {
-        // Walang redirect URL: huwag mag-assume na successful
-        // ang payment. Tingnan muna ang status at response.
-        console.log("No direct URL:", redirectUrl);
+        console.log("No redirect URL returned by the backend.");
       }
     } catch (error) {
-      // Halimbawa: hindi tumatakbo ang backend,
-      // may network problem, o hindi mabasa ang response.
-      console.error("Error creating payment:", error);
+      console.error("Error:", error);
+      alert("Something went wrong. Please check your backend.");
     }
   };
 
@@ -129,33 +155,66 @@ export default function Checkout() {
   // =====================================================
 
   const checkPaymentStatus = async () => {
-    // Kailangan ang Payment Intent ID para malaman
-    // kung aling payment attempt ang titingnan.
-    // Kung walang ID, walang sapat na impormasyon para
-    // tawagin ang payment status endpoint.
     if (!paymentIntentId) {
       console.log("Payment Intent ID is missing");
       return;
     }
 
     try {
-      // Humihiling sa backend na kunin ang status ng
-      // payment intent mula sa PayMongo.
+      setIsLoading(true);
+
       const response = await fetch(
         `http://localhost:5000/api/payment/${paymentIntentId}`,
       );
 
       const result = await response.json();
 
-      // Ipinapakita ang status sa browser console.
-      // Ang actual status ay manggagaling sa PayMongo response.
-      console.log("Payment Status:", result.data?.attributes?.status);
+      if (!response.ok) {
+        console.error("Payment status error:", result);
+        return;
+      }
 
-      // NOTE:
-      // Sa kasalukuyang code, hindi pa natin ina-update
-      // ang UI para magpakita ng success/failure message.
+      const status = result.data?.attributes?.status;
+
+      console.log("Payment Status:", status);
+
+      if (status === "succeeded") {
+        setIsPaymentSuccess(true);
+        localStorage.removeItem("cart");
+        setOrderItems([]);
+      }
     } catch (error) {
       console.error("Error checking payment status:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handlePaymentMenuKeyDown = (event) => {
+    if (event.key === "Escape") {
+      setIsPaymentMenuOpen(false);
+      paymentTriggerRef.current?.focus();
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+
+      setActivePaymentIndex((index) => (index + 1) % paymentOptions.length);
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+
+      setActivePaymentIndex(
+        (index) => (index - 1 + paymentOptions.length) % paymentOptions.length,
+      );
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+
+      setPaymentMethod(paymentOptions[activePaymentIndex].value);
+      setIsPaymentMenuOpen(false);
+      paymentTriggerRef.current?.focus();
     }
   };
 
@@ -196,158 +255,148 @@ export default function Checkout() {
 
   return (
     <div className="checkout-page">
-      <div className="checkout-containter">
-        <p className="checkout-label"> CHECKOUT </p>
-        <p className="checkout-title">Almost there</p>
+      {isLoading ? (
+        <div className="payment-message">
+          <h2>Checking Payment...</h2>
+          <p>Please wait while we verify your payment.</p>
+        </div>
+      ) : isPaymentSuccess ? (
+        <SuccessfulPayment />
+      ) : (
+        <div className="checkout-containter">
+          <p className="checkout-label"> CHECKOUT </p>
+          <p className="checkout-title">Almost there</p>
 
-        <div className="checkout-layout">
-          <section className="checkout-form-section">
-            <h2 className="checkout-section-title">Delivery</h2>
+          <div className="checkout-layout">
+            <section className="checkout-form-section">
+              <h2 className="checkout-section-title">Delivery</h2>
 
-            <Form className="checkout-form">
-              {/* First Name & Last Name */}
-              <Row className="checkout-row">
-                <Col xs={6}>
-                  <Form.Control
-                    type="text"
-                    name="firstName"
-                    placeholder="First Name"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className="checkout-input"
-                  />
-                </Col>
+              <Form className="checkout-form">
+                {/* First Name & Last Name */}
+                <Row className="checkout-row">
+                  <Col xs={6}>
+                    <Form.Control
+                      type="text"
+                      name="firstName"
+                      placeholder="First Name"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className="checkout-input"
+                    />
+                  </Col>
 
-                <Col xs={6}>
-                  <Form.Control
-                    type="text"
-                    name="lastName"
-                    placeholder="Last Name"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className="checkout-input"
-                  />
-                </Col>
-              </Row>
+                  <Col xs={6}>
+                    <Form.Control
+                      type="text"
+                      name="lastName"
+                      placeholder="Last Name"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className="checkout-input"
+                    />
+                  </Col>
+                </Row>
 
-              {/* Address */}
-              <Form.Control
-                type="text"
-                name="address"
-                placeholder="Address"
-                value={formData.address}
-                onChange={handleChange}
-                className="checkout-input checkout-address"
-                required
-              />
+                {/* Address */}
+                <Form.Control
+                  type="text"
+                  name="address"
+                  placeholder="Address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  className="checkout-input checkout-address"
+                  required
+                />
 
-              {/* City, Province & ZIP Code */}
-              <Row className="checkout-row">
-                <Col xs={4}>
-                  <Form.Control
-                    type="text"
-                    name="city"
-                    placeholder="City"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className="checkout-input"
-                    required
-                  />
-                </Col>
+                {/* City, Province & ZIP Code */}
+                <Row className="checkout-row">
+                  <Col xs={4}>
+                    <Form.Control
+                      type="text"
+                      name="city"
+                      placeholder="City"
+                      value={formData.city}
+                      onChange={handleChange}
+                      className="checkout-input"
+                      required
+                    />
+                  </Col>
 
-                <Col xs={4}>
-                  <Form.Control
-                    type="text"
-                    name="province"
-                    placeholder="Province"
-                    value={formData.province}
-                    onChange={handleChange}
-                    className="checkout-input"
-                    required
-                  />
-                </Col>
+                  <Col xs={4}>
+                    <Form.Control
+                      type="text"
+                      name="province"
+                      placeholder="Province"
+                      value={formData.province}
+                      onChange={handleChange}
+                      className="checkout-input"
+                      required
+                    />
+                  </Col>
 
-                <Col xs={4}>
-                  <Form.Control
-                    type="text"
-                    name="zipCode"
-                    placeholder="ZIP code"
-                    value={formData.zipCode}
-                    onChange={handleChange}
-                    className="checkout-input"
-                    required
-                  />
-                </Col>
-              </Row>
+                  <Col xs={4}>
+                    <Form.Control
+                      type="text"
+                      name="zipCode"
+                      placeholder="ZIP code"
+                      value={formData.zipCode}
+                      onChange={handleChange}
+                      className="checkout-input"
+                      required
+                    />
+                  </Col>
+                </Row>
 
-              {/* Phone & Email */}
-              <Row className="checkout-row">
-                <Col xs={6}>
-                  <Form.Control
-                    type="tel"
-                    name="phone"
-                    placeholder="Phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="checkout-input"
-                    required
-                  />
-                </Col>
+                {/* Phone & Email */}
+                <Row className="checkout-row">
+                  <Col xs={6}>
+                    <Form.Control
+                      type="tel"
+                      name="phone"
+                      placeholder="Phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="checkout-input"
+                      required
+                    />
+                  </Col>
 
-                <Col xs={6}>
-                  <Form.Control
-                    type="email"
-                    name="email"
-                    placeholder="Email Address"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="checkout-input"
-                    required
-                  />
-                </Col>
-              </Row>
+                  <Col xs={6}>
+                    <Form.Control
+                      type="email"
+                      name="email"
+                      placeholder="Email Address"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="checkout-input"
+                      required
+                    />
+                  </Col>
+                </Row>
 
-              {/* Payment Method */}
-              <h2 className="heckout-section-title payment-title">Payment</h2>
+                {/* Payment Method */}
+                <h2 className="heckout-section-title payment-title">Payment</h2>
 
-              <div
-                className="checkout-payment-dropdown"
-                ref={paymentDropdownRef}
-                onBlur={(event) => {
-                  if (!event.currentTarget.contains(event.relatedTarget)) {
-                    setIsPaymentMenuOpen(false);
-                  }
-                }}
-              >
-                <button
-                  ref={paymentTriggerRef}
-                  type="button"
-                  className="checkout-input checkout-payment-trigger"
-                  aria-label="Payment method"
-                  aria-haspopup="listbox"
-                  aria-expanded={isPaymentMenuOpen}
-                  aria-controls={
-                    isPaymentMenuOpen ? "checkout-payment-options" : undefined
-                  }
-                  onClick={() => {
-                    setActivePaymentIndex(
-                      Math.max(
-                        0,
-                        paymentOptions.findIndex(
-                          (option) => option.value === paymentMethod,
-                        ),
-                      ),
-                    );
-                    setIsPaymentMenuOpen((open) => !open);
+                <div
+                  className="checkout-payment-dropdown"
+                  ref={paymentDropdownRef}
+                  onBlur={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget)) {
+                      setIsPaymentMenuOpen(false);
+                    }
                   }}
-                  onKeyDown={(event) => {
-                    if (
-                      event.key === "ArrowDown" ||
-                      event.key === "ArrowUp" ||
-                      event.key === "Enter" ||
-                      event.key === " "
-                    ) {
-                      event.preventDefault();
+                >
+                  <button
+                    ref={paymentTriggerRef}
+                    type="button"
+                    className="checkout-input checkout-payment-trigger"
+                    aria-label="Payment method"
+                    aria-haspopup="listbox"
+                    aria-expanded={isPaymentMenuOpen}
+                    aria-controls={
+                      isPaymentMenuOpen ? "checkout-payment-options" : undefined
+                    }
+                    onClick={() => {
                       setActivePaymentIndex(
                         Math.max(
                           0,
@@ -356,180 +405,200 @@ export default function Checkout() {
                           ),
                         ),
                       );
-                      setIsPaymentMenuOpen(true);
-                    }
-                  }}
-                >
-                  <span>
-                    {paymentOptions.find(
-                      (option) => option.value === paymentMethod,
-                    )?.label || "Choose payment method"}
-                  </span>
-                  <span
-                    className="checkout-payment-chevron"
-                    aria-hidden="true"
-                  />
-                </button>
-                {isPaymentMenuOpen && (
-                  <div
-                    id="checkout-payment-options"
-                    ref={paymentListboxRef}
-                    className="checkout-payment-options"
-                    role="listbox"
-                    aria-label="Payment method"
-                    aria-activedescendant={`checkout-payment-option-${activePaymentIndex}`}
-                    tabIndex={0}
-                    onKeyDown={handlePaymentMenuKeyDown}
+                      setIsPaymentMenuOpen((open) => !open);
+                    }}
+                    onKeyDown={(event) => {
+                      if (
+                        event.key === "ArrowDown" ||
+                        event.key === "ArrowUp" ||
+                        event.key === "Enter" ||
+                        event.key === " "
+                      ) {
+                        event.preventDefault();
+                        setActivePaymentIndex(
+                          Math.max(
+                            0,
+                            paymentOptions.findIndex(
+                              (option) => option.value === paymentMethod,
+                            ),
+                          ),
+                        );
+                        setIsPaymentMenuOpen(true);
+                      }
+                    }}
                   >
-                    {paymentOptions.map((option, index) => (
-                      <div
-                        id={`checkout-payment-option-${index}`}
-                        key={option.value}
-                        className={`checkout-payment-option${
-                          paymentMethod === option.value ? " is-selected" : ""
-                        }${activePaymentIndex === index ? " is-active" : ""}`}
-                        role="option"
-                        aria-selected={paymentMethod === option.value}
-                        onMouseEnter={() => setActivePaymentIndex(index)}
-                        onClick={() => {
-                          setPaymentMethod(option.value);
-                          setIsPaymentMenuOpen(false);
-                          paymentTriggerRef.current?.focus();
-                        }}
-                      >
-                        {option.label}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                    <span>
+                      {paymentOptions.find(
+                        (option) => option.value === paymentMethod,
+                      )?.label || "Choose payment method"}
+                    </span>
+                    <span
+                      className="checkout-payment-chevron"
+                      aria-hidden="true"
+                    />
+                  </button>
 
-              {/* Place Order */}
-              <Button
-                type="button"
-                className="checkout-place-order"
-                onClick={handlePayment}
-              >
-                {paymentMethod === "COD"
-                  ? "Place Order"
-                  : "Continue to Payment"}
-              </Button>
+                  {isPaymentMenuOpen && (
+                    <div
+                      id="checkout-payment-options"
+                      ref={paymentListboxRef}
+                      className="checkout-payment-options"
+                      role="listbox"
+                      aria-label="Payment method"
+                      aria-activedescendant={`checkout-payment-option-${activePaymentIndex}`}
+                      tabIndex={0}
+                      onKeyDown={handlePaymentMenuKeyDown}
+                    >
+                      {paymentOptions.map((option, index) => (
+                        <div
+                          id={`checkout-payment-option-${index}`}
+                          key={option.value}
+                          className={`checkout-payment-option${
+                            paymentMethod === option.value ? " is-selected" : ""
+                          }${activePaymentIndex === index ? " is-active" : ""}`}
+                          role="option"
+                          aria-selected={paymentMethod === option.value}
+                          onMouseEnter={() => setActivePaymentIndex(index)}
+                          onClick={() => {
+                            setPaymentMethod(option.value);
+                            setIsPaymentMenuOpen(false);
+                            paymentTriggerRef.current?.focus();
+                          }}
+                        >
+                          {option.label}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              {/* Check Payment Status */}
-              {paymentMethod !== "COD" && (
+                {/* Place Order */}
                 <Button
                   type="button"
-                  variant="outline-dark"
-                  className="checkout-status-button"
-                  onClick={checkPaymentStatus}
+                  className="checkout-place-order"
+                  onClick={handlePayment}
                 >
-                  Check Payment Status
+                  {paymentMethod === "COD"
+                    ? "Place Order"
+                    : "Continue to Payment"}
                 </Button>
-              )}
-            </Form>
-          </section>
 
-          {/* RIGHT: Order summary */}
-          <aside className="checkout-order-card">
-            <h2 className="checkout-order-title">Your order</h2>
+                {/* Check Payment Status */}
+                {paymentMethod !== "COD" && (
+                  <Button
+                    type="button"
+                    variant="outline-dark"
+                    className="checkout-status-button"
+                    onClick={checkPaymentStatus}
+                  >
+                    Check Payment Status
+                  </Button>
+                )}
+              </Form>
+            </section>
 
-            <div className="checkout-order-items">
-              {orderItems.map((item, index) => (
-                <div
-                  className="checkout-order-item"
-                  key={item._id || item.shoeId || index}
-                >
-                  <div className="checkout-product-image-wrapper">
-                    <img
-                      src={
-                        item.image ||
-                        item.imageUrl ||
-                        item.img ||
-                        "/placeholder-shoe.png"
-                      }
-                      alt={item.name || "Shoe"}
-                      className="checkout-product-image"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = "/placeholder-shoe.png";
-                      }}
-                    />
-                  </div>
+            {/* RIGHT: Order summary */}
+            <aside className="checkout-order-card">
+              <h2 className="checkout-order-title">Your order</h2>
 
-                  <div className="checkout-product-details">
-                    <p className="checkout-product-name">
-                      {item.name || item.shoeName || "Shoe"}
-                      {" x "}
-                      {item.quantity || 1}
+              <div className="checkout-order-items">
+                {orderItems.map((item, index) => (
+                  <div
+                    className="checkout-order-item"
+                    key={item._id || item.shoeId || index}
+                  >
+                    <div className="checkout-product-image-wrapper">
+                      <img
+                        src={
+                          item.image ||
+                          item.imageUrl ||
+                          item.img ||
+                          "/placeholder-shoe.png"
+                        }
+                        alt={item.name || "Shoe"}
+                        className="checkout-product-image"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "/placeholder-shoe.png";
+                        }}
+                      />
+                    </div>
+
+                    <div className="checkout-product-details">
+                      <p className="checkout-product-name">
+                        {item.name || item.shoeName || "Shoe"}
+                        {" x "}
+                        {item.quantity || 1}
+                      </p>
+
+                      <p className="checkout-product-variant">
+                        Size: {item.size || "N/A"}
+                        {" · "}
+                        {item.color || item.brand || ""}
+                      </p>
+                    </div>
+
+                    <p className="checkout-product-price">
+                      P{" "}
+                      {(
+                        Number(item.price || 0) * Number(item.quantity || 1)
+                      ).toFixed(2)}
                     </p>
-
-                    <p className="checkout-product-variant">
-                      Size: {item.size || "N/A"}
-                      {" · "}
-                      {item.color || item.brand || ""}
-                    </p>
                   </div>
+                ))}
+              </div>
 
-                  <p className="checkout-product-price">
-                    P{" "}
-                    {(
-                      Number(item.price || 0) * Number(item.quantity || 1)
-                    ).toFixed(2)}
-                  </p>
-                </div>
-              ))}
-            </div>
+              <div className="checkout-summary-divider" />
 
-            <div className="checkout-summary-divider" />
+              {/* Subtotal */}
+              <div className="checkout-summary-row">
+                <span>Subtotal</span>
+                <strong>
+                  P{" "}
+                  {orderItems
+                    .reduce(
+                      (sum, item) =>
+                        sum +
+                        Number(item.price || 0) * Number(item.quantity || 1),
+                      0,
+                    )
+                    .toFixed(2)}
+                </strong>
+              </div>
 
-            {/* Subtotal */}
-            <div className="checkout-summary-row">
-              <span>Subtotal</span>
-              <strong>
-                P{" "}
-                {orderItems
-                  .reduce(
-                    (sum, item) =>
-                      sum +
-                      Number(item.price || 0) * Number(item.quantity || 1),
-                    0,
-                  )
-                  .toFixed(2)}
-              </strong>
-            </div>
+              {/* Shipping */}
+              <div className="checkout-summary-row">
+                <span>Shipping Fee</span>
+                <strong>Free</strong>
+              </div>
 
-            {/* Shipping */}
-            <div className="checkout-summary-row">
-              <span>Shipping Fee</span>
-              <strong>Free</strong>
-            </div>
+              {/* Voucher */}
+              <div className="checkout-summary-row">
+                <span>Voucher</span>
+                <strong></strong>
+              </div>
 
-            {/* Voucher */}
-            <div className="checkout-summary-row">
-              <span>Voucher</span>
-              <strong></strong>
-            </div>
+              <div className="checkout-summary-divider checkout-total-divider" />
 
-            <div className="checkout-summary-divider checkout-total-divider" />
-
-            {/* Total */}
-            <div className="checkout-summary-row checkout-total-row">
-              <span>Total</span>
-              <strong>
-                P{" "}
-                {orderItems
-                  .reduce(
-                    (sum, item) =>
-                      sum +
-                      Number(item.price || 0) * Number(item.quantity || 1),
-                    0,
-                  )
-                  .toFixed(2)}
-              </strong>
-            </div>
-          </aside>
+              {/* Total */}
+              <div className="checkout-summary-row checkout-total-row">
+                <span>Total</span>
+                <strong>
+                  P{" "}
+                  {orderItems
+                    .reduce(
+                      (sum, item) =>
+                        sum +
+                        Number(item.price || 0) * Number(item.quantity || 1),
+                      0,
+                    )
+                    .toFixed(2)}
+                </strong>
+              </div>
+            </aside>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

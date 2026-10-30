@@ -35,6 +35,17 @@ export const createPayment = async (req, res) => {
         message: "This order has already been paid",
       });
     }
+    // Check if this order already has a pending payment
+    const existingPayment = await Payment.findOne({
+      orderId: order._id,
+      paymentStatus: "pending",
+    });
+
+    if (existingPayment) {
+      return res.status(409).json({
+        message: "This order already has a pending payment",
+      });
+    }
 
     // Create a payment intent using the actual order total
     const response = await fetch(

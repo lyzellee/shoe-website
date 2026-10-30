@@ -16,6 +16,7 @@ import {
   getSingleOrder,
   deleteOrderById,
   updateOrderItemQuantity,
+  createOrderInformation,
 } from "../controllers/orderController.js";
 
 import {
@@ -37,5 +38,6 @@ router.delete("/orders/:id", deleteOrderById);
 router.get("/single/:id", getSingleShoe);
 router.put("/update/:id", updateById);
 router.patch("/orders/quantity", updateOrderItemQuantity);
+router.post("/order-information", createOrderInformation);
 
 export default router;

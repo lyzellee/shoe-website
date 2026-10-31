@@ -17,7 +17,6 @@ import Wishlist from "./client/pages/Wishlist.jsx";
 import Women from "./client/pages/Women.jsx";
 import Navbar from "./components/Navbar";
 import Orders from "./admin/pages/category/orders.jsx";
-//import P from "./client/pages/Placeorder.jsx";
 
 function App() {
   return (
@@ -26,26 +25,16 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Home />} />
-
         <Route path="/cart" element={<Cart />} />
-
         <Route path="/men" element={<Men />} />
-
         <Route path="/women" element={<Women />} />
-
-        <Route path="/product/:id" element={<ProductDetails />} />
-
-        <Route path="/shoes/add" element={<AddShoes />} />
-
-        <Route path="/stock" element={<StockShoe />} />
-
-        <Route path="/orders" element={<Orders />} />
-
-        <Route path="/wishlist" element={<Wishlist />} />
-
         <Route path="/checkout" element={<Checkout />} />
-
-        {/*<Route path="/p" element={<P />} />*/}
+        <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="/product/:id" element={<ProductDetails />} />
+        {/* admin */}
+        <Route path="/admin/add" element={<AddShoes />} />
+        <Route path="/admin/stock" element={<StockShoe />} />
+        <Route path="admin/orders" element={<Orders />} />
       </Routes>
     </Router>
   );

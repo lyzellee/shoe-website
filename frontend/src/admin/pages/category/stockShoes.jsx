@@ -99,7 +99,7 @@ export default function stockShoes() {
             </div>
 
             {/* Add Product */}
-            <Link to="/shoes/add" className="admin-add-btn">
+            <Link to="/admin/add" className="admin-add-btn">
               <span className="admin-add-icon">+</span>
               Add Product
             </Link>

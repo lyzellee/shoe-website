@@ -58,6 +58,16 @@ export default function Checkout() {
   // =====================================================
 
   const handlePayment = async () => {
+    const {
+      firstName,
+      lastName,
+      address,
+      city,
+      province,
+      zipCode,
+      phone,
+      email,
+    } = formData;
     // STEP 1: Check kung may napiling payment method
     if (!paymentMethod) {
       alert("Please select a payment method.");
@@ -110,6 +120,41 @@ export default function Checkout() {
       setOrderId(newOrderId);
 
       console.log("New Order ID:", newOrderId);
+      // STEP 4.1: I-save ang delivery information sa backend
+      const informationResponse = await fetch(
+        "http://localhost:5000/api/order-information",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orderId: newOrderId,
+            firstName,
+            lastName,
+            address,
+            city,
+            province,
+            zipCode,
+            phone,
+            email,
+          }),
+        },
+      );
+
+      const informationResult = await informationResponse.json();
+
+      console.log("Order Information Response:", informationResult);
+
+      // Itigil kung hindi na-save ang customer information
+      if (!informationResponse.ok) {
+        console.error("Order Information Error:", informationResult);
+
+        alert(
+          informationResult.message || "Failed to save delivery information.",
+        );
+        return;
+      }
 
       // STEP 5: Ipadala ang valid order ID sa payment backend
       const paymentResponse = await fetch("http://localhost:5000/api/payment", {

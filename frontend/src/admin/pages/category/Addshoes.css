@@ -1,81 +1,169 @@
+
+/* Main page */
 .shoe-page {
-  background: #ede4d8;
   min-height: 100vh;
-  padding: 48px 16px;
-  font-family:
-    "Inter",
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    sans-serif;
-  color: #2f2f2b;
-}
-.shoe-wrap {
-  max-width: 520px;
-  margin: 0 auto;
-}
-.shoe-eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.02em;
-  margin: 0 0 10px;
-}
-.shoe-title {
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  text-align: left;
-  margin: 0 0 28px;
-}
-.shoe-page .form-control,
-.shoe-page .form-select {
-  background-color: transparent;
-  border: 1px solid #b9ae9f;
-  border-radius: 16px;
-  height: 40px;
-  padding: 0 18px;
-  font-size: 12px;
-  color: #2f2f2b;
-  box-shadow: none;
-}
-.shoe-page .form-select {
-  padding-right: 36px;
-}
-.shoe-page .form-control::placeholder {
-  color: #8f8678;
-}
-.shoe-page .form-control:focus,
-.shoe-page .form-select:focus {
-  background-color: transparent;
-  border-color: #2f2f2b;
-  box-shadow: none;
-  color: #2f2f2b;
-}
-.shoe-page .btn.shoe-btn {
-  --bs-btn-bg: #2f2f2b;
-  --bs-btn-border-color: #2f2f2b;
-  --bs-btn-hover-bg: #1c1c19;
-  --bs-btn-hover-border-color: #1c1c19;
-  --bs-btn-active-bg: #1c1c19;
-  --bs-btn-active-border-color: #1c1c19;
-  --bs-btn-color: #ffffff;
-  --bs-btn-hover-color: #ffffff;
-  --bs-btn-active-color: #ffffff;
-  --bs-btn-focus-shadow-rgb: 47, 47, 43;
-  background-color: #2f2f2b;
-  border-color: #2f2f2b;
-  color: #ffffff;
   width: 100%;
-  height: 36px;
+  padding: 42px 45px;
+  background-color: #f4f5f6;
+  color: #333333;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.shoe-wrap {
+  width: 100%;
+  max-width: 1050px;
+  margin: 0 auto;
   padding: 0;
-  border-radius: 999px;
+}
+
+/* Page heading */
+.shoe-heading {
+  margin-bottom: 30px;
+}
+
+.shoe-eyebrow {
+  margin: 0 0 8px;
+  color: #91a47e;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.shoe-title {
+  margin: 0 0 8px;
+  color: #292d27;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.shoe-description {
+  margin: 0;
+  color: #85877f;
+  font-size: 13px;
+}
+
+/* Form panel */
+.shoe-form-card {
+  width: 100%;
+  max-width: 850px;
+  padding: 30px;
+  border: 1px solid #e9eae7;
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+.shoe-form-header {
+  margin-bottom: 27px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #eeeeec;
+}
+
+.shoe-form-header h5 {
+  margin: 0 0 6px;
+  color: #353a31;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.shoe-form-header p {
+  margin: 0;
+  color: #85877f;
+  font-size: 12px;
+}
+
+/* Input labels */
+.shoe-form-card .form-label {
+  display: block;
+  margin-bottom: 9px;
+  color: #55594f;
   font-size: 12px;
   font-weight: 600;
-  margin-top: 12px;
 }
-.shoe-page .btn.shoe-btn:hover,
-.shoe-page .btn.shoe-btn:active,
-.shoe-page .btn.shoe-btn:focus {
-  background-color: #1c1c19;
-  border-color: #1c1c19;
+
+/* Input fields and dropdowns */
+.shoe-form-card .form-control,
+.shoe-form-card .form-select {
+  width: 100%;
+  height: 43px;
+  padding: 10px 13px;
+  border: 1px solid #dedfd9;
+  border-radius: 5px;
+  background-color: #ffffff;
+  color: #3e4239;
+  font-size: 12px;
+  box-shadow: none;
+}
+
+.shoe-form-card .form-control::placeholder {
+  color: #a1a39c;
+}
+
+.shoe-form-card .form-control:focus,
+.shoe-form-card .form-select:focus {
+  border-color: #91a47e;
+  background-color: #ffffff;
+  color: #3e4239;
+  box-shadow: 0 0 0 3px rgba(145, 164, 126, 0.13);
+}
+
+/* Submit button */
+.shoe-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+  border-top: 1px solid #eeeeec;
+}
+
+.shoe-page .btn.shoe-btn {
+  min-width: 150px;
+  height: 40px;
+  padding: 0 22px;
+  border: 1px solid #91a47e;
+  border-radius: 5px;
+  background-color: #91a47e;
   color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: none;
+  transition: background-color 0.2s ease;
+}
+
+.shoe-page .btn.shoe-btn:hover,
+.shoe-page .btn.shoe-btn:focus {
+  border-color: #7e926c;
+  background-color: #7e926c;
+  color: #ffffff;
+}
+
+/* Responsive layout */
+@media (max-width: 768px) {
+  .shoe-page {
+    padding: 28px 18px;
+  }
+
+  .shoe-title {
+    font-size: 23px;
+  }
+
+  .shoe-form-card {
+    padding: 23px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .shoe-page {
+    padding: 22px 14px;
+  }
+
+  .shoe-form-card {
+    padding: 20px 15px;
+  }
+
+  .shoe-form-actions {
+    justify-content: stretch;
+  }
+
+  .shoe-page .btn.shoe-btn {
+    width: 100%;
+  }
 }

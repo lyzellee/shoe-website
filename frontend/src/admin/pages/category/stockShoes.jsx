@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { Table, Button, Container, Modal, Form } from "react-bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import "./stockShoes.css";
 /*import ListAllShoe from "./src/pages/category/listAllShoe";*/
@@ -14,6 +17,9 @@ export default function stockShoes() {
   const [stock, setStock] = useState();
 
   const [loading, setLoading] = useState(false);
+
+  // Frontend-only search
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleUpdate = async () => {
     try {
@@ -62,72 +68,114 @@ export default function stockShoes() {
     }
   };
 
+  // Filter shoes using the search input
+  const filteredShoes = shoes.filter((shoe) =>
+    `${shoe._id} ${shoe.name} ${shoe.brand} ${shoe.gender} ${shoe.category}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase()),
+  );
+
   return (
     <div className="admin-page">
       <Container fluid className="admin-container">
-        {/* Page header */}
+        {/* Page Header */}
         <div className="admin-header">
-          <div>
-            <h4 className="admin-title">Stock Management</h4>
-            <p className="admin-subtitle">{shoes.length} shoes in inventory</p>
+          <h2 className="admin-title">INVENTORY</h2>
+
+          <div className="admin-header-actions">
+            {/* Search */}
+            <div className="admin-search">
+              <FontAwesomeIcon
+                icon={faMagnifyingGlass}
+                size="sm"
+                className="admin-search-icon"
+              />
+              <Form.Control
+                type="text"
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Add Product */}
+            <Link to="/shoes/add" className="admin-add-btn">
+              <span className="admin-add-icon">+</span>
+              Add Product
+            </Link>
           </div>
         </div>
 
-        {/* Table card */}
+        {/* Inventory Table */}
         <div className="admin-card">
           <div className="admin-table-wrap">
-            <Table striped bordered hover className="admin-table">
+            <Table className="admin-table" responsive>
               <thead>
                 <tr>
                   <th>Shoe ID</th>
                   <th>Shoe Name</th>
                   <th>Brand</th>
                   <th>Price</th>
-                  <th>Gender</th>
                   <th>Category</th>
                   <th>Stocks</th>
-                  <th className="admin-th-actions"> Function</th>
+                  <th className="admin-th-actions">Actions</th>
                 </tr>
               </thead>
+
               <tbody>
-                {shoes.map((shoe) => (
-                  <tr key={shoe._id}>
-                    <td className="admin-cell-id">{shoe._id}</td>
-                    <td className="admin-cell-name">{shoe.name}</td>
-                    <td>{shoe.brand}</td>
-                    <td className="admin-cell-price">₱{shoe.price}</td>
-                    <td className="admin-cell-tag">{shoe.gender}</td>
-                    <td className="admin-cell-tag">{shoe.category}</td>
-                    <td className="admin-cell-stock">{shoe.stock}</td>
-                    <td className="admin-cell-actions">
-                      <Button
-                        className="admin-btn admin-btn-update"
-                        onClick={() => {
-                          setSelectedShoe(shoe);
-                          setName(shoe.name);
-                          setPrice(shoe.price);
-                          setStock(shoe.stock);
-                          setShowModal(true);
-                        }}
-                      >
-                        updates
-                      </Button>
-                      <Button
-                        variant="danger"
-                        className="admin-btn admin-btn-delete"
-                        onClick={() => handleDeleteShoes(shoe._id)}
-                      >
-                        delete
-                      </Button>
+                {filteredShoes.length > 0 ? (
+                  filteredShoes.map((shoe) => (
+                    <tr key={shoe._id}>
+                      <td className="admin-cell-id">{shoe._id}</td>
+
+                      <td className="admin-cell-name">{shoe.name}</td>
+
+                      <td>{shoe.brand}</td>
+
+                      <td className="admin-cell-price">₱{shoe.price}</td>
+
+                      <td className="admin-cell-tag">{shoe.category}</td>
+
+                      <td className="admin-cell-stock">{shoe.stock}</td>
+
+                      <td className="admin-cell-actions">
+                        <Button
+                          className="admin-btn admin-btn-update"
+                          onClick={() => {
+                            setSelectedShoe(shoe);
+                            setName(shoe.name);
+                            setPrice(shoe.price);
+                            setStock(shoe.stock);
+                            setShowModal(true);
+                          }}
+                        >
+                          Update
+                        </Button>
+
+                        <Button
+                          variant="danger"
+                          className="admin-btn admin-btn-delete"
+                          onClick={() => handleDeleteShoes(shoe._id)}
+                        >
+                          Delete
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="admin-empty">
+                      No shoes found.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </Table>
           </div>
         </div>
       </Container>
 
+      {/* Update Shoe Modal */}
       <Modal
         show={showModal}
         onHide={() => setShowModal(false)}
@@ -147,6 +195,7 @@ export default function stockShoes() {
               onChange={(e) => setName(e.target.value)}
             />
           </Form.Group>
+
           <Form.Group className="admin-field">
             <Form.Label>Price</Form.Label>
             <Form.Control
@@ -155,6 +204,7 @@ export default function stockShoes() {
               onChange={(e) => setPrice(e.target.value)}
             />
           </Form.Group>
+
           <Form.Group className="admin-field">
             <Form.Label>Stock</Form.Label>
             <Form.Control

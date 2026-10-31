@@ -6,6 +6,15 @@ export const createPayment = async (req, res) => {
   try {
     const { orderId, paymentMethod } = req.body;
 
+    // Check if PayMongo secret key exists
+    if (!process.env.PAYMONGO_SECRET_KEY) {
+      console.error("PAYMONGO_SECRET_KEY is missing");
+
+      return res.status(500).json({
+        message: "Payment service is not configured",
+      });
+    }
+
     // Validate the order ID
     if (!mongoose.Types.ObjectId.isValid(orderId)) {
       return res.status(400).json({
@@ -28,6 +37,16 @@ export const createPayment = async (req, res) => {
         message: "Order not found",
       });
     }
+    // Validate the order total
+    if (
+      typeof order.totalPrice !== "number" ||
+      !Number.isFinite(order.totalPrice) ||
+      order.totalPrice <= 0
+    ) {
+      return res.status(400).json({
+        message: "Invalid order total",
+      });
+    }
 
     // Prevent payment for an already-paid order
     if (order.paymentStatus === "completed") {
@@ -42,9 +61,62 @@ export const createPayment = async (req, res) => {
     });
 
     if (existingPayment) {
-      return res.status(409).json({
-        message: "This order already has a pending payment",
-      });
+      // Check the actual payment status from PayMongo
+      const statusResponse = await fetch(
+        `https://api.paymongo.com/v1/payment_intents/${existingPayment.paymentIntentId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization:
+              "Basic " +
+              Buffer.from(process.env.PAYMONGO_SECRET_KEY + ":").toString(
+                "base64",
+              ),
+          },
+        },
+      );
+
+      const statusResult = await statusResponse.json();
+
+      // Stop if PayMongo cannot confirm the payment status
+      if (!statusResponse.ok || !statusResult.data?.attributes?.status) {
+        return res.status(502).json({
+          message: "Unable to verify existing payment",
+        });
+      }
+
+      const actualStatus = statusResult.data.attributes.status;
+
+      // Payment was successful
+      if (actualStatus === "succeeded") {
+        existingPayment.paymentStatus = "completed";
+        await existingPayment.save();
+
+        await Order.findByIdAndUpdate(order._id, {
+          paymentStatus: "completed",
+          orderStatus: "processing",
+        });
+
+        return res.status(409).json({
+          message: "This order has already been paid",
+        });
+      }
+
+      // Previous payment failed, so allow a retry
+      if (actualStatus === "failed") {
+        existingPayment.paymentStatus = "failed";
+        await existingPayment.save();
+
+        await Order.findByIdAndUpdate(order._id, {
+          paymentStatus: "failed",
+        });
+      } else {
+        // Payment is still processing or awaiting customer action
+        return res.status(409).json({
+          message: "An existing payment is still pending",
+          paymentStatus: actualStatus,
+        });
+      }
     }
 
     // Create a payment intent using the actual order total
@@ -84,8 +156,6 @@ export const createPayment = async (req, res) => {
 
     const paymentIntentId = result.data.id;
 
-    console.log("Payment Intent ID:", paymentIntentId);
-
     // Create a GCash payment method
     const paymentMethodResponse = await fetch(
       "https://api.paymongo.com/v1/payment_methods",
@@ -121,8 +191,6 @@ export const createPayment = async (req, res) => {
 
     const paymentMethodId = paymentMethodResult.data.id;
 
-    console.log("Payment Method ID:", paymentMethodId);
-
     // Attach the payment method to the payment intent
     const attachResponse = await fetch(
       `https://api.paymongo.com/v1/payment_intents/${paymentIntentId}/attach`,
@@ -140,7 +208,7 @@ export const createPayment = async (req, res) => {
           data: {
             attributes: {
               payment_method: paymentMethodId,
-              return_url: "http://localhost:5173/checkout",
+              return_url: `${process.env.FRONTEND_URL}/checkout`,
             },
           },
         }),
@@ -162,17 +230,23 @@ export const createPayment = async (req, res) => {
     const nextAction = attachResult.data.attributes.next_action;
 
     // Save the payment details in the local database
-    const savedPayment = await Payment.create({
+    await Payment.create({
       orderId: orderId,
       paymentIntentId: paymentIntentId,
       paymentMethod: paymentMethod,
-      paymentStatus: paymentStatus === "succeeded" ? "completed" : "pending",
+      paymentStatus:
+        paymentStatus === "succeeded"
+          ? "completed"
+          : paymentStatus === "failed"
+            ? "failed"
+            : "pending",
     });
 
     // Update the order if payment succeeded
     if (paymentStatus === "succeeded") {
       await Order.findByIdAndUpdate(orderId, {
         paymentStatus: "completed",
+        orderStatus: "processing",
       });
     } else if (paymentStatus === "failed") {
       await Order.findByIdAndUpdate(orderId, {
@@ -203,8 +277,7 @@ export const createPayment = async (req, res) => {
     console.error("Create payment error:", err);
 
     return res.status(500).json({
-      message: "Error connecting to PayMongo",
-      error: err.message,
+      message: "Internal server error",
     });
   }
 };
@@ -247,7 +320,11 @@ export const getPaymentStatus = async (req, res) => {
 
     // STEP 3: Ibalik ang error kung pumalya ang PayMongo request.
     if (!response.ok) {
-      return res.status(response.status).json(result);
+      console.error("PayMongo status request failed:", result);
+
+      return res.status(502).json({
+        message: "Failed to retrieve payment status from PayMongo",
+      });
     }
 
     // Siguraduhing may Payment Intent data bago kunin ang status.
@@ -282,6 +359,7 @@ export const getPaymentStatus = async (req, res) => {
 
       await Order.findByIdAndUpdate(payment.orderId, {
         paymentStatus: "completed",
+        orderStatus: "processing",
       });
     }
 
@@ -305,11 +383,10 @@ export const getPaymentStatus = async (req, res) => {
   } catch (err) {
     // Mahuhuli rito ang unexpected errors habang
     // kumukuha o nagpoproseso ng payment status.
-    console.log("PayMongo Error:", err);
+    console.error("Get payment status error:", err);
 
-    res.status(500).json({
-      message: "Error checking payment status",
-      error: err.message,
+    return res.status(500).json({
+      message: "Internal server error",
     });
   }
 };

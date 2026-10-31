@@ -1,96 +1,194 @@
-/* ===== Admin page ===== */
+
+/* =====================================
+   STOCK MANAGEMENT PAGE
+===================================== */
+
 .admin-page {
-  background: #f3f4f6;
   min-height: 100vh;
-  padding: 32px 24px;
-  font-family:
-    "Inter",
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    sans-serif;
-  color: #1f2937;
+  width: 100%;
+  padding: 42px 45px;
+  background-color: #f4f5f6;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #333333;
 }
 
+/* Match the Product Orders content width */
 .admin-container {
-  max-width: 1280px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   padding: 0;
 }
 
-/* ===== Header ===== */
+/* =====================================
+   PAGE HEADER
+===================================== */
+
 .admin-header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
 .admin-title {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 25px;
+  font-weight: 800;
   margin: 0;
-  color: #111827;
+  color: #333333;
+  letter-spacing: -0.5px;
 }
 
-.admin-subtitle {
+/* Search and Add Product */
+
+.admin-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.admin-search {
+  width: 218px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border: 1px solid #e4e4e4;
+  border-radius: 9px;
+  padding: 0 12px;
+}
+
+.admin-search-icon {
+  font-size: 14px;
+  color: #a5a5a5;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.admin-search .form-control {
+  height: 100%;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  font-size: 11px;
+  padding: 0;
+  background-color: transparent;
+}
+
+.admin-search .form-control::placeholder {
+  color: #b9b9b9;
+}
+
+.admin-search .form-control:focus {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Add Product Button */
+
+.admin-add-btn {
+  height: 36px;
+  min-width: 162px;
+  padding: 0 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background-color: #91a47e;
+  border: 1px solid #91a47e;
+  border-radius: 9px;
+  color: #ffffff;
+  text-decoration: none;
   font-size: 13px;
-  color: #6b7280;
-  margin: 4px 0 0;
+  font-weight: 600;
+  transition: 0.2s ease;
 }
 
-/* ===== Card + table ===== */
+.admin-add-btn:hover {
+  background-color: #7e916c;
+  border-color: #7e916c;
+  color: #ffffff;
+}
+
+.admin-add-icon {
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+/* =====================================
+   INVENTORY TABLE
+===================================== */
+
 .admin-card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  width: 100%;
+  background-color: #ffffff;
+  border: 1px solid #e9eae7;
+  border-radius: 8px;
   overflow: hidden;
 }
 
 .admin-table-wrap {
+  width: 100%;
   overflow-x: auto;
 }
 
 .admin-page .admin-table {
+  width: 100%;
+  min-width: 1000px;
+  margin-bottom: 0;
+  border: none;
   --bs-table-bg: #ffffff;
-  --bs-table-striped-bg: #fafafb;
-  --bs-table-hover-bg: #f3f4f6;
-  --bs-table-border-color: #eef0f3;
-  margin: 0;
+  --bs-table-striped-bg: #ffffff;
+  --bs-table-hover-bg: #f8faf7;
+  --bs-table-border-color: #eeeeee;
   font-size: 13px;
-  border: 0;
+  color: #444444;
+  vertical-align: middle;
 }
 
+/* Table Header */
+
 .admin-page .admin-table thead th {
-  background: #f9fafb;
-  color: #6b7280;
-  font-size: 12px;
+  background-color: #ffffff;
+  color: #777b71;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  padding: 12px 16px;
-  border: 0;
-  border-bottom: 1px solid #e5e7eb;
+  letter-spacing: 0.5px;
+  padding: 17px 15px;
+  border-bottom: 1px solid #e9eae7;
+  border-top: none;
   white-space: nowrap;
 }
 
+/* Table Rows */
+
 .admin-page .admin-table tbody td {
-  padding: 12px 16px;
+  height: 65px;
+  padding: 17px 15px;
+  border-left: none;
+  border-right: none;
+  border-color: #eeeeec;
   vertical-align: middle;
-  border-left: 0;
-  border-right: 0;
-  border-color: #eef0f3;
+  background-color: #ffffff;
 }
 
-.admin-th-actions {
-  text-align: right;
+.admin-page .admin-table tbody tr:last-child td {
+  border-bottom: none;
 }
+
+.admin-page .admin-table tbody tr:hover td {
+  background-color: #f8faf6;
+}
+
+/* Table Text */
 
 .admin-cell-id {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  color: #9ca3af;
-  max-width: 140px;
+  font-size: 11px;
+  color: #888888;
+  max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -98,92 +196,106 @@
 
 .admin-cell-name {
   font-weight: 600;
-  color: #111827;
+  color: #333333;
 }
 
 .admin-cell-price,
 .admin-cell-stock {
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .admin-cell-tag {
   text-transform: capitalize;
 }
 
+.admin-th-actions {
+  text-align: center;
+}
+
 .admin-cell-actions {
-  text-align: right;
+  text-align: center;
   white-space: nowrap;
 }
 
-/* ===== Buttons ===== */
-.admin-page .admin-btn,
-.admin-modal .admin-btn {
-  font-size: 12px;
+/* =====================================
+   UPDATE AND DELETE BUTTONS
+===================================== */
+
+.admin-page .admin-btn {
+  font-size: 11px;
   font-weight: 600;
-  padding: 6px 14px;
-  border-radius: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
   box-shadow: none;
+  transition: 0.2s ease;
 }
 
 .admin-page .admin-btn + .admin-btn {
-  margin-left: 8px;
+  margin-left: 7px;
 }
 
-.admin-page .admin-btn-update,
-.admin-modal .admin-btn-update {
-  background: #111827;
-  border: 1px solid #111827;
+/* Update */
+
+.admin-page .admin-btn-update {
+  background-color: #91a47e;
+  border: 1px solid #91a47e;
   color: #ffffff;
 }
 
-.admin-page .admin-btn-update:hover,
-.admin-page .admin-btn-update:focus,
-.admin-modal .admin-btn-update:hover,
-.admin-modal .admin-btn-update:focus {
-  background: #374151;
-  border-color: #374151;
+.admin-page .admin-btn-update:hover {
+  background-color: #7e916c;
+  border-color: #7e916c;
   color: #ffffff;
 }
+
+/* Delete */
 
 .admin-page .admin-btn-delete {
-  background: #ffffff;
-  border: 1px solid #fecaca;
-  color: #dc2626;
+  background-color: #ffffff;
+  border: 1px solid #e4bcbc;
+  color: #c75b5b;
 }
 
-.admin-page .admin-btn-delete:hover,
-.admin-page .admin-btn-delete:focus {
-  background: #dc2626;
-  border-color: #dc2626;
+.admin-page .admin-btn-delete:hover {
+  background-color: #c75b5b;
+  border-color: #c75b5b;
   color: #ffffff;
 }
 
-/* ===== Modal ===== */
+/* Empty Search Result */
+
+.admin-empty {
+  height: 150px !important;
+  text-align: center;
+  color: #999999;
+}
+
+/* =====================================
+   UPDATE SHOE MODAL
+===================================== */
+
 .admin-modal .modal-content {
-  border: 0;
-  border-radius: 14px;
-  box-shadow: 0 20px 40px rgba(16, 24, 40, 0.18);
-  font-family:
-    "Inter",
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    sans-serif;
+  border: none;
+  border-radius: 13px;
+  overflow: hidden;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.10);
+  font-family: "Inter", system-ui, sans-serif;
 }
 
 .admin-modal-header {
-  border-bottom: 1px solid #eef0f3;
-  padding: 18px 24px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #eeeeee;
 }
 
 .admin-modal-title {
   font-size: 17px;
   font-weight: 700;
-  color: #111827;
+  color: #333333;
 }
 
 .admin-modal-body {
-  padding: 20px 24px;
+  padding: 22px 24px;
 }
 
 .admin-field {
@@ -197,24 +309,87 @@
 .admin-field .form-label {
   font-size: 12px;
   font-weight: 600;
-  color: #4b5563;
-  margin-bottom: 6px;
+  color: #555555;
+  margin-bottom: 7px;
 }
 
 .admin-field .form-control {
+  height: 42px;
   font-size: 13px;
-  padding: 9px 12px;
-  border: 1px solid #d1d5db;
+  padding: 10px 13px;
+  border: 1px solid #d4d4d4;
   border-radius: 8px;
   box-shadow: none;
 }
 
 .admin-field .form-control:focus {
-  border-color: #111827;
-  box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+  border-color: #91a47e;
+  box-shadow: 0 0 0 3px rgba(145, 164, 126, 0.12);
 }
 
 .admin-modal-footer {
-  border-top: 1px solid #eef0f3;
   padding: 14px 24px;
+  border-top: 1px solid #eeeeee;
+}
+
+.admin-modal .admin-btn {
+  min-width: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 9px 17px;
+  border-radius: 7px;
+}
+
+.admin-modal .admin-btn-update {
+  background-color: #91a47e;
+  border-color: #91a47e;
+  color: #ffffff;
+}
+
+.admin-modal .admin-btn-update:hover {
+  background-color: #7e916c;
+  border-color: #7e916c;
+}
+
+/* =====================================
+   RESPONSIVE DESIGN
+===================================== */
+
+@media (max-width: 900px) {
+  .admin-page {
+    padding: 25px 18px;
+  }
+
+  .admin-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-header-actions {
+    width: 100%;
+  }
+
+  .admin-search {
+    flex: 1;
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-page {
+    padding: 25px 14px;
+  }
+
+  .admin-title {
+    font-size: 22px;
+  }
+
+  .admin-header-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-search,
+  .admin-add-btn {
+    width: 100%;
+  }
 }

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Shoe from "../models/shoe.js";
 import Order from "../models/order.js";
+import Payment from "../models/payment.js";
 import OrderSchemaInformation from "../models/orderInformation.js";
 
 export const createOrder = async (req, res) => {
@@ -234,12 +235,27 @@ export const deleteOrderById = async (req, res) => {
         message: "Order not found",
       });
     }
-    // STEP 4.1: Prevent deletion of paid orders
+    // STEP 4.1: Prevent cancellation of paid orders
     if (order.paymentStatus === "completed") {
       await session.abortTransaction();
 
       return res.status(400).json({
-        message: "Paid orders cannot be deleted",
+        message: "Paid orders cannot be cancelled",
+      });
+    }
+
+    // STEP 4.2: Check for pending payment records
+    const pendingPayment = await Payment.findOne({
+      orderId: order._id,
+      paymentStatus: "pending",
+    }).session(session);
+
+    if (pendingPayment) {
+      await session.abortTransaction();
+
+      return res.status(409).json({
+        message:
+          "This order has a pending payment. Check the PayMongo payment status before cancelling.",
       });
     }
     // STEP 4: Only pending orders can be deleted
@@ -273,9 +289,9 @@ export const deleteOrderById = async (req, res) => {
       }
     }
 
-    // STEP 6: Delete order
-    await Order.findByIdAndDelete(id).session(session);
-
+    // STEP 6: Mark order as cancelled
+    order.orderStatus = "cancelled";
+    await order.save({ session });
     // STEP 7: Commit transaction
     await session.commitTransaction();
 

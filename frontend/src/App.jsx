@@ -1,13 +1,21 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 
-//import CheckoutShoes from "./pages/checkoutShoes.jsx";
-//import DashboardShoes from "./pages/dashboardShoes.jsx";
-//import Sample from "./pages/sample.jsx";
-//import MenShoes from "./pages/category/menShoes.jsx";
+// Admin pages
 import AddShoes from "./admin/pages/category/addShoes.jsx";
 import StockShoe from "./admin/pages/category/stockShoes.jsx";
+import Orders from "./admin/pages/category/orders.jsx";
 
+// Admin layout
+import AdminLayout from "./admin/components/AdminLayout.jsx";
+
+// Client pages
 import Cart from "./client/pages/Cart.jsx";
 import Checkout from "./client/pages/Checkout.jsx";
 import Home from "./client/pages/Home.jsx";
@@ -15,15 +23,24 @@ import Men from "./client/pages/Men.jsx";
 import ProductDetails from "./client/pages/ProductDetails.jsx";
 import Wishlist from "./client/pages/Wishlist.jsx";
 import Women from "./client/pages/Women.jsx";
-import Navbar from "./components/Navbar";
-import Orders from "./admin/pages/category/orders.jsx";
 
-function App() {
+// Components
+import Navbar from "./components/Navbar";
+
+function AppContent() {
+  const location = useLocation();
+
+  // Hide the client Navbar on admin pages
+  const adminRoutes = ["/admin/add", "/admin/stock", "/admin/orders"];
+
+  const isAdminPage = adminRoutes.includes(location.pathname);
+
   return (
-    <Router>
-      <Navbar />
+    <>
+      {!isAdminPage && <Navbar />}
 
       <Routes>
+        {/* Client Pages */}
         <Route path="/" element={<Home />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/men" element={<Men />} />
@@ -31,11 +48,22 @@ function App() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/product/:id" element={<ProductDetails />} />
-        {/* admin */}
-        <Route path="/admin/add" element={<AddShoes />} />
-        <Route path="/admin/stock" element={<StockShoe />} />
-        <Route path="admin/orders" element={<Orders />} />
+
+        {/* Admin Pages with Shared Sidebar */}
+        <Route element={<AdminLayout />}>
+          <Route path="/admin/add" element={<AddShoes />} />
+          <Route path="/admin/stock" element={<StockShoe />} />
+          <Route path="/admin/orders" element={<Orders />} />
+        </Route>
       </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

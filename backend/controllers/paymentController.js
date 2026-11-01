@@ -284,28 +284,20 @@ export const createPayment = async (req, res) => {
 export const getPaymentStatus = async (req, res) => {
   try {
     // STEP 1: Kunin ang Payment Intent ID mula sa URL.
-    //
-    // Halimbawa:
-    // GET /api/payment/pi_123
-    //
-    // Sa route na ito, ang "pi_123" ang paymentIntentId.
     const { paymentIntentId } = req.params;
-    // Siguraduhing may Payment Intent ID bago tumawag sa PayMongo.
+
     if (typeof paymentIntentId !== "string" || !paymentIntentId.trim()) {
       return res.status(400).json({
         message: "Payment Intent ID is required",
       });
     }
 
-    // STEP 2: Humingi ng kasalukuyang status sa PayMongo.
-    // Hindi sapat na umasa lang sa status na nasa frontend.
+    // STEP 2: Kunin ang kasalukuyang payment status mula sa PayMongo.
     const response = await fetch(
       `https://api.paymongo.com/v1/payment_intents/${paymentIntentId}`,
       {
         method: "GET",
-
         headers: {
-          // Secret key ay nananatili sa backend.
           Authorization:
             "Basic " +
             Buffer.from(process.env.PAYMONGO_SECRET_KEY + ":").toString(
@@ -315,10 +307,9 @@ export const getPaymentStatus = async (req, res) => {
       },
     );
 
-    // I-convert ang response sa JavaScript object.
     const result = await response.json();
 
-    // STEP 3: Ibalik ang error kung pumalya ang PayMongo request.
+    // STEP 3: I-check kung successful ang request sa PayMongo.
     if (!response.ok) {
       console.error("PayMongo status request failed:", result);
 
@@ -327,32 +318,35 @@ export const getPaymentStatus = async (req, res) => {
       });
     }
 
-    // Siguraduhing may Payment Intent data bago kunin ang status.
+    // STEP 4: Siguraduhing may payment status sa response.
     if (!result.data?.attributes?.status) {
       return res.status(502).json({
         message: "Invalid payment status response from PayMongo",
       });
     }
 
-    // Kunin ang status pagkatapos ma-validate ang response.
     const paymentStatus = result.data.attributes.status;
 
-    // STEP 5: Hanapin ang katumbas na payment record sa MongoDB.
-    // Ginagamit ang Payment Intent ID para maitugma ang record.
+    // STEP 5: Hanapin ang payment record sa MongoDB.
     const payment = await Payment.findOne({
       paymentIntentId: paymentIntentId,
-    });
+    }).populate("orderId");
 
-    // Kapag walang local payment record, hindi natin alam
-    // kung anong local order ang dapat i-update.
+    // Kapag walang local payment record.
     if (!payment) {
       return res.status(404).json({
         message: "Payment record not found",
       });
     }
 
-    // STEP 6: Kapag succeeded ang status mula sa PayMongo,
-    // markahan ang local payment at order bilang completed.
+    // Siguraduhing umiiral pa ang order na konektado sa payment.
+    if (!payment.orderId) {
+      return res.status(404).json({
+        message: "Associated order not found",
+      });
+    }
+
+    // STEP 6: Kapag successful ang payment.
     if (paymentStatus === "succeeded") {
       payment.paymentStatus = "completed";
       await payment.save();
@@ -363,14 +357,8 @@ export const getPaymentStatus = async (req, res) => {
       });
     }
 
-    // STEP 7: Ang kasalukuyang code ay minamarkahang failed
-    // ang mga status na ito.
-    //
-    // IMPORTANT:
-    // Ang "awaiting_payment_method" ay maaaring mangahulugan
-    // na naghihintay pa ng payment method, hindi palaging failed.
-    // Kailangang i-review ang status mapping bago production.
-    else if (paymentStatus === "failed") {
+    // STEP 7: Kapag failed o canceled ang payment.
+    else if (paymentStatus === "failed" || paymentStatus === "canceled") {
       payment.paymentStatus = "failed";
       await payment.save();
 
@@ -379,10 +367,9 @@ export const getPaymentStatus = async (req, res) => {
       });
     }
 
+    // STEP 8: Ibalik ang PayMongo response sa frontend.
     return res.status(200).json(result);
   } catch (err) {
-    // Mahuhuli rito ang unexpected errors habang
-    // kumukuha o nagpoproseso ng payment status.
     console.error("Get payment status error:", err);
 
     return res.status(500).json({

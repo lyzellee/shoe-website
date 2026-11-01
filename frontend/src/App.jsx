@@ -11,6 +11,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import AddShoes from "./admin/pages/category/addShoes.jsx";
 import StockShoe from "./admin/pages/category/stockShoes.jsx";
 import Orders from "./admin/pages/category/orders.jsx";
+import ProtectedRoute from "./admin/components/ProtectedRoute.jsx";
+import AdminLogin from "./admin/pages/category/AdminLoginTemp.jsx";
+import RepresentativeDashboard from "./admin/pages/category/RepresentativeDashboard.jsx";
 
 // Admin layout
 import AdminLayout from "./admin/components/AdminLayout.jsx";
@@ -51,10 +54,38 @@ function AppContent() {
 
         {/* Admin Pages with Shared Sidebar */}
         <Route element={<AdminLayout />}>
-          <Route path="/admin/add" element={<AddShoes />} />
-          <Route path="/admin/stock" element={<StockShoe />} />
-          <Route path="/admin/orders" element={<Orders />} />
+          <Route
+            path="/admin/add"
+            element={
+              <ProtectedRoute>
+                <AddShoes />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/stock"
+            element={
+              <ProtectedRoute>
+                <StockShoe />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/orders"
+            element={
+              <ProtectedRoute>
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
         </Route>
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route
+          path="/representative/dashboard"
+          element={<RepresentativeDashboard />}
+        />
       </Routes>
     </>
   );

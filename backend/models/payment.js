@@ -9,6 +9,7 @@ const paymentSchema = new mongoose.Schema(
     paymentIntentId: {
       type: String,
       required: true,
+      unique: true,
     },
 
     paymentMethod: {

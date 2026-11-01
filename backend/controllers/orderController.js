@@ -266,9 +266,31 @@ export const deleteOrderById = async (req, res) => {
         message: "Only pending orders can be deleted",
       });
     }
+    const cancelledOrder = await Order.findOneAndUpdate(
+      {
+        _id: order._id,
+        orderStatus: "pending",
+        paymentStatus: { $ne: "completed" },
+      },
+      {
+        $set: { orderStatus: "cancelled" },
+      },
+      {
+        new: true,
+        session,
+      },
+    );
+
+    if (!cancelledOrder) {
+      await session.abortTransaction();
+
+      return res.status(409).json({
+        message: "Order status changed. Please check the order again.",
+      });
+    }
 
     // STEP 5: Restore stock for each order item
-    for (const item of order.items) {
+    for (const item of cancelledOrder.items) {
       const restoredShoe = await Shoe.findByIdAndUpdate(
         item.shoeId,
         {
@@ -288,10 +310,6 @@ export const deleteOrderById = async (req, res) => {
         });
       }
     }
-
-    // STEP 6: Mark order as cancelled
-    order.orderStatus = "cancelled";
-    await order.save({ session });
     // STEP 7: Commit transaction
     await session.commitTransaction();
 
@@ -376,6 +394,19 @@ export const updateOrderItemQuantity = async (req, res) => {
 
       return res.status(400).json({
         message: "Only unpaid, pending orders can be updated",
+      });
+    }
+    // STEP 6.1: Prevent quantity updates during pending payment
+    const pendingPayment = await Payment.findOne({
+      orderId: order._id,
+      paymentStatus: "pending",
+    }).session(session);
+
+    if (pendingPayment) {
+      await session.abortTransaction();
+
+      return res.status(409).json({
+        message: "Cannot update quantity while payment is pending",
       });
     }
     // STEP 7: Hanapin ang actual shoe sa database
@@ -489,6 +520,16 @@ export const createOrderInformation = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         message: "Order not found",
+      });
+    }
+    // Check if customer information already exists for this order
+    const existingInformation = await OrderSchemaInformation.findOne({
+      orderId,
+    });
+
+    if (existingInformation) {
+      return res.status(409).json({
+        message: "Customer information already exists for this order",
       });
     }
 

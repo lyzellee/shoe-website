@@ -1,7 +1,16 @@
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
 import { useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPen } from "@fortawesome/free-solid-svg-icons";
 import "./Cart.css";
+
+const getCartImage = (shoe) => {
+  const image = shoe?.image || shoe?.imageUrl || shoe?.img;
+  if (!image) return "/product-images/product%201.png";
+  if (image.startsWith("http://") || image.startsWith("https://")) return image;
+  return `http://localhost:5000${image.startsWith("/") ? "" : "/"}${image}`;
+};
 
 export default function Cart() {
   // Kunin ang cart items mula sa localStorage
@@ -9,11 +18,15 @@ export default function Cart() {
     const savedCart = localStorage.getItem("cart");
     return savedCart ? JSON.parse(savedCart) : [];
   });
+  const [editingItemId, setEditingItemId] = useState("");
+  const [editSize, setEditSize] = useState("");
+  const [editColor, setEditColor] = useState("");
 
   // I-save ang updated cart sa state at localStorage
   const updateCart = (updatedCart) => {
     setCartItems(updatedCart);
     localStorage.setItem("cart", JSON.stringify(updatedCart));
+    window.dispatchEvent(new Event("cartUpdated"));
   };
 
   // Baguhin ang quantity
@@ -54,6 +67,23 @@ export default function Cart() {
     updateCart(updatedCart);
   };
 
+  const startEditing = (item) => {
+    setEditingItemId(item._id);
+    setEditSize(item.size || "");
+    setEditColor(item.color || item.colour || "");
+  };
+
+  const saveVariant = (shoeId) => {
+    const updatedCart = cartItems.map((item) =>
+      item._id === shoeId
+        ? { ...item, size: editSize, color: editColor }
+        : item,
+    );
+    updateCart(updatedCart);
+    window.dispatchEvent(new Event("cartUpdated"));
+    setEditingItemId("");
+  };
+
   // Kalkulahin ang subtotal
   const subtotal = cartItems.reduce((total, item) => {
     const price = Number(item.price) || 0;
@@ -91,12 +121,7 @@ export default function Cart() {
                     <div className="card-info">
                       <div className="card-image-box">
                         <img
-                          src={
-                            shoe.image ||
-                            shoe.imageUrl ||
-                            shoe.img ||
-                            "/product-images/product%201.png"
-                          }
+                          src={getCartImage(shoe)}
                           alt={shoe.name || "Product"}
                           className="cart-product-image"
                           onError={(event) => {
@@ -115,6 +140,55 @@ export default function Cart() {
                         <h5 className="card-name">{shoe.name || "Product"}</h5>
 
                         <p className="card-brand">{shoe.brand}</p>
+
+                        {editingItemId === item._id ? (
+                          <div className="cart-variant-editor">
+                            <label>
+                              Size
+                              <select
+                                value={editSize}
+                                onChange={(event) => setEditSize(event.target.value)}
+                              >
+                                <option value="">Select size</option>
+                                {(Array.isArray(shoe.sizes) ? shoe.sizes : ["6", "7", "8", "9", "10", "11"]).map((size) => (
+                                  <option key={size} value={size}>{size}</option>
+                                ))}
+                              </select>
+                            </label>
+
+                            <label>
+                              Color
+                              <input
+                                type="text"
+                                value={editColor}
+                                onChange={(event) => setEditColor(event.target.value)}
+                                placeholder="Color"
+                              />
+                            </label>
+
+                            <div className="cart-variant-actions">
+                              <Button
+                                type="button"
+                                className="save-variant-button"
+                                onClick={() => saveVariant(item._id)}
+                              >
+                                Save
+                              </Button>
+                              <Button
+                                type="button"
+                                className="cancel-variant-button"
+                                onClick={() => setEditingItemId("")}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="card-size">
+                            Size: {shoe.size || "N/A"}
+                            {shoe.color ? ` · ${shoe.color}` : ""}
+                          </p>
+                        )}
 
                         <div className="quantity-controls">
                           <Button
@@ -141,6 +215,15 @@ export default function Cart() {
                         <h5>
                           ₱{formatPrice((Number(shoe.price) || 0) * quantity)}
                         </h5>
+
+                        <button
+                          type="button"
+                          className="edit-variant-button"
+                          aria-label={`Edit size and color for ${shoe.name || "shoe"}`}
+                          onClick={() => startEditing(shoe)}
+                        >
+                          <FontAwesomeIcon icon={faPen} />
+                        </button>
 
                         <Button
                           variant="link"

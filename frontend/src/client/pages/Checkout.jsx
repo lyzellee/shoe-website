@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Form, Button, Row, Col } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
 import "./Checkout.css";
 import { getCart } from "../../components/AddToCartItems.jsx";
 import SuccessfulPayment from "../../components/SuccessfulPayment.jsx";
@@ -10,7 +13,26 @@ const paymentOptions = [
   { value: "Card", label: "Card" },
 ];
 
+const SAVED_ADDRESSES_KEY = "savedCheckoutAddresses";
+
+const getCheckoutImage = (item) => {
+  const image = item?.image || item?.imageUrl || item?.img;
+  if (!image) return "/product-images/product%201.png";
+  if (image.startsWith("http://") || image.startsWith("https://")) return image;
+  return `http://localhost:5000${image.startsWith("/") ? "" : "/"}${image}`;
+};
+
+const readSavedAddresses = () => {
+  try {
+    const addresses = JSON.parse(localStorage.getItem(SAVED_ADDRESSES_KEY) || "[]");
+    return Array.isArray(addresses) ? addresses : [];
+  } catch {
+    return [];
+  }
+};
+
 export default function Checkout() {
+  const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState("");
   const [orderItems, setOrderItems] = useState(() => getCart());
   const paymentDropdownRef = useRef(null);
@@ -33,6 +55,9 @@ export default function Checkout() {
     phone: "",
     email: "",
   });
+  const [savedAddresses, setSavedAddresses] = useState(readSavedAddresses);
+  const [selectedAddressId, setSelectedAddressId] = useState("");
+  const [saveCurrentAddress, setSaveCurrentAddress] = useState(true);
 
   // =====================================================
   // STEP 2: HANDLE DELIVERY INPUTS
@@ -51,6 +76,20 @@ export default function Checkout() {
       ...previousData,
       [name]: value,
     }));
+  };
+
+  const selectSavedAddress = (address) => {
+    setSelectedAddressId(address.id);
+    setFormData({
+      firstName: address.firstName || "",
+      lastName: address.lastName || "",
+      address: address.address || "",
+      city: address.city || "",
+      province: address.province || "",
+      zipCode: address.zipCode || "",
+      phone: address.phone || "",
+      email: address.email || "",
+    });
   };
 
   // =====================================================
@@ -82,6 +121,38 @@ export default function Checkout() {
     if (cartItems.length === 0) {
       alert("Your cart is empty.");
       return;
+    }
+
+    if (saveCurrentAddress) {
+      const addressExists = savedAddresses.some(
+        (saved) =>
+          saved.address === address &&
+          saved.city === city &&
+          saved.zipCode === zipCode &&
+          saved.phone === phone,
+      );
+
+      if (!addressExists) {
+        const updatedAddresses = [
+          ...savedAddresses,
+          {
+            id: `address-${Date.now()}`,
+            firstName,
+            lastName,
+            address,
+            city,
+            province,
+            zipCode,
+            phone,
+            email,
+          },
+        ];
+        localStorage.setItem(
+          SAVED_ADDRESSES_KEY,
+          JSON.stringify(updatedAddresses),
+        );
+        setSavedAddresses(updatedAddresses);
+      }
     }
 
     try {
@@ -309,6 +380,14 @@ export default function Checkout() {
         <SuccessfulPayment />
       ) : (
         <div className="checkout-containter">
+          <button
+            type="button"
+            className="checkout-back-button"
+            aria-label="Back to cart"
+            onClick={() => navigate("/cart")}
+          >
+            <FontAwesomeIcon icon={faChevronLeft} />
+          </button>
           <p className="checkout-label"> CHECKOUT </p>
           <p className="checkout-title">Almost there</p>
 
@@ -317,6 +396,34 @@ export default function Checkout() {
               <h2 className="checkout-section-title">Delivery</h2>
 
               <Form className="checkout-form">
+                {savedAddresses.length > 0 && (
+                  <div className="saved-addresses">
+                    <div className="saved-addresses-heading">
+                      <span>Saved addresses</span>
+                      <span>Choose an address</span>
+                    </div>
+                    {savedAddresses.map((savedAddress) => (
+                      <button
+                        type="button"
+                        key={savedAddress.id}
+                        className={`saved-address-option ${
+                          selectedAddressId === savedAddress.id ? "selected" : ""
+                        }`}
+                        onClick={() => selectSavedAddress(savedAddress)}
+                      >
+                        <strong>
+                          {savedAddress.firstName} {savedAddress.lastName}
+                        </strong>
+                        <span>
+                          {savedAddress.address}, {savedAddress.city},{" "}
+                          {savedAddress.province} {savedAddress.zipCode}
+                        </span>
+                        <span>{savedAddress.phone}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {/* First Name & Last Name */}
                 <Row className="checkout-row">
                   <Col xs={6}>
@@ -418,6 +525,14 @@ export default function Checkout() {
                     />
                   </Col>
                 </Row>
+
+                <Form.Check
+                  type="checkbox"
+                  className="save-address-check"
+                  checked={saveCurrentAddress}
+                  onChange={(event) => setSaveCurrentAddress(event.target.checked)}
+                  label="Save this address for next time"
+                />
 
                 {/* Payment Method */}
                 <h2 className="heckout-section-title payment-title">Payment</h2>
@@ -554,17 +669,13 @@ export default function Checkout() {
                   >
                     <div className="checkout-product-image-wrapper">
                       <img
-                        src={
-                          item.image ||
-                          item.imageUrl ||
-                          item.img ||
-                          "/placeholder-shoe.png"
-                        }
+                        src={getCheckoutImage(item)}
                         alt={item.name || "Shoe"}
                         className="checkout-product-image"
                         onError={(e) => {
                           e.currentTarget.onerror = null;
-                          e.currentTarget.src = "/placeholder-shoe.png";
+                          e.currentTarget.src =
+                            "/product-images/product%201.png";
                         }}
                       />
                     </div>

@@ -49,6 +49,27 @@
   margin: 0 auto;
 }
 
+.checkout-back-button {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  padding: 0;
+  border: 1px solid #b9b0a6;
+  border-radius: 50%;
+  background: transparent;
+  color: #30302e;
+  font-size: 14px;
+}
+
+.checkout-back-button:hover {
+  border-color: #30302e;
+  background: #30302e;
+  color: #fff;
+}
+
 /* CHECKOUT label */
 .checkout-label {
   margin: 0 0 12px;
@@ -100,6 +121,65 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
+}
+
+.saved-addresses {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #d5cfc4;
+  border-radius: 16px;
+  background: rgba(237, 228, 218, 0.35);
+}
+
+.saved-addresses-heading {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #30302e;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.saved-addresses-heading span:last-child {
+  color: #918b85;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.saved-address-option {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 64px;
+  padding: 11px 14px;
+  border: 1px solid #b9b0a6;
+  border-radius: 12px;
+  background: #f1eee6;
+  color: #30302e;
+  text-align: left;
+  font-size: 10px;
+}
+
+.saved-address-option.selected {
+  border-color: #91a47e;
+  background: rgba(145, 164, 126, 0.12);
+}
+
+.saved-address-option strong {
+  font-size: 11px;
+}
+
+.save-address-check {
+  color: #69645e;
+  font-size: 11px;
+}
+
+.save-address-check .form-check-input:checked {
+  border-color: #91a47e;
+  background-color: #91a47e;
 }
 
 /* Bootstrap row spacing */

@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import path from "path";
 import connectDB from "./config/db.js";
 import shoeRoutes from "./routes/shoes.js";
 
@@ -9,6 +10,9 @@ const app = express();
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded shoe images
+app.use("/uploads", express.static(path.resolve("uploads")));
 
 // Routes
 app.use("/api", shoeRoutes);

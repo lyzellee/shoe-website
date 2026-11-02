@@ -1,5 +1,6 @@
 import express from "express";
 import { verifyToken, allowRoles } from "../middleware/authMiddleware.js";
+import upload from "../middleware/upload.js";
 
 import {
   createShoe,
@@ -39,16 +40,20 @@ router.put(
   "/update/:id",
   verifyToken,
   allowRoles("admin", "representative"),
+  upload.single("image"),
   updateById,
 );
+
 router.get(
   "/payment/:paymentIntentId",
   verifyToken,
   allowRoles("admin", "representative"),
   getPaymentStatus,
 );
+
 router.post("/payment", createPayment);
 router.post("/order-information", createOrderInformation);
+
 router.patch(
   "/orders/quantity",
   verifyToken,
@@ -61,14 +66,18 @@ router.delete(
   allowRoles("admin", "representative"),
   deleteOrderById,
 );
+
 router.delete("/:id", verifyToken, allowRoles("admin"), deleteById);
+
 router.get(
   "/orders",
   verifyToken,
   allowRoles("admin", "representative"),
   getAllOrder,
 );
-router.post("/shoes", verifyToken, allowRoles("admin"), createShoe);
+
+// Create shoe with image upload
+router.post("/shoes", verifyToken, allowRoles("admin"), upload.single("image"), createShoe);
 router.post("/login", login);
 router.post("/register", verifyToken, allowRoles("admin"), registerUser);
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHeart as faHeartSolid,
@@ -15,15 +16,42 @@ export default function Wishlist() {
 
   // Listen for favorites added or removed on other pages.
   useEffect(() => {
-    const updateFavorites = () => {
-      setFavorites(readFavorites());
+    let isCurrent = true;
+
+    const updateFavorites = async () => {
+      const savedFavorites = readFavorites();
+      setFavorites(savedFavorites);
+
+      try {
+        const response = await axios.get("http://localhost:5000/api/all");
+        const currentShoes = Array.isArray(response.data) ? response.data : [];
+
+        if (!isCurrent) return;
+
+        const mergedFavorites = savedFavorites
+          .map((savedShoe) => {
+            const savedId = getFavoriteId(savedShoe);
+            const currentShoe = currentShoes.find(
+              (shoe) => String(shoe._id || shoe.id) === savedId
+            );
+
+            return currentShoe ? { ...savedShoe, ...currentShoe } : savedShoe;
+          })
+          .filter(Boolean);
+
+        setFavorites(mergedFavorites);
+      } catch {
+        // Keep the saved favorite data if the backend is unavailable.
+      }
     };
 
     window.addEventListener("favoritesUpdated", updateFavorites);
     window.addEventListener("storage", updateFavorites);
     window.addEventListener("focus", updateFavorites);
+    updateFavorites();
 
     return () => {
+      isCurrent = false;
       window.removeEventListener("favoritesUpdated", updateFavorites);
       window.removeEventListener("storage", updateFavorites);
       window.removeEventListener("focus", updateFavorites);
@@ -46,6 +74,16 @@ export default function Wishlist() {
 
   // Format product prices
   const formatPrice = (price) => (Number(price) || 0).toLocaleString("en-PH");
+
+  // Format product labels consistently
+  const formatLabel = (value) => {
+    if (typeof value !== "string" || !value.trim()) return "";
+
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  };
 
   // Get the product image
   const getImage = (shoe) =>
@@ -101,7 +139,19 @@ export default function Wishlist() {
                       }
                     }}
                   >
-                    <span className="wishlist-badge">NEW</span>
+                    <div className="wishlist-tags">
+                      {shoe.productStatus && (
+                        <span className="wishlist-badge">
+                          {formatLabel(shoe.productStatus)}
+                        </span>
+                      )}
+
+                      {shoe.category && (
+                        <span className="wishlist-badge wishlist-category-badge">
+                          {formatLabel(shoe.category)}
+                        </span>
+                      )}
+                    </div>
 
                     <button
                       type="button"
@@ -141,7 +191,9 @@ export default function Wishlist() {
 
                   <div className="wishlist-product-info">
                     <p className="wishlist-product-category">
-                      {shoe.gender || shoe.category || "SHOES"}
+                      {formatLabel(
+                        shoe.brand || shoe.gender || shoe.category || "Shoes"
+                      )}
                     </p>
 
                     <div className="wishlist-product-details">

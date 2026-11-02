@@ -1,9 +1,35 @@
 import mongoose from "mongoose";
 import Shoe from "../models/shoe.js";
 
+// Helper: Escape special characters when searching for an exact shoe name
+const escapeRegex = (value) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Helper: Convert FormData sizes into an array of numbers
+const parseSizes = (sizes) => {
+  if (sizes === undefined) return undefined;
+
+  const parsedSizes =
+    typeof sizes === "string" ? JSON.parse(sizes) : sizes;
+
+  if (
+    !Array.isArray(parsedSizes) ||
+    !parsedSizes.every(
+      (size) => Number.isFinite(Number(size)) && Number(size) > 0,
+    )
+  ) {
+    throw new Error("Sizes must be an array of valid numbers");
+  }
+
+  return [...new Set(parsedSizes.map(Number))].sort((a, b) => a - b);
+};
+
+
+//createShoe
 export const createShoe = async (req, res) => {
   try {
-    const { name, brand, price, stock } = req.body;
+    const { name, brand, price, stock, productStatus, color, description } = req.body;
+    
     const shoeGender =
       typeof req.body.gender === "string"
         ? req.body.gender.trim().toLowerCase()
@@ -91,12 +117,41 @@ export const createShoe = async (req, res) => {
     }
 
     // STEP 8: Validate category
-    if (!["running", "sports"].includes(shoeCategory)) {
+    if (!["running", "sports", "casual", "lifestyle"].includes(shoeCategory)) {
       return res.status(400).json({
-        message: "Category must be running or sports",
+        message: "Category must be running, sports, casual, or lifestyle",
+     });
+    }
+
+    // STEP 9: Validate product status
+    const normalizedStatus =
+      typeof productStatus === "string"
+        ? productStatus.trim().toLowerCase()
+        : productStatus;
+
+    if (
+      normalizedStatus !== undefined &&
+      normalizedStatus !== "" &&
+      normalizedStatus !== null &&
+      !["new", "popular"].includes(normalizedStatus)
+    ) {
+      return res.status(400).json({
+        message: "Product status must be new or popular",
       });
     }
-    // STEP 9: Check duplicate shoe
+
+    // STEP 10: Parse and validate shoe sizes
+    let shoeSizes = [];
+
+    try {
+      shoeSizes = parseSizes(req.body.sizes) ?? [];
+    } catch (error) {
+      return res.status(400).json({
+        message: error.message,
+      });
+    }
+
+    // STEP 11: Check duplicate shoe
     const existingShoe = await Shoe.findOne({
       name: { $regex: `^${name.trim()}$`, $options: "i" },
     });
@@ -107,7 +162,7 @@ export const createShoe = async (req, res) => {
       });
     }
 
-    // STEP 10: Save shoe to database
+    // STEP 12: Save shoe to database
     const newShoe = await Shoe.create({
       name: name.trim(),
       brand: brand.trim(),
@@ -115,6 +170,15 @@ export const createShoe = async (req, res) => {
       gender: shoeGender,
       category: shoeCategory,
       stock: shoeStock,
+      productStatus:
+        normalizedStatus === "" || normalizedStatus === undefined
+          ? null
+          : normalizedStatus,
+      sizes: shoeSizes,
+      color: typeof color === "string" ? color.trim() : "",
+      description:
+        typeof description === "string" ? description.trim() : "",
+      image: req.file ? `/uploads/${req.file.filename}` : "",
     });
 
     return res.status(201).json({
@@ -217,6 +281,10 @@ export const updateById = async (req, res) => {
       "stock",
       "gender",
       "category",
+      "productStatus",
+      "sizes",
+      "color",
+      "description",
     ];
 
     const invalidFields = Object.keys(req.body).filter(
@@ -306,7 +374,7 @@ export const updateById = async (req, res) => {
           !["men", "women"].includes(req.body.gender.trim().toLowerCase()))) ||
       (req.body.category !== undefined &&
         (typeof req.body.category !== "string" ||
-          !["running", "sports"].includes(
+          !["running", "sports", "casual", "lifestyle"].includes(
             req.body.category.trim().toLowerCase(),
           )))
     ) {
@@ -314,6 +382,7 @@ export const updateById = async (req, res) => {
         message: "Invalid gender or category",
       });
     }
+
     // Normalize shoe data
     if (req.body.name !== undefined) {
       req.body.name = req.body.name.trim();
@@ -330,7 +399,67 @@ export const updateById = async (req, res) => {
     if (req.body.category !== undefined) {
       req.body.category = req.body.category.trim().toLowerCase();
     }
-    const updateShoes = await Shoe.findByIdAndUpdate(id, req.body, {
+
+        // Prepare the data before updating
+    const updateData = { ...req.body };
+
+    // Convert price and stock into numbers
+    if (updateData.price !== undefined) {
+      updateData.price = Number(updateData.price);
+    }
+
+    if (updateData.stock !== undefined) {
+      updateData.stock = Number(updateData.stock);
+    }
+
+    // Validate and normalize product status
+    if (updateData.productStatus !== undefined) {
+      updateData.productStatus =
+        typeof updateData.productStatus === "string"
+          ? updateData.productStatus.trim().toLowerCase()
+          : updateData.productStatus;
+
+      if (
+        updateData.productStatus !== "" &&
+        updateData.productStatus !== null &&
+        !["new", "popular"].includes(updateData.productStatus)
+      ) {
+        return res.status(400).json({
+          message: "Product status must be new or popular",
+        });
+      }
+
+      if (updateData.productStatus === "") {
+        updateData.productStatus = null;
+      }
+    }
+
+    // Parse and validate shoe sizes
+    if (updateData.sizes !== undefined) {
+      try {
+        updateData.sizes = parseSizes(updateData.sizes);
+      } catch (error) {
+        return res.status(400).json({
+          message: error.message,
+        });
+      }
+    }
+
+    // Normalize color and description
+    if (updateData.color !== undefined) {
+      updateData.color = updateData.color.trim();
+    }
+
+    if (updateData.description !== undefined) {
+      updateData.description = updateData.description.trim();
+    }
+
+    // Add the new image path if an image was uploaded
+    if (req.file) {
+      updateData.image = `/uploads/${req.file.filename}`;
+    }
+    
+    const updateShoes = await Shoe.findByIdAndUpdate(id, updateData, {
       returnDocument: "after",
       runValidators: true,
     });

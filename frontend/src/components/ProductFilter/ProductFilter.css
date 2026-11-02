@@ -1,0 +1,100 @@
+
+.category-navbar {
+  margin-top: 70px;
+  margin-bottom: 30px;
+}
+
+.category-buttons {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* ALL, POPULAR, AND NEW BUTTONS */
+.category-button {
+  background-color: transparent !important;
+  color: #292B28 !important;
+  opacity: 0.8;
+  border-width: 1px !important;
+  border-style: solid;
+  border-radius: 18px;
+  border-color: #292B28 !important;
+  padding: 8px 20px !important;
+}
+
+.category-button.active {
+  background-color: #292B28 !important;
+  color: #EDE4DA !important;
+  border-color: #292B28 !important;
+}
+
+/* REMOVE BUTTON SHADOW */
+.category-button:hover,
+.category-button:focus,
+.category-button:active {
+  box-shadow: none !important;
+}
+
+/* CATEGORY DROPDOWN */
+.category-dropdown {
+  color: #292B28 !important;
+  background-color: transparent !important;
+  border-color: #292B28 !important;
+  border-radius: 18px;
+  width: 160px;
+  text-align: left !important;
+  padding-left: 20px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.category-dropdown:hover,
+.category-dropdown:focus,
+.category-dropdown:active,
+.category-dropdown.show {
+  color: #292B28 !important;
+  background-color: transparent !important;
+  border-color: #292B28 !important;
+  box-shadow: none !important;
+}
+
+/* CATEGORY DROPDOWN OPTIONS */
+.category-dropdown-option {
+  background-color: #EDE4DA !important;
+  color: #292B28 !important;
+  border: 1px solid #d4cbbf !important;
+  border-radius: 18px;
+  width: 160px;
+  text-align: left !important;
+  padding: 10px 10px !important;
+  overflow: hidden;
+}
+
+/* Normal dropdown item */
+.category-dropdown-option .dropdown-item {
+  background-color: transparent !important;
+  color: #292B28 !important;
+  border-radius: 5px;
+}
+
+/* Hover and keyboard focus */
+.category-dropdown-option .dropdown-item:hover,
+.category-dropdown-option .dropdown-item:focus {
+  background-color: #dcd9c8 !important;
+  color: #292B28 !important;
+}
+
+/* Selected item - remove Bootstrap blue */
+.category-dropdown-option .dropdown-item.active,
+.category-dropdown-option .dropdown-item:active {
+  background-color: #A7B894 !important;
+  color: #292B28 !important;
+}
+
+/* Remove Bootstrap focus outline/shadow */
+.category-dropdown-option .dropdown-item:focus-visible {
+  outline: 2px solid #91A47E;
+  outline-offset: -2px;
+  box-shadow: none !important;
+}

@@ -8,6 +8,11 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import { isFavorite, readFavorites, toggleFavorite } from "../favorites.js";
+import {
+  addToCart,
+  getCart,
+  removeFromCart,
+} from "../../components/AddToCartItems.jsx";
 import "./ProductDetails.css";
 
 const API_URL = "http://localhost:5000/api";
@@ -30,12 +35,17 @@ function getName(item) {
 
 // Get the product image
 function getImage(item) {
-  return (
+  const image =
     item?.image ||
     item?.imageUrl ||
     item?.img ||
-    "/product-images/product 1.png"
-  );
+    "/product-images/product 1.png";
+
+  if (image.startsWith("http://") || image.startsWith("https://")) {
+    return image;
+  }
+
+  return `http://localhost:5000${image.startsWith("/") ? "" : "/"}${image}`;
 }
 
 // Get and format the product price
@@ -48,9 +58,26 @@ function formatPrice(item) {
   return `₱${getPrice(item).toLocaleString("en-PH")}`;
 }
 
-// Format category text for the badge.
+// Format category text for the badge
 function getCategory(item) {
   return typeof item?.category === "string" ? item.category.trim() : "";
+}
+
+// Format product status
+function getProductStatus(item) {
+  return typeof item?.productStatus === "string"
+    ? item.productStatus.trim()
+    : "";
+}
+
+// Capitalize product tags for display
+function formatLabel(value) {
+  if (typeof value !== "string" || !value.trim()) return "";
+
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function ProductDetails() {
@@ -58,7 +85,7 @@ function ProductDetails() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Breadcrumb section names.
+  // Breadcrumb section names
   const categoryNames = {
     "/men": "Men",
     "/women": "Women",
@@ -69,17 +96,44 @@ function ProductDetails() {
   const sectionPath = location.state?.from || "/";
   const sectionName = categoryNames[sectionPath] || "Shop";
 
-  // Product and page states.
+  // Product and page states
   const [shoe, setShoe] = useState(null);
   const [allShoes, setAllShoes] = useState([]);
-  const [selectedSize, setSelectedSize] = useState(7);
-  const [selectedColor, setSelectedColor] = useState(0);
+  const [selectedSize, setSelectedSize] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cartMessage, setCartMessage] = useState("");
   const [addingToCart, setAddingToCart] = useState(false);
   const [favorites, setFavorites] = useState(readFavorites);
-  const colorOptions = ["Olive", "Dark Olive"];
+
+  // Track products currently saved in the cart
+  const [cartItems, setCartItems] = useState(() =>
+    getCart().map((item) => item._id),
+  );
+
+  // Available sizes from the selected shoe
+  const availableSizes = Array.isArray(shoe?.sizes) ? shoe.sizes : [];
+
+  // Actual color saved for this shoe
+  const shoeColor =
+    typeof shoe?.color === "string" && shoe.color.trim()
+      ? shoe.color.trim()
+      : "Not specified";
+
+  // Keep the cart display updated when another component changes the cart
+  useEffect(() => {
+    const updateCartItems = () => {
+      setCartItems(getCart().map((item) => item._id));
+    };
+
+    window.addEventListener("cartUpdated", updateCartItems);
+    window.addEventListener("storage", updateCartItems);
+
+    return () => {
+      window.removeEventListener("cartUpdated", updateCartItems);
+      window.removeEventListener("storage", updateCartItems);
+    };
+  }, []);
 
   useEffect(() => {
     const updateFavorites = () => setFavorites(readFavorites());
@@ -94,49 +148,75 @@ function ProductDetails() {
   }, []);
 
   useEffect(() => {
+    if (!cartMessage) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setCartMessage("");
+    }, 2000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [cartMessage]);
+
+  useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [id]);
+
+  // Set the first available size when the product loads
+  useEffect(() => {
+    if (availableSizes.length > 0) {
+      setSelectedSize(availableSizes[0]);
+    } else {
+      setSelectedSize(null);
+    }
+  }, [shoe]);
 
   function handleFavorite(item) {
     setFavorites(toggleFavorite(item));
   }
 
-  async function handleAddToCart(item) {
-    setAddingToCart(true);
-    setCartMessage("");
-
-    try {
-      await axios.post(`${API_URL}/orders`, {
-        orderReference: `ORD-${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2, 8)}`,
-        items: [
-          {
-            shoeId: item._id,
-            quantity: 1,
-            size: selectedSize,
-            color: colorOptions[selectedColor],
-          },
-        ],
-      });
-      setCartMessage(`${getName(item)} added to your cart.`);
-    } catch (err) {
-      console.error("Unable to add shoe to cart:", err);
-      setCartMessage(
-        err.response?.data?.message ||
-          "Unable to add this shoe to your cart. Please try again.",
-      );
-    } finally {
-      setAddingToCart(false);
+  // Add the main product to the same local cart used by the Men page
+  function handleAddToCart(item) {
+    if (selectedSize === null) {
+      setCartMessage("Please select an available size first.");
+      return;
     }
+
+    const updatedCart = addToCart({
+      ...item,
+      size: selectedSize,
+      color: shoeColor,
+    });
+
+    setCartItems(updatedCart.map((cartItem) => cartItem._id));
+    setCartMessage(`${getName(item)} added to your cart.`);
   }
 
-  // Fetch the selected product and other products.
+  // Add or remove a recommended product, following the Men page behavior
+  function handleRecommendationCart(item) {
+    const savedCart = getCart();
+    const alreadyAdded = savedCart.some(
+      (cartItem) => cartItem._id === item._id,
+    );
+
+    let updatedCart;
+
+    if (alreadyAdded) {
+      updatedCart = removeFromCart(item._id);
+      setCartMessage(`${getName(item)} removed from your cart.`);
+    } else {
+      updatedCart = addToCart(item);
+      setCartMessage(`${getName(item)} added to your cart.`);
+    }
+
+    setCartItems(updatedCart.map((cartItem) => cartItem._id));
+  }
+
+  // Fetch the selected product and other products
   useEffect(() => {
     let cancelled = false;
 
     async function fetchSingleShoe() {
-      return axios.get(`http://localhost:5000/api/single/${id}`);
+      return axios.get(`${API_URL}/single/${id}`);
     }
 
     async function fetchShoes() {
@@ -230,11 +310,15 @@ function ProductDetails() {
         {/* Main product image */}
         <div className="product-image-container">
           <div className="product-badges">
-            <span className="product-badge">NEW</span>
+            {getProductStatus(shoe) && (
+              <span className="product-badge">
+                {formatLabel(getProductStatus(shoe))}
+              </span>
+            )}
 
             {getCategory(shoe) && (
               <span className="product-category-badge">
-                {getCategory(shoe)}
+                {formatLabel(getCategory(shoe))}
               </span>
             )}
           </div>
@@ -245,7 +329,7 @@ function ProductDetails() {
             className="product-image"
             onError={(event) => {
               event.currentTarget.onerror = null;
-              event.currentTarget.src = "/placeholder-shoe.png";
+              event.currentTarget.src = "/product-images/product 1.png";
             }}
           />
         </div>
@@ -264,58 +348,36 @@ function ProductDetails() {
 
           <div className="product-divider" />
 
-          {/* Color selection */}
+          {/* Actual product color */}
           <div className="option-heading">
             <span>Color</span>
 
-            <span className="selected-color-label">
-              {colorOptions[selectedColor]}
-            </span>
+            <span className="selected-color-label">{shoeColor}</span>
           </div>
 
-          <div className="color-options">
-            <button
-              type="button"
-              aria-label="Olive"
-              aria-pressed={selectedColor === 0}
-              className={`color-swatch olive-swatch ${
-                selectedColor === 0 ? "selected" : ""
-              }`}
-              onClick={() => setSelectedColor(0)}
-            >
-              <span className="color-swatch-fill" />
-            </button>
-
-            <button
-              type="button"
-              aria-label="Dark Olive"
-              aria-pressed={selectedColor === 1}
-              className={`color-swatch dark-olive-swatch ${
-                selectedColor === 1 ? "selected" : ""
-              }`}
-              onClick={() => setSelectedColor(1)}
-            >
-              <span className="color-swatch-fill" />
-            </button>
-          </div>
-
-          {/* Size selection */}
-          <div className="size-heading">Size</div>
+          {/* Size selection from the database */}
+          <div className="size-heading">Available Sizes</div>
 
           <div className="size-options">
-            {[7, 8, 9, 10].map((size) => (
-              <button
-                type="button"
-                key={size}
-                aria-pressed={selectedSize === size}
-                className={`size-button ${
-                  selectedSize === size ? "active" : ""
-                }`}
-                onClick={() => setSelectedSize(size)}
-              >
-                {size}
-              </button>
-            ))}
+            {availableSizes.length > 0 ? (
+              availableSizes.map((size) => (
+                <button
+                  type="button"
+                  key={size}
+                  aria-pressed={selectedSize === size}
+                  className={`size-button ${
+                    selectedSize === size ? "active" : ""
+                  }`}
+                  onClick={() => setSelectedSize(size)}
+                >
+                  {size}
+                </button>
+              ))
+            ) : (
+              <p className="no-sizes-message">
+                No available sizes for this shoe.
+              </p>
+            )}
           </div>
 
           {/* Product actions */}
@@ -323,7 +385,7 @@ function ProductDetails() {
             <button
               type="button"
               className="add-to-cart-button"
-              disabled={addingToCart}
+              disabled={addingToCart || availableSizes.length === 0}
               onClick={() => handleAddToCart(shoe)}
             >
               {addingToCart ? "Adding..." : "Add to Cart"}
@@ -340,6 +402,7 @@ function ProductDetails() {
               <span aria-hidden="true">
                 {isFavorite(favorites, shoe) ? "♥" : "♡"}
               </span>
+
               {isFavorite(favorites, shoe) ? "Saved" : "Save"}
             </button>
           </div>
@@ -359,90 +422,101 @@ function ProductDetails() {
         <h2 className="recommendations-title">YOU MAY ALSO LIKE</h2>
 
         <div className="recommendations-grid">
-          {recommendations.map((item, index) => (
-            <article className="recommendation-card" key={item._id}>
-              <div
-                className="recommendation-image-container"
-                role="link"
-                tabIndex={0}
-                onClick={() => viewShoe(item._id)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    viewShoe(item._id);
-                  }
-                }}
-              >
-                <span className="recommendation-badge">
-                  {index % 2 === 0 ? "NEW" : "POPULAR"}
-                </span>
+          {recommendations.map((item) => {
+            const itemIsInCart = cartItems.includes(item._id);
 
-                <div className="recommendation-icons">
-                  <button
-                    type="button"
-                    aria-label={`${
-                      isFavorite(favorites, item) ? "Remove" : "Add"
-                    } ${getName(item)} ${
-                      isFavorite(favorites, item) ? "from" : "to"
-                    } favorites`}
-                    aria-pressed={isFavorite(favorites, item)}
-                    className={isFavorite(favorites, item) ? "favorite" : ""}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleFavorite(item);
-                    }}
-                  >
-                    <FontAwesomeIcon
-                      icon={
-                        isFavorite(favorites, item)
-                          ? faHeartSolid
-                          : faHeartRegular
-                      }
-                    />
-                  </button>
+            return (
+              <article className="recommendation-card" key={item._id}>
+                <div
+                  className="recommendation-image-container"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => viewShoe(item._id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      viewShoe(item._id);
+                    }
+                  }}
+                >
+                  <span className="recommendation-badge">
+                    {getProductStatus(item)
+                      ? formatLabel(getProductStatus(item))
+                      : "New"}
+                  </span>
 
-                  <button
-                    type="button"
-                    className="quick-add-button"
-                    aria-label={`Add ${getName(item)} to cart`}
-                    disabled={addingToCart}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleAddToCart(item);
+                  <div className="recommendation-icons">
+                    <button
+                      type="button"
+                      aria-label={`${
+                        isFavorite(favorites, item) ? "Remove" : "Add"
+                      } ${getName(item)} ${
+                        isFavorite(favorites, item) ? "from" : "to"
+                      } favorites`}
+                      aria-pressed={isFavorite(favorites, item)}
+                      className={isFavorite(favorites, item) ? "favorite" : ""}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleFavorite(item);
+                      }}
+                    >
+                      <FontAwesomeIcon
+                        icon={
+                          isFavorite(favorites, item)
+                            ? faHeartSolid
+                            : faHeartRegular
+                        }
+                      />
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`quick-add-button ${
+                        itemIsInCart ? "added" : ""
+                      }`}
+                      aria-label={`${
+                        itemIsInCart ? "Remove" : "Add"
+                      } ${getName(item)} ${itemIsInCart ? "from" : "to"} cart`}
+                      aria-pressed={itemIsInCart}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleRecommendationCart(item);
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faPlus} size="sm" />
+                    </button>
+                  </div>
+
+                  <img
+                    src={getImage(item)}
+                    alt={getName(item)}
+                    className="recommendation-image"
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = "/product-images/product 1.png";
                     }}
-                  >
-                    <FontAwesomeIcon icon={faPlus} size="sm" />
-                  </button>
+                  />
                 </div>
 
-                <img
-                  src={getImage(item)}
-                  alt={getName(item)}
-                  className="recommendation-image"
-                  onError={(event) => {
-                    event.currentTarget.onerror = null;
-                    event.currentTarget.src = "/placeholder-shoe.png";
-                  }}
-                />
-              </div>
+                <div className="recommendation-meta">
+                  <span>{formatLabel(item.brand || item.gender || sectionName)}</span>
 
-              <div className="recommendation-meta">
-                <span>{item.gender || sectionName}</span>
+                  <span>{formatPrice(item)}</span>
+                </div>
 
-                <span>{formatPrice(item)}</span>
-              </div>
-
-              <button
-                type="button"
-                className="recommendation-name"
-                onClick={() => viewShoe(item._id)}
-              >
-                {getName(item)}
-              </button>
-            </article>
-          ))}
+                <button
+                  type="button"
+                  className="recommendation-name"
+                  onClick={() => viewShoe(item._id)}
+                >
+                  {getName(item)}
+                </button>
+              </article>
+            );
+          })}
         </div>
       </section>
     </main>
   );
 }
+
 export default ProductDetails;

@@ -137,7 +137,7 @@
 
 .admin-page .admin-table {
   width: 100%;
-  min-width: 1000px;
+  min-width: 1280px;
   margin-bottom: 0;
   border: none;
   --bs-table-bg: #ffffff;
@@ -207,6 +207,15 @@
 
 .admin-cell-tag {
   text-transform: capitalize;
+}
+
+.admin-cell-capitalize {
+  text-transform: capitalize;
+}
+
+.admin-cell-sizes {
+  max-width: 150px;
+  white-space: normal;
 }
 
 .admin-th-actions {
@@ -304,6 +313,12 @@
 
 .admin-field:last-child {
   margin-bottom: 0;
+}
+
+.admin-modal-body .admin-field .form-control[readonly] {
+  background-color: #f6f7f4;
+  border-color: #e1e4dd;
+  color: #697067;
 }
 
 .admin-field .form-label {

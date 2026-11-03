@@ -21,6 +21,7 @@ import {
   getSingleShoe,
   getWomenShoes,
   updateById,
+  restoreById,
 } from "../controllers/shoeController.js";
 
 import {
@@ -88,6 +89,13 @@ router.delete(
 );
 
 router.delete("/:id", verifyToken, allowRoles("admin"), deleteById);
+
+router.patch(
+  "/restore/:id",
+  verifyToken,
+  allowRoles("admin", "representative"),
+  restoreById,
+);
 
 router.get(
   "/orders",

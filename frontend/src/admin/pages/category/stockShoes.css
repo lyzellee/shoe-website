@@ -48,6 +48,121 @@
   gap: 13px;
 }
 
+.inventory-view-row {
+  margin: -15px 0 18px;
+  position: relative;
+  z-index: 5;
+}
+
+.inventory-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inventory-toolbar-control {
+  position: relative;
+}
+
+.inventory-tool-btn {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid #e2e4de;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #666b61;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  transition: 0.2s ease;
+}
+
+.inventory-tool-btn:hover,
+.inventory-tool-btn.active {
+  border-color: #91a47e;
+  color: #7e916c;
+  background: #f7f9f4;
+}
+
+.inventory-export-btn {
+  color: #6f805f;
+}
+
+.inventory-trashed-btn {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 13px;
+  border: 1px solid #e2e4de;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #7b8075;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.inventory-trashed-btn.active {
+  color: #ffffff;
+  background: #91a47e;
+  border-color: #91a47e;
+}
+
+.inventory-popover {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  min-width: 220px;
+  padding: 14px;
+  border: 1px solid #e5e7e1;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(52, 57, 52, 0.14);
+  z-index: 20;
+}
+
+.inventory-sort-popover .form-label,
+.inventory-filter-popover .form-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #555b51;
+}
+
+.inventory-sort-popover .form-select,
+.inventory-filter-popover .form-select {
+  height: 38px;
+  font-size: 12px;
+  border-color: #dfe2db;
+  border-radius: 7px;
+  box-shadow: none;
+}
+
+.inventory-filter-popover {
+  min-width: 410px;
+}
+
+.inventory-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.inventory-clear-filter {
+  margin-top: 12px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #7e916c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .admin-search {
   width: 218px;
   height: 36px;
@@ -244,6 +359,45 @@
   margin-left: 7px;
 }
 
+.admin-icon-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  margin: 0 3px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-icon-btn:hover {
+  transform: translateY(-1px);
+}
+
+.admin-icon-btn-update {
+  border: 1px solid #91a47e;
+  color: #ffffff;
+  background: #91a47e;
+}
+
+.admin-icon-btn-update:hover {
+  border-color: #7e916c;
+  background: #7e916c;
+}
+
+.admin-icon-btn-delete {
+  border: 1px solid #e6bebe;
+  color: #c75b5b;
+  background: #ffffff;
+}
+
+.admin-icon-btn-delete:hover {
+  border-color: #c75b5b;
+  color: #ffffff;
+  background: #c75b5b;
+}
+
 /* Update */
 
 .admin-page .admin-btn-update {
@@ -305,14 +459,62 @@
 
 .admin-modal-body {
   padding: 22px 24px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 16px;
+  row-gap: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.admin-modal-body .admin-field {
+  width: 100%;
+  min-width: 0;
+}
+
+.admin-modal-body .admin-field .form-control,
+.admin-modal-body .admin-field .form-select {
+  width: 100%;
+  height: 48px;
+  min-height: 48px;
+  box-sizing: border-box;
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: #444944;
+}
+
+.admin-modal-body .admin-field .form-select {
+  padding: 10px 13px;
+}
+
+.admin-modal-body .admin-field textarea.form-control {
+  height: 48px;
+  min-height: 48px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  line-height: 24px;
+  overflow: hidden;
+  resize: none;
+}
+
+.admin-modal {
+  max-width: 760px;
 }
 
 .admin-field {
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
-.admin-field:last-child {
-  margin-bottom: 0;
+.admin-field-full {
+  grid-column: 1 / -1;
+}
+
+.admin-modal .admin-field textarea {
+  height: 48px;
+  min-height: 48px;
+  line-height: 24px;
+  resize: none;
 }
 
 .admin-modal-body .admin-field .form-control[readonly] {
@@ -322,13 +524,54 @@
 }
 
 .admin-field .form-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #555555;
   margin-bottom: 7px;
 }
 
-.admin-field .form-control {
+.admin-delete-modal {
+  max-width: 430px;
+}
+
+.admin-delete-modal-body {
+  padding-top: 24px;
+  padding-bottom: 24px;
+  text-align: center;
+}
+
+.admin-delete-modal-body p {
+  margin-bottom: 6px;
+  color: #343934;
+}
+
+.admin-delete-modal-body span {
+  color: #858a80;
+  font-size: 12px;
+}
+
+.admin-delete-cancel-btn,
+.admin-delete-confirm-btn {
+  min-width: 90px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-delete-cancel-btn {
+  border: 1px solid #dfe3da;
+  color: #60665d;
+  background: #ffffff;
+}
+
+.admin-delete-confirm-btn {
+  border: 1px solid #c75b5b;
+  color: #ffffff;
+  background: #c75b5b;
+}
+
+.admin-field .form-control,
+.admin-field .form-select {
   height: 42px;
   font-size: 13px;
   padding: 10px 13px;
@@ -337,7 +580,8 @@
   box-shadow: none;
 }
 
-.admin-field .form-control:focus {
+.admin-field .form-control:focus,
+.admin-field .form-select:focus {
   border-color: #91a47e;
   box-shadow: 0 0 0 3px rgba(145, 164, 126, 0.12);
 }

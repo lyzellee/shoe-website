@@ -9,8 +9,15 @@ const escapeRegex = (value) =>
 const parseSizes = (sizes) => {
   if (sizes === undefined) return undefined;
 
-  const parsedSizes =
-    typeof sizes === "string" ? JSON.parse(sizes) : sizes;
+  let parsedSizes = sizes;
+
+  if (typeof sizes === "string") {
+    try {
+      parsedSizes = JSON.parse(sizes);
+    } catch {
+      parsedSizes = sizes.split(",").map((size) => size.trim());
+    }
+  }
 
   if (
     !Array.isArray(parsedSizes) ||
@@ -194,7 +201,12 @@ export const createShoe = async (req, res) => {
 
 export const getAllShoes = async (req, res) => {
   try {
-    const shoes = await Shoe.find();
+    const showDeleted = req.query.deleted === "true";
+    const shoes = await Shoe.find(
+      showDeleted
+        ? { isDeleted: true }
+        : { isDeleted: { $ne: true } },
+    ).sort({ updatedAt: -1 });
     res.status(200).json(shoes);
   } catch (err) {
     res.status(500).json({
@@ -208,6 +220,7 @@ export const getMenShoes = async (req, res) => {
     const { category } = req.params;
     const menShoes = await Shoe.find({
       gender: "men",
+      isDeleted: { $ne: true },
     });
     res.status(200).json(menShoes);
   } catch (err) {
@@ -221,6 +234,7 @@ export const getWomenShoes = async (req, res) => {
   try {
     const womenShoes = await Shoe.find({
       gender: "women",
+      isDeleted: { $ne: true },
     });
     console.log("Women's shoes fetched successfully:", womenShoes);
     res.status(200).json(womenShoes);
@@ -242,8 +256,12 @@ export const deleteById = async (req, res) => {
       });
     }
 
-    // STEP 2: Find and delete shoe
-    const deletedShoe = await Shoe.findByIdAndDelete(id);
+    // STEP 2: Soft-delete the shoe
+    const deletedShoe = await Shoe.findByIdAndUpdate(
+      id,
+      { isDeleted: true, deletedAt: new Date() },
+      { returnDocument: "after" },
+    );
 
     // STEP 3: Check if shoe exists
     if (!deletedShoe) {
@@ -260,6 +278,39 @@ export const deleteById = async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       message: "Error deleting shoe",
+    });
+  }
+};
+
+export const restoreById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid shoe ID",
+      });
+    }
+
+    const restoredShoe = await Shoe.findByIdAndUpdate(
+      id,
+      { isDeleted: false, deletedAt: null },
+      { returnDocument: "after" },
+    );
+
+    if (!restoredShoe) {
+      return res.status(404).json({
+        message: "Shoe not found",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Shoe restored successfully",
+      data: restoredShoe,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "Error restoring shoe",
     });
   }
 };
@@ -506,7 +557,10 @@ export const getSingleShoe = async (req, res) => {
     }
 
     // STEP 2: Find shoe in database
-    const shoe = await Shoe.findById(id);
+    const shoe = await Shoe.findOne({
+      _id: id,
+      isDeleted: { $ne: true },
+    });
 
     // STEP 3: Check if shoe exists
     if (!shoe) {

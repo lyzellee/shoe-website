@@ -150,7 +150,7 @@ export default function Cart() {
                                 onChange={(event) => setEditSize(event.target.value)}
                               >
                                 <option value="">Select size</option>
-                                {(Array.isArray(shoe.sizes) ? shoe.sizes : ["6", "7", "8", "9", "10", "11"]).map((size) => (
+                                {(Array.isArray(shoe.sizes) ? shoe.sizes : ["4", "5", "6", "7", "8", "9", "10", "11", "12"]).map((size) => (
                                   <option key={size} value={size}>{size}</option>
                                 ))}
                               </select>

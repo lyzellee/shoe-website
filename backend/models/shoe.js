@@ -64,6 +64,17 @@ const shoeSchema = new mongoose.Schema(
       default: "",
     },
 
+    // Soft-delete fields
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
     // Total stock quantity
     stock: {
       type: Number,
@@ -86,4 +97,3 @@ shoeSchema.index(
 );
 
 export default mongoose.model("Shoe", shoeSchema);
-

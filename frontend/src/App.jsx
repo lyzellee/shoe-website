@@ -34,10 +34,10 @@ import Footer from "./components/Footer";
 function AppContent() {
   const location = useLocation();
 
-  // Hide the client Navbar on admin pages
-  const adminRoutes = ["/admin/add", "/admin/stock", "/admin/orders"];
-
-  const isAdminPage = adminRoutes.includes(location.pathname);
+  // Admin and representative pages must not use the client navbar or footer.
+  const isAdminPage =
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/representative");
 
   return (
     <>

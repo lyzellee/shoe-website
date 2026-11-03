@@ -1,16 +1,16 @@
 import { Navigate } from "react-router-dom";
 
-export default function ProtectedRoute({ children }) {
+export default function ProtectedRoute({ children, allowedRole }) {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "null");
 
-  // Walang token? Bumalik sa admin login.
+  // Walang token? Bumalik sa login page.
   if (!token) {
     return <Navigate to="/admin/login" replace />;
   }
 
-  // Hindi admin? Hindi puwedeng pumasok sa admin pages.
-  if (!user || user.role !== "admin") {
+  // Hindi tugma ang role? Hindi puwedeng pumasok.
+  if (!user || user.role !== allowedRole) {
     return <Navigate to="/" replace />;
   }
 

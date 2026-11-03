@@ -117,6 +117,9 @@ export default function stockShoes() {
                   <th>Brand</th>
                   <th>Price</th>
                   <th>Category</th>
+                  <th>Gender</th>
+                  <th>Color</th>
+                  <th>Sizes</th>
                   <th>Stocks</th>
                   <th className="admin-th-actions">Actions</th>
                 </tr>
@@ -135,6 +138,16 @@ export default function stockShoes() {
                       <td className="admin-cell-price">₱{shoe.price}</td>
 
                       <td className="admin-cell-tag">{shoe.category}</td>
+
+                      <td className="admin-cell-capitalize">{shoe.gender || "-"}</td>
+
+                      <td>{shoe.color || "-"}</td>
+
+                      <td className="admin-cell-sizes">
+                        {Array.isArray(shoe.sizes) && shoe.sizes.length > 0
+                          ? shoe.sizes.join(", ")
+                          : "-"}
+                      </td>
 
                       <td className="admin-cell-stock">{shoe.stock}</td>
 
@@ -164,7 +177,7 @@ export default function stockShoes() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="admin-empty">
+                    <td colSpan="10" className="admin-empty">
                       No shoes found.
                     </td>
                   </tr>
@@ -187,6 +200,15 @@ export default function stockShoes() {
         </Modal.Header>
 
         <Modal.Body className="admin-modal-body">
+          <Form.Group className="admin-field">
+            <Form.Label>Shoe ID</Form.Label>
+            <Form.Control
+              type="text"
+              value={selectedShoe?._id || ""}
+              readOnly
+            />
+          </Form.Group>
+
           <Form.Group className="admin-field">
             <Form.Label>Name</Form.Label>
             <Form.Control
@@ -213,6 +235,56 @@ export default function stockShoes() {
               onChange={(e) => setStock(e.target.value)}
             />
           </Form.Group>
+
+          <Form.Group className="admin-field">
+            <Form.Label>Brand</Form.Label>
+            <Form.Control
+              type="text"
+              value={selectedShoe?.brand || ""}
+              readOnly
+            />
+          </Form.Group>
+
+          <Form.Group className="admin-field">
+            <Form.Label>Category</Form.Label>
+            <Form.Control
+              type="text"
+              value={selectedShoe?.category || ""}
+              readOnly
+            />
+          </Form.Group>
+
+          <Form.Group className="admin-field">
+            <Form.Label>Gender</Form.Label>
+            <Form.Control
+              type="text"
+              value={selectedShoe?.gender || ""}
+              readOnly
+            />
+          </Form.Group>
+
+          <Form.Group className="admin-field">
+            <Form.Label>Color</Form.Label>
+            <Form.Control
+              type="text"
+              value={selectedShoe?.color || ""}
+              readOnly
+            />
+          </Form.Group>
+
+          <Form.Group className="admin-field">
+            <Form.Label>Sizes</Form.Label>
+            <Form.Control
+              type="text"
+              value={
+                Array.isArray(selectedShoe?.sizes) && selectedShoe.sizes.length > 0
+                  ? selectedShoe.sizes.join(", ")
+                  : "-"
+              }
+              readOnly
+            />
+          </Form.Group>
+
         </Modal.Body>
 
         <Modal.Footer className="admin-modal-footer">

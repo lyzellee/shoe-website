@@ -30,7 +30,7 @@ export default function AdminLogin() {
 
       // Admin lang ang puwedeng pumasok sa admin dashboard.
       if (data.user.role !== "admin" && data.user.role !== "representative") {
-        setError("Access denied. Admin account required.");
+        setError("Access denied. Unauthorized account.");
         return;
       }
 
@@ -45,14 +45,14 @@ export default function AdminLogin() {
         navigate("/representative/dashboard", { replace: true });
       }
     } catch (error) {
+      console.log("Error:", error);
       setError("Cannot connect to server. Check your backend.");
     }
   };
 
   return (
     <div className="container mt-5" style={{ maxWidth: "400px" }}>
-      <h2>Admin Login</h2>
-
+      <h2>Account Login</h2>
       <form onSubmit={handleLogin}>
         <div className="mb-3">
           <label className="form-label">Email</label>

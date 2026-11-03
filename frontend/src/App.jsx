@@ -29,6 +29,7 @@ import Women from "./client/pages/Women.jsx";
 
 // Components
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 function AppContent() {
   const location = useLocation();
@@ -87,6 +88,7 @@ function AppContent() {
           element={<RepresentativeDashboard />}
         />
       </Routes>
+      {!isAdminPage && <Footer />}
     </>
   );
 }

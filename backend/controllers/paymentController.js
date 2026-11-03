@@ -282,6 +282,7 @@ export const createPayment = async (req, res) => {
   }
 };
 export const getPaymentStatus = async (req, res) => {
+  const session = await mongoose.startSession();
   try {
     // STEP 1: Kunin ang Payment Intent ID mula sa URL.
     const { paymentIntentId } = req.params;
@@ -327,13 +328,22 @@ export const getPaymentStatus = async (req, res) => {
 
     const paymentStatus = result.data.attributes.status;
 
+    if (["succeeded", "failed", "canceled"].includes(paymentStatus)) {
+      session.startTransaction();
+    }
     // STEP 5: Hanapin ang payment record sa MongoDB.
-    const payment = await Payment.findOne({
+    const paymentQuery = Payment.findOne({
       paymentIntentId: paymentIntentId,
-    }).populate("orderId");
+    });
+
+    const payment = session.inTransaction()
+      ? await paymentQuery.session(session)
+      : await paymentQuery;
 
     // Kapag walang local payment record.
     if (!payment) {
+      await session.abortTransaction();
+
       return res.status(404).json({
         message: "Payment record not found",
       });
@@ -341,6 +351,17 @@ export const getPaymentStatus = async (req, res) => {
 
     // Siguraduhing umiiral pa ang order na konektado sa payment.
     if (!payment.orderId) {
+      await session.abortTransaction();
+
+      return res.status(404).json({
+        message: "Associated order not found",
+      });
+    }
+    const order = await Order.findById(payment.orderId).session(session);
+
+    if (!order) {
+      await session.abortTransaction();
+
       return res.status(404).json({
         message: "Associated order not found",
       });
@@ -349,31 +370,45 @@ export const getPaymentStatus = async (req, res) => {
     // STEP 6: Kapag successful ang payment.
     if (paymentStatus === "succeeded") {
       payment.paymentStatus = "completed";
-      await payment.save();
-
-      await Order.findByIdAndUpdate(payment.orderId, {
-        paymentStatus: "completed",
-        orderStatus: "processing",
-      });
+      await payment.save({ session });
+      await Order.findByIdAndUpdate(
+        payment.orderId,
+        {
+          paymentStatus: "completed",
+          orderStatus: "processing",
+        },
+        { session },
+      );
     }
 
     // STEP 7: Kapag failed o canceled ang payment.
     else if (paymentStatus === "failed" || paymentStatus === "canceled") {
       payment.paymentStatus = "failed";
-      await payment.save();
-
-      await Order.findByIdAndUpdate(payment.orderId, {
-        paymentStatus: "failed",
-      });
+      await payment.save({ session });
+      await Order.findByIdAndUpdate(
+        payment.orderId,
+        {
+          paymentStatus: "failed",
+        },
+        { session },
+      );
     }
-
+    if (session.inTransaction()) {
+      await session.commitTransaction();
+    }
     // STEP 8: Ibalik ang PayMongo response sa frontend.
     return res.status(200).json(result);
   } catch (err) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+
     console.error("Get payment status error:", err);
 
     return res.status(500).json({
       message: "Internal server error",
     });
+  } finally {
+    await session.endSession();
   }
 };

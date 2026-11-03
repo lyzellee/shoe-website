@@ -3,6 +3,17 @@ import { verifyToken, allowRoles } from "../middleware/authMiddleware.js";
 import upload from "../middleware/upload.js";
 
 import {
+  createTesterFeedback,
+  getAllTesterFeedback,
+  deleteTesterFeedback,
+} from "../controllers/testerFeedbackController.js";
+
+import {
+  createUserFeedback,
+  getAllUserFeedback,
+  deleteUserFeedback,
+} from "../controllers/userFeedbackController.js";
+import {
   createShoe,
   deleteById,
   getAllShoes,
@@ -34,6 +45,15 @@ router.get("/men", getMenShoes);
 router.get("/women", getWomenShoes);
 router.post("/orders", createOrder);
 router.get("/single/:id", getSingleShoe);
+//user-feedback
+router.post("/create-userfb", createUserFeedback);
+router.get("/get-userfb", getAllUserFeedback);
+router.delete("/delete-userfb", deleteUserFeedback);
+
+//tester-feedback
+router.post("/create-testfb", createTesterFeedback);
+router.get("/get-testfb", getAllTesterFeedback);
+router.delete("/delete-testfb/:id", deleteTesterFeedback);
 
 // admin
 router.put(
@@ -77,7 +97,13 @@ router.get(
 );
 
 // Create shoe with image upload
-router.post("/shoes", verifyToken, allowRoles("admin"), upload.single("image"), createShoe);
+router.post(
+  "/shoes",
+  verifyToken,
+  allowRoles("admin"),
+  upload.single("image"),
+  createShoe,
+);
 router.post("/login", login);
 router.post("/register", verifyToken, allowRoles("admin"), registerUser);
 

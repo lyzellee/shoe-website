@@ -58,7 +58,7 @@ function AppContent() {
           <Route
             path="/admin/add"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRole="admin">
                 <AddShoes />
               </ProtectedRoute>
             }
@@ -67,7 +67,7 @@ function AppContent() {
           <Route
             path="/admin/stock"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRole="admin">
                 <StockShoe />
               </ProtectedRoute>
             }
@@ -76,7 +76,7 @@ function AppContent() {
           <Route
             path="/admin/orders"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRole="admin">
                 <Orders />
               </ProtectedRoute>
             }

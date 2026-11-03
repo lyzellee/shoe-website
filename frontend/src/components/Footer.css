@@ -1,0 +1,94 @@
+.site-footer {
+  margin-top: 60px;
+  border-top: 1px solid #bfb7aa;
+  background: #f1eee6;
+  color: #292b28;
+}
+
+.site-footer-inner {
+  width: min(1180px, 86%);
+  margin: 0 auto;
+  padding: 34px 0;
+  display: grid;
+  grid-template-columns: 2fr 0.7fr 0.9fr 1.8fr;
+  gap: 54px;
+}
+
+.footer-brand a {
+  display: inline-block;
+  margin-bottom: 22px;
+  color: #292b28;
+  font-size: 17px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.site-footer p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.footer-column {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.footer-column h3,
+.footer-newsletter h3 {
+  margin: 0 0 8px;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.footer-column a {
+  color: #292b28;
+  font-size: 10px;
+  text-decoration: none;
+}
+
+.footer-newsletter p {
+  margin-bottom: 20px;
+  color: #68645d;
+}
+
+.footer-newsletter form label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.footer-newsletter form div {
+  display: flex;
+  border-bottom: 1px solid #292b28;
+}
+
+.footer-newsletter input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font-size: 10px;
+  outline: none;
+}
+
+.footer-newsletter button {
+  border: 0;
+  background: transparent;
+  font-size: 10px;
+}
+
+@media (max-width: 767px) {
+  .site-footer-inner {
+    width: 90%;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+  }
+
+  .footer-brand,
+  .footer-newsletter {
+    grid-column: 1 / -1;
+  }
+}

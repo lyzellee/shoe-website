@@ -26,6 +26,7 @@ import Men from "./client/pages/Men.jsx";
 import ProductDetails from "./client/pages/ProductDetails.jsx";
 import Wishlist from "./client/pages/Wishlist.jsx";
 import Women from "./client/pages/Women.jsx";
+import Feedback from "./client/pages/Feedback.jsx";
 
 // Components
 import Navbar from "./components/Navbar";
@@ -52,6 +53,7 @@ function AppContent() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/product/:id" element={<ProductDetails />} />
+        <Route path="/feedback" element={<Feedback />} />
 
         {/* Admin Pages with Shared Sidebar */}
         <Route element={<AdminLayout />}>
@@ -85,7 +87,11 @@ function AppContent() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route
           path="/representative/dashboard"
-          element={<RepresentativeDashboard />}
+          element={
+            <ProtectedRoute allowedRole="representative">
+              <RepresentativeDashboard />
+            </ProtectedRoute>
+          }
         />
       </Routes>
       {!isAdminPage && <Footer />}

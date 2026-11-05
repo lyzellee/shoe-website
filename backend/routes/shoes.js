@@ -49,7 +49,8 @@ router.get("/single/:id", getSingleShoe);
 //user-feedback
 router.post("/create-userfb", createUserFeedback);
 router.get("/get-userfb", getAllUserFeedback);
-router.delete("/delete-userfb", deleteUserFeedback);
+
+router.delete("/delete-userfb/:id", deleteUserFeedback);
 
 //tester-feedback
 router.post("/create-testfb", createTesterFeedback);

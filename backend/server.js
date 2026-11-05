@@ -4,12 +4,18 @@ import cors from "cors";
 import path from "path";
 import connectDB from "./config/db.js";
 import shoeRoutes from "./routes/shoes.js";
+import helmet from "helmet";
 
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+  }),
+);
 app.use(express.json());
+app.use(helmet());
 
 // Serve uploaded shoe images
 app.use("/uploads", express.static(path.resolve("uploads")));

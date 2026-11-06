@@ -5,7 +5,9 @@ import path from "path";
 import connectDB from "./config/db.js";
 import shoeRoutes from "./routes/shoes.js";
 import helmet from "helmet";
+import dotenv from "dotenv";
 
+dotenv.config();
 const app = express();
 
 // Middlewares

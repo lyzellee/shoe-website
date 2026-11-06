@@ -6,16 +6,322 @@ body,
     background-color: #f1eee6;
 }
 
+/* Carousel shell ------------------------------------------------------- */
+
 .hero-carousel {
+  position: relative;
+  overflow: hidden;
   background-color: #f1eee6;
 }
 
+.hero-carousel .carousel-inner {
+  background-color: #f1eee6;
+}
+
+.hero-carousel .carousel-item {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: calc(100vh - 48px);
+  background-color: #f1eee6;
+}
+
+/* Full-bleed image layer ---------------------------------------------- */
+
+.hero-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.hero-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Fade the top of the two photos that contain artwork text so the
+   kicker and headline stay clean and those letters recede */
+.hero-image::before {
+  content: "";
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero-slide-featured .hero-image::before,
+.hero-slide-women .hero-image::before {
+  display: block;
+  background: linear-gradient(
+    180deg,
+    rgba(241, 238, 230, 0.22) 0%,
+    rgba(241, 238, 230, 0.12) 38%,
+    rgba(241, 238, 230, 0) 62%
+  );
+}
+
+.hero-slide-featured .hero-image::before {
+  background: linear-gradient(
+    180deg,
+    rgba(241, 238, 230, 0.18) 0%,
+    rgba(241, 238, 230, 0.08) 32%,
+    rgba(241, 238, 230, 0) 52%
+  );
+}
+
+/* Soft cream veil so the headline stays readable over the photo */
+.hero-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    #f1eee6 0%,
+    rgba(241, 238, 230, 0.98) 16%,
+    rgba(241, 238, 230, 0.94) 30%,
+    rgba(241, 238, 230, 0.82) 44%,
+    rgba(241, 238, 230, 0.5) 60%,
+    rgba(241, 238, 230, 0.12) 78%,
+    rgba(241, 238, 230, 0) 100%
+  );
+}
+
+/* Keep the shoes in the best part of each frame */
+.hero-slide-featured .hero-image img,
+.hero-slide-women .hero-image img {
+  object-position: center bottom;
+}
+
+.hero-slide-featured .hero-image img {
+  object-position: 58% center;
+}
+
+.hero-slide-featured .hero-image {
+  left: 0;
+  right: 0;
+  width: 100%;
+  background: transparent;
+}
+
+.hero-image-featured {
+  left: 50%;
+  right: auto;
+  width: 100vw;
+  transform: translateX(-50%);
+}
+
+.hero-image-featured img {
+  object-fit: cover;
+  object-position: center center;
+}
+
+.hero-image-featured::after {
+  background: linear-gradient(
+    90deg,
+    rgba(241, 238, 230, 0.82) 0%,
+    rgba(241, 238, 230, 0.68) 18%,
+    rgba(241, 238, 230, 0.38) 34%,
+    rgba(241, 238, 230, 0.08) 50%,
+    rgba(241, 238, 230, 0) 68%
+  );
+}
+
+.hero-image-women {
+  left: 50%;
+  right: auto;
+  width: 100vw;
+  transform: translateX(-50%);
+}
+
+.hero-image-women img {
+  object-fit: cover;
+  object-position: center center;
+}
+
+.hero-image-men {
+  left: 50%;
+  right: auto;
+  width: 100vw;
+  transform: translateX(-50%);
+}
+
+.hero-image-men img {
+  object-fit: cover;
+  object-position: center center;
+}
+
+.hero-image-men::after {
+  background: linear-gradient(
+    90deg,
+    rgba(239, 220, 198, 0.98) 0%,
+    rgba(239, 220, 198, 0.88) 14%,
+    rgba(239, 220, 198, 0.54) 30%,
+    rgba(239, 220, 198, 0.1) 48%,
+    rgba(239, 220, 198, 0) 62%
+  );
+}
+
+.hero-image-women::after {
+  background: linear-gradient(
+    90deg,
+    rgba(249, 234, 228, 0.98) 0%,
+    rgba(249, 234, 228, 0.88) 14%,
+    rgba(249, 234, 228, 0.58) 30%,
+    rgba(249, 234, 228, 0.12) 48%,
+    rgba(249, 234, 228, 0) 62%
+  );
+}
+
+.hero-slide-featured .hero-image::after,
+.hero-slide-featured .hero-image::before {
+  display: block;
+}
+
+.hero-slide-featured .hero-image img {
+  object-fit: cover;
+  object-position: center center;
+}
+
+.latest-drop-section {
+  padding: 100px 0 70px;
+  background: #f1eee6;
+}
+
+.latest-drop-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.latest-drop-heading p {
+  margin: 0 0 8px;
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+
+.latest-drop-heading h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.latest-drop-heading button {
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.latest-drop-heading button span {
+  margin-left: 10px;
+  font-size: 16px;
+}
+
+.latest-drop-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.latest-drop-card {
+  cursor: pointer;
+}
+
+.latest-drop-image {
+  position: relative;
+  height: 180px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #ddd9c9;
+}
+
+.latest-drop-image span {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(237, 233, 220, 0.92);
+  font-size: 9px;
+  text-transform: capitalize;
+}
+
+.latest-drop-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.25s ease;
+}
+
+.latest-drop-card:hover img {
+  transform: scale(1.03);
+}
+
+.latest-drop-card > p {
+  margin: 0 0 4px;
+  color: #77746f;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.latest-drop-card > div:last-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.latest-drop-card > div:last-child strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hero-slide-featured .hero-image::after {
+  background: linear-gradient(
+    90deg,
+    rgba(241, 238, 230, 0.98) 0%,
+    rgba(241, 238, 230, 0.92) 12%,
+    rgba(241, 238, 230, 0.68) 28%,
+    rgba(241, 238, 230, 0.22) 46%,
+    rgba(241, 238, 230, 0) 62%
+  );
+}
+
+.hero-slide-men .hero-image img {
+  object-position: center center;
+}
+
+/* Content layer ------------------------------------------------------- */
+
+.hero-container {
+  position: relative;
+  z-index: 2;
+}
+
 .hero-slide {
-  min-height: 500px;
-  padding: 50px 0;
+  position: relative;
+  z-index: 2;
+  min-height: calc(100vh - 48px);
+  padding: 60px 0;
 }
 
 .hero-content {
+  position: relative;
+  z-index: 3;
   padding: 40px;
 }
 
@@ -54,14 +360,240 @@ body,
   background-color: #7f9169 !important;
 }
 
-.hero-image {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* Controls stay above the content layer so they remain clickable */
+.hero-carousel .carousel-control-prev,
+.hero-carousel .carousel-control-next {
+  z-index: 5;
 }
 
-.hero-image img {
-  width: 90%;
-  max-width: 500px;
-  object-fit: contain;
+.hero-carousel .carousel-control-prev-icon,
+.hero-carousel .carousel-control-next-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: rgba(241, 238, 230, 0.85);
+  background-image: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+.hero-carousel .carousel-control-prev-icon::after,
+.hero-carousel .carousel-control-next-icon::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-left: 2px solid #30322d;
+  border-bottom: 2px solid #30322d;
+}
+
+.hero-carousel .carousel-control-prev-icon::after {
+  transform: rotate(45deg);
+  margin-left: 3px;
+}
+
+.hero-carousel .carousel-control-next-icon::after {
+  transform: rotate(-135deg);
+  margin-right: 3px;
+}
+
+.hero-carousel .carousel-indicators {
+  z-index: 5;
+}
+
+.hero-carousel .carousel-indicators [data-bs-target] {
+  width: 26px;
+  height: 3px;
+  border: 0;
+  margin: 0 4px;
+  background-color: #30322D;
+  opacity: 0.25;
+}
+
+.hero-carousel .carousel-indicators .active {
+  opacity: 0.8;
+}
+
+/* Tablet -------------------------------------------------------------- */
+
+@media (max-width: 1199.98px) {
+  .hero-carousel .carousel-item,
+  .hero-slide {
+    min-height: calc(100vh - 48px);
+  }
+
+  .hero-content h1 {
+    font-size: 52px;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .hero-carousel .carousel-item,
+  .hero-slide {
+    min-height: calc(100vh - 48px);
+  }
+
+  .hero-content {
+    padding: 32px;
+  }
+
+  .hero-content h1 {
+    font-size: 48px;
+  }
+
+  .hero-image::after {
+    background: linear-gradient(
+      90deg,
+      #f1eee6 0%,
+      rgba(241, 238, 230, 0.98) 22%,
+      rgba(241, 238, 230, 0.92) 40%,
+      rgba(241, 238, 230, 0.72) 56%,
+      rgba(241, 238, 230, 0.3) 76%,
+      rgba(241, 238, 230, 0) 100%
+    );
+  }
+}
+
+/* Mobile: text sits on a clean cream field and the photo fills the
+   lower part of the slide, still running edge to edge. */
+@media (max-width: 767.98px) {
+  .hero-carousel .carousel-item,
+  .hero-slide {
+    min-height: calc(100svh - 48px);
+  }
+
+  .hero-slide {
+    align-items: flex-start !important;
+    padding: 40px 0 0;
+  }
+
+  .hero-content {
+    padding: 8px 16px;
+  }
+
+  .hero-label {
+    font-size: 12px;
+    letter-spacing: 1.6px;
+    margin-bottom: 14px;
+  }
+
+  .hero-content h1 {
+    font-size: 42px;
+    margin-bottom: 18px;
+  }
+
+  .hero-description {
+    font-size: 14px;
+    margin-bottom: 22px;
+  }
+
+  .hero-image {
+    top: auto;
+    bottom: 0;
+    height: 100%;
+  }
+
+  .hero-image::before {
+    display: none;
+  }
+
+  .hero-image::after {
+    background: linear-gradient(
+      180deg,
+      #f1eee6 0%,
+      rgba(241, 238, 230, 0.97) 10%,
+      rgba(241, 238, 230, 0.85) 22%,
+      rgba(241, 238, 230, 0.45) 32%,
+      rgba(241, 238, 230, 0.08) 42%,
+      rgba(241, 238, 230, 0) 50%
+    );
+  }
+
+  .hero-slide-featured .hero-image img,
+  .hero-slide-women .hero-image img {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-position: 68% bottom;
+  }
+
+  .hero-slide-featured .hero-image::before {
+    display: none;
+  }
+
+  .hero-slide-featured .hero-image::after {
+    background: linear-gradient(
+      180deg,
+      rgba(241, 238, 230, 0.9) 0%,
+      rgba(241, 238, 230, 0.62) 12%,
+      rgba(241, 238, 230, 0.12) 28%,
+      rgba(241, 238, 230, 0) 42%
+    );
+  }
+
+  .hero-slide-featured .hero-image {
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hero-slide-featured .hero-image img {
+    position: relative;
+    height: 100%;
+    object-fit: cover;
+    object-position: center bottom;
+  }
+
+  .hero-image-featured::after {
+    background: linear-gradient(
+      180deg,
+      rgba(241, 238, 230, 0.9) 0%,
+      rgba(241, 238, 230, 0.62) 12%,
+      rgba(241, 238, 230, 0.12) 28%,
+      rgba(241, 238, 230, 0) 42%
+    );
+  }
+
+  .latest-drop-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 14px;
+  }
+
+  .latest-drop-image {
+    height: 150px;
+  }
+
+  .hero-slide-men .hero-image img {
+    object-position: center center;
+  }
+
+  .hero-carousel .carousel-indicators {
+    margin-bottom: 1rem;
+  }
+
+  .hero-carousel .carousel-control-prev,
+  .hero-carousel .carousel-control-next {
+    width: 10%;
+  }
+}
+
+/* Small phones -------------------------------------------------------- */
+
+@media (max-width: 420px) {
+  .hero-carousel .carousel-item,
+  .hero-slide {
+    min-height: calc(100svh - 48px);
+  }
+
+  .hero-content h1 {
+    font-size: 38px;
+  }
+
+  .hero-content {
+    padding: 4px 12px;
+  }
 }

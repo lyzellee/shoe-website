@@ -4,7 +4,7 @@ export default function SuccessfulPayment() {
   // Babalik sa home page pagkatapos ng 3 segundo
   useEffect(() => {
     const timer = setTimeout(() => {
-      window.location.href = "/";
+      window.location.href = "/feedback";
     }, 3000);
 
     return () => clearTimeout(timer);

@@ -39,7 +39,7 @@ export default function stockShoes() {
 
   // Frontend-only search
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("name-asc");
+  const [sortBy, setSortBy] = useState("newest-first");
   const [filterBrand, setFilterBrand] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterGender, setFilterGender] = useState("");
@@ -152,6 +152,16 @@ export default function stockShoes() {
     .filter((shoe) => !filterCategory || shoe.category === filterCategory)
     .filter((shoe) => !filterGender || shoe.gender === filterGender)
     .sort((a, b) => {
+      if (sortBy === "newest-first") {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return dateB - dateA;
+      }
+      if (sortBy === "oldest-first") {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return dateA - dateB;
+      }
       if (sortBy === "name-desc") return (b.name || "").localeCompare(a.name || "");
       if (sortBy === "price-asc") return Number(a.price || 0) - Number(b.price || 0);
       if (sortBy === "price-desc") return Number(b.price || 0) - Number(a.price || 0);
@@ -238,6 +248,8 @@ export default function stockShoes() {
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                   >
+                    <option value="newest-first">Newest First</option>
+                    <option value="oldest-first">Oldest First</option>
                     <option value="name-asc">Name: A to Z</option>
                     <option value="name-desc">Name: Z to A</option>
                     <option value="price-asc">Price: Low to High</option>

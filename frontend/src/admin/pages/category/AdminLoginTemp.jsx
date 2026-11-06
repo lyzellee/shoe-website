@@ -16,13 +16,16 @@ export default function AdminLogin() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:5000/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
         },
-        body: JSON.stringify({ email, password }),
-      });
+      );
 
       const data = await response.json();
 
@@ -65,10 +68,17 @@ export default function AdminLogin() {
             <span>SHOE HUB</span>
           </div>
           <div className="admin-login-kicker">
-            <h2>ADMIN<br />PORTAL</h2>
+            <h2>
+              ADMIN
+              <br />
+              PORTAL
+            </h2>
             <p>Manage your store, track orders, and more.</p>
           </div>
-          <div className="admin-login-console" aria-label="Store management console">
+          <div
+            className="admin-login-console"
+            aria-label="Store management console"
+          >
             <span className="admin-login-console-dot" />
             <span>Store management console</span>
           </div>
@@ -76,7 +86,9 @@ export default function AdminLogin() {
 
         <div className="admin-login-content">
           <div className="admin-login-dots" aria-hidden="true">
-            {Array.from({ length: 12 }).map((_, index) => <span key={index} />)}
+            {Array.from({ length: 12 }).map((_, index) => (
+              <span key={index} />
+            ))}
           </div>
           <div className="admin-login-intro">
             <h1 id="admin-login-title">Welcome back</h1>

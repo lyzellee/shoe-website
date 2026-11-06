@@ -17,6 +17,7 @@ const orderSchema = new mongoose.Schema({
       quantity: {
         type: Number,
         required: true,
+        min: 1,
       },
 
       size: {
@@ -30,6 +31,7 @@ const orderSchema = new mongoose.Schema({
       price: {
         type: Number,
         required: true,
+        min: 0,
       },
     },
   ],
@@ -37,6 +39,7 @@ const orderSchema = new mongoose.Schema({
   totalPrice: {
     type: Number,
     required: true,
+    min: 0,
   },
 
   orderStatus: {

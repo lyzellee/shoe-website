@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Form, Button, Container, Dropdown, Col, Row } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Addshoes.css";
 
 const availableSizes = [4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 export default function AddShoes() {
+  const navigate = useNavigate();
+
   // 1. useState para sa bawat input field
   const [name, setName] = useState("");
   const [brand, setBrand] = useState("");
@@ -112,6 +115,7 @@ export default function AddShoes() {
 
       alert("Successfully added shoe!");
       resetForm();
+      navigate("/admin/stock", { replace: true });
     } catch (err) {
       console.error("Error adding shoe:", err);
 

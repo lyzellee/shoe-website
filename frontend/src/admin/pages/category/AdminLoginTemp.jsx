@@ -43,7 +43,7 @@ export default function AdminLogin() {
 
       // Dalhin ang admin sa dashboard page.
       if (data.user.role === "admin") {
-        navigate("/admin/add", { replace: true });
+        navigate("/admin/stock", { replace: true });
       } else if (data.user.role === "representative") {
         navigate("/representative/dashboard", { replace: true });
       }

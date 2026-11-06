@@ -19,12 +19,39 @@ export default function Orders() {
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const fetchOrders = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
-      const response = await fetch("http://localhost:5000/api/orders");
+      // 1. Kunin ang saved JWT token mula sa localStorage (inimbak sa AdminLogin.jsx)
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setError("No authentication token found. Please sign in again.");
+        setLoading(false);
+        return;
+      }
+
+      // 2. Isama ang token sa Authorization header
+      const response = await fetch("http://localhost:5000/api/orders", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // 👈 ITO ANG DAHILAN KUNG BAKIT NAG-401
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       setOrders(data);
     } catch (error) {
       console.error("Error fetching orders:", error);
+      setError("Failed to fetch orders.");
+    } finally {
+      setLoading(false);
     }
   };
 

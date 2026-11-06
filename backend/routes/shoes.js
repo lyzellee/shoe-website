@@ -66,12 +66,7 @@ router.put(
   updateById,
 );
 
-router.get(
-  "/payment/:paymentIntentId",
-  verifyToken,
-  allowRoles("admin", "representative"),
-  getPaymentStatus,
-);
+router.get("/payment/:paymentIntentId", getPaymentStatus);
 
 router.post("/payment", createPayment);
 router.post("/order-information", createOrderInformation);

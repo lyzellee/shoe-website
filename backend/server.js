@@ -11,10 +11,16 @@ dotenv.config();
 const app = express();
 
 // Middlewares
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+);
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:3000",
   process.env.FRONTEND_URL,
+  "https://shoe-website-beige-rho.vercel.app",
 ].filter(Boolean);
 
 app.use(

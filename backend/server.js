@@ -9,13 +9,13 @@ import helmet from "helmet";
 const app = express();
 
 // Middlewares
+app.use(helmet());
 app.use(
   cors({
     origin: "http://localhost:5173",
   }),
 );
 app.use(express.json());
-app.use(helmet());
 
 // Serve uploaded shoe images
 app.use("/uploads", express.static(path.resolve("uploads")));
@@ -25,7 +25,7 @@ app.use("/api", shoeRoutes);
 
 // Connect to Database and Start Server
 connectDB().then(() => {
-  app.listen(5000, () => {
-    console.log("Server running on port 5000");
+  app.listen(process.env.PORT || 5000, () => {
+    console.log(`Server running on port ${process.env.PORT || 5000}`);
   });
 });

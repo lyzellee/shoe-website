@@ -214,6 +214,12 @@ export const createPayment = async (req, res) => {
         }),
       },
     );
+    const frontendUrl = process.env.FRONTEND_URL?.trim().replace(/\/+$/, "");
+
+    const returnUrl = `${frontendUrl}/checkout`;
+
+    console.log("FRONTEND_URL:", JSON.stringify(process.env.FRONTEND_URL));
+    console.log("RETURN_URL:", JSON.stringify(returnUrl));
 
     const attachResult = await attachResponse.json();
 

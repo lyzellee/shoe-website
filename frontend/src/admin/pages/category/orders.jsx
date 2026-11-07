@@ -5,17 +5,15 @@ import Modal from "react-bootstrap/Modal";
 import { useState, useEffect } from "react";
 import "./orders.css";
 
+const BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://shoe-website-x78a.onrender.com/api"
+).replace(/\/api\/?$/, "");
+
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [orderReference, setOrderReference] = useState("");
-  const [items, setItems] = useState([]);
-  const [status, setStatus] = useState("");
-  const [total, setTotal] = useState(0);
-  const [date, setDate] = useState("");
-  const [customer, setCustomer] = useState("");
-  const [orderId, setOrderId] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const fetchOrders = async () => {
@@ -23,7 +21,6 @@ export default function Orders() {
     setError(null);
 
     try {
-      // 1. Kunin ang saved JWT token mula sa localStorage (inimbak sa AdminLogin.jsx)
       const token = localStorage.getItem("token");
 
       if (!token) {
@@ -32,12 +29,11 @@ export default function Orders() {
         return;
       }
 
-      // 2. Isama ang token sa Authorization header
-      const response = await fetch("http://localhost:5000/api/orders", {
+      const response = await fetch(`${BASE_URL}/api/orders`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // 👈 ITO ANG DAHILAN KUNG BAKIT NAG-401
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -46,9 +42,9 @@ export default function Orders() {
       }
 
       const data = await response.json();
-      setOrders(data);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
+      setOrders(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
       setError("Failed to fetch orders.");
     } finally {
       setLoading(false);
@@ -62,30 +58,28 @@ export default function Orders() {
   const getPaymentBadge = (status) => {
     switch (status) {
       case "completed":
-        return <Badge bg="success">Completed</Badge>; // Green
+        return <Badge bg="success">Completed</Badge>;
       case "pending":
         return (
           <Badge bg="warning" text="dark">
             Pending
           </Badge>
-        ); // Yellow / Orange
+        );
       case "failed":
-        return <Badge bg="danger">Failed</Badge>; // Red
+        return <Badge bg="danger">Failed</Badge>;
       default:
-        return <Badge bg="secondary">{status}</Badge>; // Gray
+        return <Badge bg="secondary">{status || "Unknown"}</Badge>;
     }
   };
 
   const handleViewOrder = (order) => {
     setSelectedOrder(order);
-    console.log("Selected Order:", order);
   };
 
   const handleCloseOrder = () => {
     setSelectedOrder(null);
   };
 
-  // Get the product name whether the shoe information is populated or stored directly.
   const getItemName = (item) => {
     if (item.shoeId && typeof item.shoeId === "object") {
       return item.shoeId.name || "Unnamed product";
@@ -94,7 +88,6 @@ export default function Orders() {
     return item.name || "Product";
   };
 
-  // Get the product price.
   const getItemPrice = (item) => {
     if (item.price !== undefined && item.price !== null) {
       return Number(item.price) || 0;
@@ -103,11 +96,12 @@ export default function Orders() {
     if (item.shoeId && typeof item.shoeId === "object") {
       return Number(item.shoeId.price) || 0;
     }
+
+    return 0;
   };
 
   return (
     <div className="orders-page">
-      {/* Page heading */}
       <div className="orders-heading">
         <div>
           <p className="orders-eyebrow">ADMINISTRATION</p>
@@ -120,7 +114,8 @@ export default function Orders() {
         </div>
       </div>
 
-      {/* Orders table */}
+      {error && <div className="orders-error-message">{error}</div>}
+
       <div className="orders-table-wrapper">
         <Table hover responsive className="orders-table">
           <thead>
@@ -137,7 +132,13 @@ export default function Orders() {
           </thead>
 
           <tbody>
-            {orders.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan="8" className="orders-message">
+                  Loading orders...
+                </td>
+              </tr>
+            ) : orders.length > 0 ? (
               orders.map((order) => (
                 <tr key={order._id}>
                   <td className="orders-reference">{order.orderReference}</td>
@@ -156,7 +157,7 @@ export default function Orders() {
                   <td>{getPaymentBadge(order.paymentStatus)}</td>
 
                   <td className="orders-total">
-                    ${Number(order.totalPrice || 0).toFixed(2)}
+                    ₱{Number(order.totalPrice || 0).toLocaleString("en-PH")}
                   </td>
 
                   <td>{order.orderDate || "N/A"}</td>
@@ -182,7 +183,6 @@ export default function Orders() {
         </Table>
       </div>
 
-      {/* View Order Modal */}
       <Modal
         show={selectedOrder !== null}
         onHide={handleCloseOrder}
@@ -202,7 +202,6 @@ export default function Orders() {
             </Modal.Header>
 
             <Modal.Body className="orders-modal-body">
-              {/* Customer and order information */}
               <div className="orders-details-grid">
                 <div className="orders-detail">
                   <span>Customer</span>
@@ -227,7 +226,6 @@ export default function Orders() {
                 </div>
               </div>
 
-              {/* Ordered products */}
               <div className="orders-products-section">
                 <h6>Ordered Products</h6>
 
@@ -240,10 +238,10 @@ export default function Orders() {
                       </div>
 
                       <div className="orders-item-price">
-                        $
+                        ₱
                         {(
                           getItemPrice(item) * (Number(item.quantity) || 0)
-                        ).toFixed(2)}
+                        ).toLocaleString("en-PH")}
                       </div>
                     </div>
                   ))
@@ -254,11 +252,13 @@ export default function Orders() {
                 )}
               </div>
 
-              {/* Total amount */}
               <div className="orders-modal-total">
                 <span>Total Amount</span>
                 <strong>
-                  ${Number(selectedOrder.totalPrice || 0).toFixed(2)}
+                  ₱
+                  {Number(selectedOrder.totalPrice || 0).toLocaleString(
+                    "en-PH",
+                  )}
                 </strong>
               </div>
             </Modal.Body>

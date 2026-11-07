@@ -19,12 +19,14 @@ const getCheckoutImage = (item) => {
   const image = item?.image || item?.imageUrl || item?.img;
   if (!image) return "/product-images/product%201.png";
   if (image.startsWith("http://") || image.startsWith("https://")) return image;
-  return `http://localhost:5000${image.startsWith("/") ? "" : "/"}${image}`;
+  return `${import.meta.env.VITE_API_BASE_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 };
 
 const readSavedAddresses = () => {
   try {
-    const addresses = JSON.parse(localStorage.getItem(SAVED_ADDRESSES_KEY) || "[]");
+    const addresses = JSON.parse(
+      localStorage.getItem(SAVED_ADDRESSES_KEY) || "[]",
+    );
     return Array.isArray(addresses) ? addresses : [];
   } catch {
     return [];
@@ -157,22 +159,25 @@ export default function Checkout() {
 
     try {
       // STEP 3: Gumawa muna ng order sa MongoDB
-      const orderResponse = await fetch("http://localhost:5000/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          // Gumawa ng unique order reference
-          orderReference: `ORD-${Date.now()}`,
+      const orderResponse = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/orders`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            // Gumawa ng unique order reference
+            orderReference: `ORD-${Date.now()}`,
 
-          // I-convert ang cart items sa format na kailangan ng backend
-          items: cartItems.map((item) => ({
-            shoeId: item._id,
-            quantity: item.quantity,
-          })),
-        }),
-      });
+            // I-convert ang cart items sa format na kailangan ng backend
+            items: cartItems.map((item) => ({
+              shoeId: item._id,
+              quantity: item.quantity,
+            })),
+          }),
+        },
+      );
 
       const orderResult = await orderResponse.json();
 
@@ -193,7 +198,7 @@ export default function Checkout() {
       console.log("New Order ID:", newOrderId);
       // STEP 4.1: I-save ang delivery information sa backend
       const informationResponse = await fetch(
-        "http://localhost:5000/api/order-information",
+        `${import.meta.env.VITE_API_BASE_URL}/api/order-information`,
         {
           method: "POST",
           headers: {
@@ -228,16 +233,19 @@ export default function Checkout() {
       }
 
       // STEP 5: Ipadala ang valid order ID sa payment backend
-      const paymentResponse = await fetch("http://localhost:5000/api/payment", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const paymentResponse = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/payment`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orderId: newOrderId,
+            paymentMethod: paymentMethod,
+          }),
         },
-        body: JSON.stringify({
-          orderId: newOrderId,
-          paymentMethod: paymentMethod,
-        }),
-      });
+      );
 
       const paymentResult = await paymentResponse.json();
 
@@ -280,7 +288,7 @@ export default function Checkout() {
       setIsLoading(true);
 
       const response = await fetch(
-        `http://localhost:5000/api/payment/${paymentIntentId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/payment/${paymentIntentId}`,
       );
 
       const result = await response.json();
@@ -407,7 +415,9 @@ export default function Checkout() {
                         type="button"
                         key={savedAddress.id}
                         className={`saved-address-option ${
-                          selectedAddressId === savedAddress.id ? "selected" : ""
+                          selectedAddressId === savedAddress.id
+                            ? "selected"
+                            : ""
                         }`}
                         onClick={() => selectSavedAddress(savedAddress)}
                       >
@@ -530,7 +540,9 @@ export default function Checkout() {
                   type="checkbox"
                   className="save-address-check"
                   checked={saveCurrentAddress}
-                  onChange={(event) => setSaveCurrentAddress(event.target.checked)}
+                  onChange={(event) =>
+                    setSaveCurrentAddress(event.target.checked)
+                  }
                   label="Save this address for next time"
                 />
 

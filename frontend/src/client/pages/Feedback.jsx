@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./Feedback.css";
 
-const API_URL = "http://localhost:5000/api/create-userfb";
+const API_URL = `${import.meta.env.VITE_API_BASE_URL}/api/create-userfb`;
 
 export default function Feedback() {
   const [rating, setRating] = useState(0);

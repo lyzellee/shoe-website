@@ -112,7 +112,9 @@ export default function CategoryMen() {
   useEffect(() => {
     const fetchShoes = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/all");
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/all`,
+        );
         setShoes(response.data);
       } catch (error) {
         console.error("Error fetching shoes:", error);
@@ -170,7 +172,7 @@ export default function CategoryMen() {
   const handleListAll = async () => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/all`,
+        `${import.meta.env.VITE_API_BASE_URL}/all`,
       );
       setShoes(response.data);
     } catch (error) {

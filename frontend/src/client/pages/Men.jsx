@@ -113,7 +113,7 @@ export default function CategoryMen() {
     const fetchShoes = async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/all`,
+          `${import.meta.env.VITE_API_BASE_URL}/all`,
         );
         setShoes(response.data);
       } catch (error) {

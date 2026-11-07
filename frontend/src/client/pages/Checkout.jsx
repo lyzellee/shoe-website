@@ -160,7 +160,7 @@ export default function Checkout() {
     try {
       // STEP 3: Gumawa muna ng order sa MongoDB
       const orderResponse = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/orders`,
+        `${import.meta.env.VITE_API_BASE_URL}/orders`,
         {
           method: "POST",
           headers: {
@@ -198,7 +198,7 @@ export default function Checkout() {
       console.log("New Order ID:", newOrderId);
       // STEP 4.1: I-save ang delivery information sa backend
       const informationResponse = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/order-information`,
+        `${import.meta.env.VITE_API_BASE_URL}/order-information`,
         {
           method: "POST",
           headers: {

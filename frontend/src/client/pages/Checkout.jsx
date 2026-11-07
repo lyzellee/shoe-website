@@ -288,7 +288,7 @@ export default function Checkout() {
       setIsLoading(true);
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/payment/${paymentIntentId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/payment/${paymentIntentId}`,
       );
 
       const result = await response.json();

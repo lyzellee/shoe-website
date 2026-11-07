@@ -45,7 +45,7 @@ function getImage(item) {
     return image;
   }
 
-  return `import.meta.env.VITE_API_BASE_URL}${image.startsWith("/") ? "" : "/"}${image}`;
+  return `${API_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 }
 
 // Get and format the product price

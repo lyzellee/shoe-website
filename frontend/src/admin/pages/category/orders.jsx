@@ -143,7 +143,12 @@ export default function Orders() {
                 <tr key={order._id}>
                   <td className="orders-reference">{order.orderReference}</td>
 
-                  <td>{order.customer || "N/A"}</td>
+                  <td>
+                    {" "}
+                    {order.customerInfo
+                      ? `${order.customerInfo.firstName} ${order.customerInfo.lastName}`
+                      : "N/A"}
+                  </td>
 
                   <td>
                     {order.items?.reduce(
@@ -205,7 +210,12 @@ export default function Orders() {
               <div className="orders-details-grid">
                 <div className="orders-detail">
                   <span>Customer</span>
-                  <strong>{selectedOrder.customer || "N/A"}</strong>
+                  <strong>
+                    {" "}
+                    {selectedOrder.customerInfo
+                      ? `${selectedOrder.customerInfo.firstName} ${selectedOrder.customerInfo.lastName}`
+                      : "N/A"}
+                  </strong>
                 </div>
 
                 <div className="orders-detail">

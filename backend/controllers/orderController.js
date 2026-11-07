@@ -162,8 +162,26 @@ export const createOrder = async (req, res) => {
 };
 export const getAllOrder = async (req, res) => {
   try {
-    const orders = await Order.find().populate("items.shoeId");
+    const orders = await Order.aggregate([
+      {
+        $lookup: {
+          from: "orderschemainformations",
+          localField: "_id",
+          foreignField: "orderId",
+          as: "customerInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$customerInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+    ]);
 
+    const populatedOrders = await Order.populate(orders, {
+      path: "items.shoeId",
+    });
     res.status(200).json(orders);
   } catch (err) {
     console.error("GET ALL ORDER ERROR:", err);

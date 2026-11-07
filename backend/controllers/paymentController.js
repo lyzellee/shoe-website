@@ -208,7 +208,7 @@ export const createPayment = async (req, res) => {
           data: {
             attributes: {
               payment_method: paymentMethodId,
-              return_url: `${process.env.FRONTEND_URL}/checkout`,
+              return_url: returnUrl,
             },
           },
         }),

@@ -10,7 +10,7 @@ function Home() {
 
   useEffect(() => {
     axios
-      .get(`${import.meta.env.VITE_API_BASE_URL}/api/all`)
+      .get(`${import.meta.env.VITE_API_BASE_URL}/all`)
       .then((response) => setLatestShoes(response.data.slice(0, 4)))
       .catch(() => setLatestShoes([]));
   }, []);

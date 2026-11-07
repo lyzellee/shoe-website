@@ -23,7 +23,9 @@ export default function Wishlist() {
       setFavorites(savedFavorites);
 
       try {
-        const response = await axios.get("http://localhost:5000/api/all");
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/all`,
+        );
         const currentShoes = Array.isArray(response.data) ? response.data : [];
 
         if (!isCurrent) return;
@@ -32,7 +34,7 @@ export default function Wishlist() {
           .map((savedShoe) => {
             const savedId = getFavoriteId(savedShoe);
             const currentShoe = currentShoes.find(
-              (shoe) => String(shoe._id || shoe.id) === savedId
+              (shoe) => String(shoe._id || shoe.id) === savedId,
             );
 
             return currentShoe ? { ...savedShoe, ...currentShoe } : savedShoe;
@@ -192,7 +194,7 @@ export default function Wishlist() {
                   <div className="wishlist-product-info">
                     <p className="wishlist-product-category">
                       {formatLabel(
-                        shoe.brand || shoe.gender || shoe.category || "Shoes"
+                        shoe.brand || shoe.gender || shoe.category || "Shoes",
                       )}
                     </p>
 

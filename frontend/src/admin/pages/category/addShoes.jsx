@@ -107,7 +107,7 @@ export default function AddShoes() {
       // Keep your existing admin token authentication
       const token = localStorage.getItem("token");
 
-      await axios.post("http://localhost:5000/api/shoes", formData, {
+      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/shoes`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

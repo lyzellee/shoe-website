@@ -15,7 +15,10 @@ import {
 } from "../../components/AddToCartItems.jsx";
 import ProductFilter from "../../components/ProductFilter/ProductFilter";
 import "./Women.css";
-
+const BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://shoe-website-x78a.onrender.com/api"
+).replace(/\/api\/?$/, "");
 const featuredImages = [
   "/featured-images/women-featured-1.png",
   "/featured-images/women-featured-2.png",
@@ -29,7 +32,7 @@ const getShoeImage = (image) => {
     return image;
   }
 
-  return `http://localhost:5000${image.startsWith("/") ? "" : "/"}${image}`;
+  return `${BASE_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 };
 
 const formatLabel = (value) => {
@@ -83,7 +86,7 @@ export default function Women() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/all")
+      .get(`${BASE_URL}/api/all`)
       .then((response) => setShoes(response.data))
       .catch((error) => console.error("Error fetching shoes:", error));
   }, []);
@@ -107,9 +110,7 @@ export default function Women() {
       : addToCart(shoe);
 
     setAddCard(updatedCart.map((item) => item._id));
-    setAddCardMessage(
-      existingShoe ? "Removed from cart" : "Added to cart",
-    );
+    setAddCardMessage(existingShoe ? "Removed from cart" : "Added to cart");
     setTimeout(() => setAddCardMessage(""), 2000);
   };
 
@@ -266,8 +267,7 @@ export default function Women() {
                 alt={shoe.name}
                 onError={(event) => {
                   event.currentTarget.onerror = null;
-                  event.currentTarget.src =
-                    "/product-images/product 1.png";
+                  event.currentTarget.src = "/product-images/product 1.png";
                 }}
               />
             </div>

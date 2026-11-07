@@ -192,6 +192,32 @@ export const createPayment = async (req, res) => {
     const paymentMethodId = paymentMethodResult.data.id;
 
     // Attach the payment method to the payment intent
+    // Get and validate the frontend URL FIRST
+    const frontendUrl = process.env.FRONTEND_URL?.trim().replace(/\/+$/, "");
+
+    if (!frontendUrl) {
+      return res.status(500).json({
+        message: "FRONTEND_URL is missing",
+      });
+    }
+
+    let returnUrl;
+
+    try {
+      const parsedUrl = new URL(`${frontendUrl}/checkout`);
+
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+        throw new Error("Invalid protocol");
+      }
+
+      returnUrl = parsedUrl.toString();
+    } catch (error) {
+      return res.status(500).json({
+        message: "Invalid FRONTEND_URL",
+      });
+    }
+
+    // Attach the payment method to the payment intent
     const attachResponse = await fetch(
       `https://api.paymongo.com/v1/payment_intents/${paymentIntentId}/attach`,
       {
@@ -208,7 +234,7 @@ export const createPayment = async (req, res) => {
           data: {
             attributes: {
               payment_method: paymentMethodId,
-              return_url: `${process.env.FRONTEND_URL}/checkout`,
+              return_url: returnUrl,
             },
           },
         }),
@@ -216,12 +242,15 @@ export const createPayment = async (req, res) => {
     );
 
     const attachResult = await attachResponse.json();
+<<<<<<< HEAD
 
     console.log(
       "PayMongo Attach Error:",
       JSON.stringify(attachResult.errors || attachResult, null, 2),
     );
 
+=======
+>>>>>>> testing1
     // Stop if PayMongo fails to attach the payment method
     if (!attachResponse.ok || !attachResult.data) {
       return res.status(400).json({

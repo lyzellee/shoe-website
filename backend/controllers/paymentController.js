@@ -217,9 +217,6 @@ export const createPayment = async (req, res) => {
       });
     }
 
-    console.log("FRONTEND_URL:", JSON.stringify(frontendUrl));
-    console.log("RETURN_URL:", JSON.stringify(returnUrl));
-
     // Attach the payment method to the payment intent
     const attachResponse = await fetch(
       `https://api.paymongo.com/v1/payment_intents/${paymentIntentId}/attach`,

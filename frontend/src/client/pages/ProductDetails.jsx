@@ -15,7 +15,7 @@ import {
 } from "../../components/AddToCartItems.jsx";
 import "./ProductDetails.css";
 
-const API_URL = `${import.meta.env.VITE_API_BASE_URL}/api`;
+const API_URL = `${import.meta.env.VITE_API_BASE_URL}`;
 
 // Get the product from different possible API response formats
 function unwrapProduct(data) {

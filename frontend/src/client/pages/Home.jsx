@@ -148,7 +148,7 @@ function Home() {
                   <img
                     src={
                       shoe.image
-                        ? `http://localhost:5000${shoe.image.startsWith("/") ? "" : "/"}${shoe.image}`
+                        ? `${import.meta.env.VITE_API_URL}${shoe.image.startsWith("/") ? "" : "/"}${shoe.image}`
                         : "/product-images/product%201.png"
                     }
                     alt={shoe.name || "Shoe"}

@@ -5,10 +5,10 @@ import Modal from "react-bootstrap/Modal";
 import { useState, useEffect } from "react";
 import "./orders.css";
 
-const BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://shoe-website-x78a.onrender.com/api"
-).replace(/\/api\/?$/, "");
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(
+  /\/api\/?$/,
+  "",
+);
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);

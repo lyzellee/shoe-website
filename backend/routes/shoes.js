@@ -2,6 +2,7 @@ import express from "express";
 import { verifyToken, allowRoles } from "../middleware/authMiddleware.js";
 import upload from "../middleware/upload.js";
 
+import { getDashboardStats } from "../controllers/dashBoardController.js";
 import {
   createTesterFeedback,
   getAllTesterFeedback,
@@ -119,5 +120,12 @@ router.post(
 );
 router.post("/login", login);
 router.post("/register", verifyToken, allowRoles("admin"), registerUser);
+
+router.get(
+  "/dashboard-stats",
+  verifyToken,
+  allowRoles("admin", "representative"),
+  getDashboardStats,
+);
 
 export default router;

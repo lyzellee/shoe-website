@@ -131,21 +131,45 @@
 @media (max-width: 991.98px) {
   .custom-navbar {
     margin-top: 0;
-    padding: 8px 0;
+    min-height: 48px;
+    height: 48px;
+    padding: 0;
   }
 
   .custom-navbar .container {
     flex-wrap: wrap;
+    height: 48px;
+    padding: 0 16px;
   }
 
   .navbar-menu-toggle {
     margin-left: auto;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px;
+    border-radius: 6px;
+  }
+
+  .navbar-menu-toggle .navbar-toggler-icon {
+    width: 18px;
+    height: 18px;
   }
 
   .navbar-menu-collapse {
-    flex-basis: 100%;
+    position: absolute;
+    top: 48px;
+    left: 0;
     width: 100%;
-    margin-top: 8px;
+    margin: 0;
+    padding: 6px 16px 12px;
+    background: #91A47E;
+    border-bottom: 1px solid rgba(46, 47, 48, 0.14);
+    box-shadow: 0 12px 24px rgba(46, 47, 48, 0.16);
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
   }
 
   .navbar-main-links {
@@ -156,14 +180,24 @@
   .custom-navbar .navbar-main-links .nav-link {
     width: 100%;
     margin: 0;
-    padding: 10px 0;
+    min-height: 44px;
+    padding: 8px 0;
     text-align: center;
     border-top: 1px solid rgba(46, 47, 48, 0.12);
+  }
+
+  .navbar-main-links .nav-link:first-child {
+    border-top: 0;
+  }
+
+  .navbar-main-links .nav-link::after {
+    bottom: 5px;
   }
 
   .navbar-icons {
     width: 100%;
     justify-content: center;
-    padding: 8px 0 4px;
+    gap: 14px;
+    padding: 10px 0 2px;
   }
 }

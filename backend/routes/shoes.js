@@ -23,10 +23,12 @@ import {
   updateById,
   restoreById,
 } from "../controllers/shoeController.js";
-import { getDashboardStats } from "../controllers/dashBoardController.js";
+
 import {
   createOrder,
   getAllOrder,
+  updateOrderStatus,
+  getCustomerOrders,
   getSingleOrder,
   deleteOrderById,
   updateOrderItemQuantity,
@@ -45,6 +47,7 @@ router.get("/all", getAllShoes);
 router.get("/men", getMenShoes);
 router.get("/women", getWomenShoes);
 router.post("/orders", createOrder);
+router.post("/customer-orders", getCustomerOrders);
 router.get("/single/:id", getSingleShoe);
 //user-feedback
 router.post("/create-userfb", createUserFeedback);
@@ -76,6 +79,12 @@ router.patch(
   verifyToken,
   allowRoles("admin", "representative"),
   updateOrderItemQuantity,
+);
+router.patch(
+  "/orders/:id/status",
+  verifyToken,
+  allowRoles("admin", "representative"),
+  updateOrderStatus,
 );
 router.delete(
   "/orders/:id",
@@ -110,11 +119,5 @@ router.post(
 );
 router.post("/login", login);
 router.post("/register", verifyToken, allowRoles("admin"), registerUser);
-router.get(
-  "/dashboard-stats",
-  verifyToken,
-  allowRoles("admin"),
-  getDashboardStats,
-);
 
 export default router;

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./YourOrder.css";
 
 const orderSteps = ["pending", "processing", "shipped", "delivered"];
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/api\/?$/, "");
 
 const formatPrice = (price) =>
   new Intl.NumberFormat("en-PH", {
@@ -67,6 +68,35 @@ export default function YourOrder({
     const refreshOrders = () => setLocalOrders(readLocalOrders());
     window.addEventListener("storage", refreshOrders);
     window.addEventListener("focus", refreshOrders);
+
+    const savedOrders = readLocalOrders();
+    const references = savedOrders
+      .map((order) => order.orderReference)
+      .filter(Boolean);
+
+    if (references.length > 0) {
+      const refreshFromServer = () => fetch(`${BASE_URL}/api/customer-orders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ references }),
+      })
+        .then((response) => (response.ok ? response.json() : []))
+        .then((serverOrders) => {
+          if (Array.isArray(serverOrders) && serverOrders.length > 0) {
+            setLocalOrders(serverOrders);
+            localStorage.setItem("shoeHubOrders", JSON.stringify(serverOrders));
+          }
+        })
+        .catch(() => {});
+
+      refreshFromServer();
+      const pollingInterval = window.setInterval(refreshFromServer, 30000);
+      return () => {
+        window.clearInterval(pollingInterval);
+        window.removeEventListener("storage", refreshOrders);
+        window.removeEventListener("focus", refreshOrders);
+      };
+    }
 
     return () => {
       window.removeEventListener("storage", refreshOrders);

@@ -14,6 +14,7 @@ import Orders from "./admin/pages/category/orders.jsx";
 import ProtectedRoute from "./admin/components/ProtectedRoute.jsx";
 import AdminLogin from "./admin/pages/category/AdminLoginTemp.jsx";
 import RepresentativeDashboard from "./admin/pages/category/RepresentativeDashboard.jsx";
+import Dashboard from "./admin/pages/category/Dashboard.jsx";
 
 // Admin layout
 import AdminLayout from "./admin/components/AdminLayout.jsx";
@@ -82,6 +83,14 @@ function AppContent() {
             element={
               <ProtectedRoute allowedRole="admin">
                 <Orders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allowedRole="admin">
+                <Dashboard />
               </ProtectedRoute>
             }
           />

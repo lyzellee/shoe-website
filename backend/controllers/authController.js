@@ -82,9 +82,9 @@ export const registerUser = async (req, res) => {
         role: "admin",
       });
 
-      if (adminCount >= 3) {
+      if (adminCount >= 4) {
         return res.status(403).json({
-          message: "Maximum of 2 admin accounts allowed",
+          message: "Maximum of 4 admin accounts allowed",
         });
       }
     }

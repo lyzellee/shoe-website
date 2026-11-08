@@ -170,6 +170,29 @@
   cursor: not-allowed;
 }
 
+.feedback-close {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 12px;
+  border: 1px solid #dfe3dc;
+  border-radius: 9px;
+  background: transparent;
+  color: #555d51;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.feedback-close:hover {
+  border-color: #98a889;
+  background: #edf1e9;
+  color: #30352f;
+}
+
 .feedback-error,
 .feedback-success {
   margin-bottom: 18px;

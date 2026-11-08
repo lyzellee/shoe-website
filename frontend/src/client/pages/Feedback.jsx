@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Feedback.css";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/create-userfb`;
 
 export default function Feedback() {
+  const navigate = useNavigate();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -143,6 +145,14 @@ export default function Feedback() {
 
           <button type="submit" className="feedback-submit" disabled={loading}>
             {loading ? "Submitting..." : "Submit Feedback"}
+          </button>
+
+          <button
+            type="button"
+            className="feedback-close"
+            onClick={() => navigate("/")}
+          >
+            Close
           </button>
         </form>
 

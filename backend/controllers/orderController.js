@@ -609,6 +609,16 @@ export const updateOrderItemQuantity = async (req, res) => {
     await session.endSession();
   }
 };
+const toTitleCase = (str) => {
+  if (!str) return "";
+  return str
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 export const createOrderInformation = async (req, res) => {
   try {
     const {
@@ -648,17 +658,25 @@ export const createOrderInformation = async (req, res) => {
         message: "Customer information already exists for this order",
       });
     }
+    const cleanFirstName = toTitleCase(firstName);
+    const cleanLastName = toTitleCase(lastName);
+    const cleanAddress = address?.trim();
+    const cleanCity = toTitleCase(city);
+    const cleanProvince = toTitleCase(province);
+    const cleanZipCode = zipCode?.trim();
+    const cleanPhone = phone?.trim();
+    const cleanEmail = email?.trim().toLowerCase();
 
     // 3. I-check kung kumpleto ang customer details
     if (
-      !firstName ||
-      !lastName ||
-      !address ||
-      !city ||
-      !province ||
-      !zipCode ||
-      !phone ||
-      !email
+      !cleanFirstName ||
+      !cleanLastName ||
+      !cleanAddress ||
+      !cleanCity ||
+      !cleanProvince ||
+      !cleanZipCode ||
+      !cleanPhone ||
+      !cleanEmail
     ) {
       return res.status(400).json({
         message: "All customer information fields are required",
@@ -668,14 +686,14 @@ export const createOrderInformation = async (req, res) => {
     // 4. I-save ang customer details
     const orderInformation = await OrderSchemaInformation.create({
       orderId,
-      firstName,
-      lastName,
-      address,
-      city,
-      province,
-      zipCode,
-      phone,
-      email,
+      firstName: cleanFirstName,
+      lastName: cleanLastName,
+      address: cleanAddress,
+      city: cleanCity,
+      province: cleanProvince,
+      zipCode: cleanZipCode,
+      phone: cleanPhone,
+      email: cleanEmail,
     });
 
     // 5. Ibalik ang saved information

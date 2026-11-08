@@ -9,7 +9,7 @@ const getCartImage = (shoe) => {
   const image = shoe?.image || shoe?.imageUrl || shoe?.img;
   if (!image) return "/product-images/product%201.png";
   if (image.startsWith("http://") || image.startsWith("https://")) return image;
-  return `http://localhost:5000${image.startsWith("/") ? "" : "/"}${image}`;
+  return `${import.meta.env.VITE_API_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 };
 
 export default function Cart() {
@@ -147,11 +147,28 @@ export default function Cart() {
                               Size
                               <select
                                 value={editSize}
-                                onChange={(event) => setEditSize(event.target.value)}
+                                onChange={(event) =>
+                                  setEditSize(event.target.value)
+                                }
                               >
                                 <option value="">Select size</option>
-                                {(Array.isArray(shoe.sizes) ? shoe.sizes : ["4", "5", "6", "7", "8", "9", "10", "11", "12"]).map((size) => (
-                                  <option key={size} value={size}>{size}</option>
+                                {(Array.isArray(shoe.sizes)
+                                  ? shoe.sizes
+                                  : [
+                                      "4",
+                                      "5",
+                                      "6",
+                                      "7",
+                                      "8",
+                                      "9",
+                                      "10",
+                                      "11",
+                                      "12",
+                                    ]
+                                ).map((size) => (
+                                  <option key={size} value={size}>
+                                    {size}
+                                  </option>
                                 ))}
                               </select>
                             </label>
@@ -161,7 +178,9 @@ export default function Cart() {
                               <input
                                 type="text"
                                 value={editColor}
-                                onChange={(event) => setEditColor(event.target.value)}
+                                onChange={(event) =>
+                                  setEditColor(event.target.value)
+                                }
                                 placeholder="Color"
                               />
                             </label>

@@ -56,7 +56,7 @@ export default function stockShoes() {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        `http://localhost:5000/api/update/${selectedShoe._id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/update/${selectedShoe._id}`,
         {
           name: name,
           brand: brand,
@@ -88,12 +88,9 @@ export default function stockShoes() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.delete(
-        `http://localhost:5000/api/${id}`,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        },
-      );
+      const response = await axios.delete(`http://localhost:5000/api/${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       setShowDeleteModal(false);
       setShoeToDelete(null);
       setLoading(false);
@@ -139,8 +136,12 @@ export default function stockShoes() {
     }
   };
 
-  const brands = [...new Set(shoes.map((shoe) => shoe.brand).filter(Boolean))].sort();
-  const categories = [...new Set(shoes.map((shoe) => shoe.category).filter(Boolean))].sort();
+  const brands = [
+    ...new Set(shoes.map((shoe) => shoe.brand).filter(Boolean)),
+  ].sort();
+  const categories = [
+    ...new Set(shoes.map((shoe) => shoe.category).filter(Boolean)),
+  ].sort();
 
   const filteredShoes = shoes
     .filter((shoe) =>
@@ -162,11 +163,16 @@ export default function stockShoes() {
         const dateB = new Date(b.createdAt || 0).getTime();
         return dateA - dateB;
       }
-      if (sortBy === "name-desc") return (b.name || "").localeCompare(a.name || "");
-      if (sortBy === "price-asc") return Number(a.price || 0) - Number(b.price || 0);
-      if (sortBy === "price-desc") return Number(b.price || 0) - Number(a.price || 0);
-      if (sortBy === "stock-asc") return Number(a.stock || 0) - Number(b.stock || 0);
-      if (sortBy === "stock-desc") return Number(b.stock || 0) - Number(a.stock || 0);
+      if (sortBy === "name-desc")
+        return (b.name || "").localeCompare(a.name || "");
+      if (sortBy === "price-asc")
+        return Number(a.price || 0) - Number(b.price || 0);
+      if (sortBy === "price-desc")
+        return Number(b.price || 0) - Number(a.price || 0);
+      if (sortBy === "stock-asc")
+        return Number(a.stock || 0) - Number(b.stock || 0);
+      if (sortBy === "stock-desc")
+        return Number(b.stock || 0) - Number(a.stock || 0);
       return (a.name || "").localeCompare(b.name || "");
     });
 
@@ -186,14 +192,24 @@ export default function stockShoes() {
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
     worksheet["!cols"] = [
-      { wch: 26 }, { wch: 24 }, { wch: 16 }, { wch: 12 },
-      { wch: 16 }, { wch: 12 }, { wch: 18 }, { wch: 18 },
-      { wch: 10 }, { wch: 12 },
+      { wch: 26 },
+      { wch: 24 },
+      { wch: 16 },
+      { wch: 12 },
+      { wch: 16 },
+      { wch: 12 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 10 },
+      { wch: 12 },
     ];
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
-    XLSX.writeFile(workbook, `inventory-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(
+      workbook,
+      `inventory-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
   };
 
   return (
@@ -265,7 +281,12 @@ export default function stockShoes() {
               <button
                 type="button"
                 className={`inventory-tool-btn ${
-                  showFilterMenu || filterBrand || filterCategory || filterGender ? "active" : ""
+                  showFilterMenu ||
+                  filterBrand ||
+                  filterCategory ||
+                  filterGender
+                    ? "active"
+                    : ""
                 }`}
                 onClick={() => {
                   setShowFilterMenu((current) => !current);
@@ -280,27 +301,39 @@ export default function stockShoes() {
                   <div className="inventory-filter-grid">
                     <Form.Group>
                       <Form.Label>Brand</Form.Label>
-                      <Form.Select value={filterBrand} onChange={(e) => setFilterBrand(e.target.value)}>
+                      <Form.Select
+                        value={filterBrand}
+                        onChange={(e) => setFilterBrand(e.target.value)}
+                      >
                         <option value="">All brands</option>
                         {brands.map((brandName) => (
-                          <option key={brandName} value={brandName}>{brandName}</option>
+                          <option key={brandName} value={brandName}>
+                            {brandName}
+                          </option>
                         ))}
                       </Form.Select>
                     </Form.Group>
                     <Form.Group>
                       <Form.Label>Category</Form.Label>
-                      <Form.Select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+                      <Form.Select
+                        value={filterCategory}
+                        onChange={(e) => setFilterCategory(e.target.value)}
+                      >
                         <option value="">All categories</option>
                         {categories.map((categoryName) => (
                           <option key={categoryName} value={categoryName}>
-                            {categoryName.charAt(0).toUpperCase() + categoryName.slice(1)}
+                            {categoryName.charAt(0).toUpperCase() +
+                              categoryName.slice(1)}
                           </option>
                         ))}
                       </Form.Select>
                     </Form.Group>
                     <Form.Group>
                       <Form.Label>Gender</Form.Label>
-                      <Form.Select value={filterGender} onChange={(e) => setFilterGender(e.target.value)}>
+                      <Form.Select
+                        value={filterGender}
+                        onChange={(e) => setFilterGender(e.target.value)}
+                      >
                         <option value="">All genders</option>
                         <option value="men">Men</option>
                         <option value="women">Women</option>
@@ -381,7 +414,9 @@ export default function stockShoes() {
 
                       <td className="admin-cell-tag">{shoe.category}</td>
 
-                      <td className="admin-cell-capitalize">{shoe.gender || "-"}</td>
+                      <td className="admin-cell-capitalize">
+                        {shoe.gender || "-"}
+                      </td>
 
                       <td>{shoe.color || "-"}</td>
 
@@ -596,7 +631,6 @@ export default function stockShoes() {
               onChange={(e) => setDescription(e.target.value)}
             />
           </Form.Group>
-
         </Modal.Body>
 
         <Modal.Footer className="admin-modal-footer">
@@ -620,7 +654,9 @@ export default function stockShoes() {
         dialogClassName="admin-delete-modal"
       >
         <Modal.Header closeButton className="admin-modal-header">
-          <Modal.Title className="admin-modal-title">Delete Product</Modal.Title>
+          <Modal.Title className="admin-modal-title">
+            Delete Product
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body className="admin-delete-modal-body">
           <p>

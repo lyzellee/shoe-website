@@ -31,12 +31,13 @@ export const login = async (req, res) => {
     // creating JWT toker
     const token = jwt.sign(
       {
+        id: user._id,
         userId: user._id,
         role: user.role,
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: "1h",
+        expiresIn: "7d", // Token expires in 7 days
       },
     );
     // back to token and user information
@@ -81,7 +82,7 @@ export const registerUser = async (req, res) => {
         role: "admin",
       });
 
-      if (adminCount >= 2) {
+      if (adminCount >= 3) {
         return res.status(403).json({
           message: "Maximum of 2 admin accounts allowed",
         });

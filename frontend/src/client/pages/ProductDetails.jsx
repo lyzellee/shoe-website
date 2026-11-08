@@ -15,7 +15,7 @@ import {
 } from "../../components/AddToCartItems.jsx";
 import "./ProductDetails.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = `${import.meta.env.VITE_API_BASE_URL}`;
 
 // Get the product from different possible API response formats
 function unwrapProduct(data) {
@@ -45,7 +45,7 @@ function getImage(item) {
     return image;
   }
 
-  return `http://localhost:5000${image.startsWith("/") ? "" : "/"}${image}`;
+  return `${API_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 }
 
 // Get and format the product price
@@ -498,7 +498,9 @@ function ProductDetails() {
                 </div>
 
                 <div className="recommendation-meta">
-                  <span>{formatLabel(item.brand || item.gender || sectionName)}</span>
+                  <span>
+                    {formatLabel(item.brand || item.gender || sectionName)}
+                  </span>
 
                   <span>{formatPrice(item)}</span>
                 </div>

@@ -22,17 +22,10 @@
   margin-bottom: 40px;
 }
 
-.orders-eyebrow {
-  font-size: 11px;
-  letter-spacing: 2px;
-  color: #849477;
-  font-weight: 600;
-}
-
 .your-orders-header h1 {
-  font-size: 36px;
+  font-size: 30px;
   font-weight: 650;
-  margin: 10px 0;
+  margin: 5px 0;
 }
 
 .your-orders-header p {
@@ -265,6 +258,7 @@
   font-size: 13px;
   color: #77776f;
   display: flex;
+  flex-wrap: wrap;
   gap: 9px;
   margin: 5px 0;
 }

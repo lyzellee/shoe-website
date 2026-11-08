@@ -5,6 +5,7 @@ import { faHeart } from "@fortawesome/free-regular-svg-icons";
 import {
   faMagnifyingGlass,
   faCartShopping,
+  faReceipt,
 } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
 import { readFavorites } from "../client/favorites.js";
@@ -94,6 +95,16 @@ function Navbar() {
               {cartCount > 0 && (
                 <span className="nav-count-badge">{cartCount}</span>
               )}
+            </Nav.Link>
+
+            <Nav.Link
+              as={Link}
+              to="/your-order"
+              className="nav-icon-order"
+              aria-label="Your orders"
+              title="Your Orders"
+            >
+              <FontAwesomeIcon icon={faReceipt} size="lg" />
             </Nav.Link>
           </div>
         </BootstrapNavbar.Collapse>

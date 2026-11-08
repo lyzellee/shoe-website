@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./YourOrder.css";
 
 const orderSteps = ["pending", "processing", "shipped", "delivered"];
@@ -34,6 +34,24 @@ const formatStatus = (status) => {
   return status.charAt(0).toUpperCase() + status.slice(1);
 };
 
+const getOrderImage = (shoe) => {
+  const image = shoe?.image || shoe?.imageUrl || shoe?.img;
+  if (!image) return "/product-images/product%201.png";
+  if (image.startsWith("http://") || image.startsWith("https://")) return image;
+  return `${import.meta.env.VITE_API_URL}${image.startsWith("/") ? "" : "/"}${image}`;
+};
+
+const readLocalOrders = () => {
+  try {
+    const savedOrders = JSON.parse(
+      localStorage.getItem("shoeHubOrders") || "[]",
+    );
+    return Array.isArray(savedOrders) ? savedOrders : [];
+  } catch {
+    return [];
+  }
+};
+
 export default function YourOrder({
   orders = [],
   loading = false,
@@ -42,6 +60,19 @@ export default function YourOrder({
   onTrackOrder,
 }) {
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [localOrders, setLocalOrders] = useState(readLocalOrders);
+  const displayedOrders = orders.length > 0 ? orders : localOrders;
+
+  useEffect(() => {
+    const refreshOrders = () => setLocalOrders(readLocalOrders());
+    window.addEventListener("storage", refreshOrders);
+    window.addEventListener("focus", refreshOrders);
+
+    return () => {
+      window.removeEventListener("storage", refreshOrders);
+      window.removeEventListener("focus", refreshOrders);
+    };
+  }, []);
 
   const toggleOrder = (id) => {
     setExpandedOrder((prev) => (prev === id ? null : id));
@@ -102,8 +133,7 @@ export default function YourOrder({
       <div className="your-orders-container">
         {/* PAGE HEADER */}
         <header className="your-orders-header">
-          <span className="orders-eyebrow">YOUR PURCHASES</span>
-          <h1>Your Orders</h1>
+          <h1>YOUR ORDERS</h1>
           <p>Track your orders and keep up with every step of your delivery.</p>
         </header>
 
@@ -111,14 +141,14 @@ export default function YourOrder({
         <section className="orders-summary">
           <div>
             <span>Total Orders</span>
-            <h2>{orders.length}</h2>
+            <h2>{displayedOrders.length}</h2>
           </div>
 
           <div>
             <span>In Progress</span>
             <h2>
               {
-                orders.filter((order) =>
+                displayedOrders.filter((order) =>
                   ["pending", "processing", "shipped"].includes(
                     order.orderStatus?.toLowerCase(),
                   ),
@@ -131,7 +161,7 @@ export default function YourOrder({
             <span>Delivered</span>
             <h2>
               {
-                orders.filter(
+                displayedOrders.filter(
                   (order) => order.orderStatus?.toLowerCase() === "delivered",
                 ).length
               }
@@ -143,10 +173,10 @@ export default function YourOrder({
         <section className="orders-list-section">
           <div className="orders-list-heading">
             <h2>Order History</h2>
-            <span>{orders.length} orders</span>
+            <span>{displayedOrders.length} orders</span>
           </div>
 
-          {orders.length === 0 ? (
+          {displayedOrders.length === 0 ? (
             <div className="orders-empty">
               <div className="empty-order-icon">▤</div>
               <h3>No orders yet</h3>
@@ -157,7 +187,7 @@ export default function YourOrder({
             </div>
           ) : (
             <div className="orders-list">
-              {orders.map((order) => {
+              {displayedOrders.map((order) => {
                 const orderId = order._id;
                 const status = order.orderStatus?.toLowerCase() || "pending";
                 const statusIndex = getStatusIndex(status);
@@ -214,7 +244,7 @@ export default function YourOrder({
                             <div className="order-product-image">
                               {shoe?.image ? (
                                 <img
-                                  src={shoe.image}
+                                  src={getOrderImage(shoe)}
                                   alt={shoe.name || "Shoe"}
                                 />
                               ) : (
@@ -231,6 +261,8 @@ export default function YourOrder({
 
                               <p>
                                 Size: {item.size || "N/A"}
+                                <span>•</span>
+                                Color: {item.color || shoe?.color || "Standard"}
                                 <span>•</span>
                                 Qty: {item.quantity}
                               </p>

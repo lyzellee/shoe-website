@@ -1,47 +1,45 @@
 import Order from "../models/order.js";
 import OrderInformation from "../models/orderInformation.js";
-import Payment from "../models/payment.js";
 import Shoe from "../models/shoe.js";
+
+const TIMEZONE = "Asia/Manila";
 
 // @desc    Get Admin Dashboard Analytics & Summary
 // @route   GET /api/admin/dashboard-stats
 // @access  Private/Admin
 export const getDashboardStats = async (req, res) => {
   try {
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const startOfCurrentMonth = new Date(
-      currentYear,
-      currentDate.getMonth(),
-      1,
-    );
-    const startOfPreviousMonth = new Date(
-      currentYear,
-      currentDate.getMonth() - 1,
-      1,
-    );
-    const endOfPreviousMonth = new Date(
-      currentYear,
-      currentDate.getMonth(),
-      0,
-      23,
-      59,
-      59,
-    );
+    const now = new Date();
+    const year = now.getFullYear();
 
-    // 1. Total Revenue, Total Orders, & Monthly Revenue Comparison
-    const salesSummary = await Order.aggregate([
-      { $match: { status: { $ne: "Cancelled" } } },
+    const startOfCurrentMonth = new Date(year, now.getMonth(), 1);
+    const startOfPreviousMonth = new Date(year, now.getMonth() - 1, 1);
+    const startOfYear = new Date(year, 0, 1);
+    const startOfNextYear = new Date(year + 1, 0, 1);
+
+    // Revenue only counts orders that are not cancelled AND already paid.
+    const paidMatch = {
+      orderStatus: { $ne: "cancelled" },
+      paymentStatus: "completed",
+    };
+    const isPaid = { $eq: ["$paymentStatus", "completed"] };
+
+    // 1. Totals + this month vs last month
+    const [summaryRow] = await Order.aggregate([
+      { $match: { orderStatus: { $ne: "cancelled" } } },
       {
         $group: {
           _id: null,
-          totalRevenue: { $sum: "$totalAmount" },
           totalOrders: { $sum: 1 },
+          paidOrders: { $sum: { $cond: [isPaid, 1, 0] } },
+          totalRevenue: { $sum: { $cond: [isPaid, "$totalPrice", 0] } },
           monthlyRevenue: {
             $sum: {
               $cond: [
-                { $gte: ["$createdAt", startOfCurrentMonth] },
-                "$totalAmount",
+                {
+                  $and: [isPaid, { $gte: ["$orderDate", startOfCurrentMonth] }],
+                },
+                "$totalPrice",
                 0,
               ],
             },
@@ -51,11 +49,12 @@ export const getDashboardStats = async (req, res) => {
               $cond: [
                 {
                   $and: [
-                    { $gte: ["$createdAt", startOfPreviousMonth] },
-                    { $lte: ["$createdAt", endOfPreviousMonth] },
+                    isPaid,
+                    { $gte: ["$orderDate", startOfPreviousMonth] },
+                    { $lt: ["$orderDate", startOfCurrentMonth] },
                   ],
                 },
-                "$totalAmount",
+                "$totalPrice",
                 0,
               ],
             },
@@ -64,41 +63,42 @@ export const getDashboardStats = async (req, res) => {
       },
     ]);
 
-    const summary = salesSummary[0] || {
-      totalRevenue: 0,
+    const summary = summaryRow || {
       totalOrders: 0,
+      paidOrders: 0,
+      totalRevenue: 0,
       monthlyRevenue: 0,
       prevMonthlyRevenue: 0,
     };
 
-    const monthlyGrowth =
-      summary.prevMonthlyRevenue > 0
-        ? (
-            ((summary.monthlyRevenue - summary.prevMonthlyRevenue) /
-              summary.prevMonthlyRevenue) *
-            100
-          ).toFixed(1)
-        : 100;
+    let monthlyGrowth = 0;
+    if (summary.prevMonthlyRevenue > 0) {
+      monthlyGrowth = Number(
+        (
+          ((summary.monthlyRevenue - summary.prevMonthlyRevenue) /
+            summary.prevMonthlyRevenue) *
+          100
+        ).toFixed(1),
+      );
+    } else if (summary.monthlyRevenue > 0) {
+      monthlyGrowth = 100;
+    }
 
-    // 2. Monthly Sales Trend (Jan - Dec) para sa Bar/Line Graph
-    const monthlySalesTrend = await Order.aggregate([
+    // 2. Monthly sales trend (Jan - Dec of the current year)
+    const monthlyTrend = await Order.aggregate([
       {
         $match: {
-          createdAt: {
-            $gte: new Date(`${currentYear}-01-01`),
-            $lte: new Date(`${currentYear}-12-31`),
-          },
-          status: { $ne: "Cancelled" },
+          ...paidMatch,
+          orderDate: { $gte: startOfYear, $lt: startOfNextYear },
         },
       },
       {
         $group: {
-          _id: { $month: "$createdAt" },
-          totalSales: { $sum: "$totalAmount" },
+          _id: { $month: { date: "$orderDate", timezone: TIMEZONE } },
+          totalSales: { $sum: "$totalPrice" },
           orderCount: { $sum: 1 },
         },
       },
-      { $sort: { _id: 1 } },
     ]);
 
     const monthNames = [
@@ -116,8 +116,8 @@ export const getDashboardStats = async (req, res) => {
       "Dec",
     ];
 
-    const formattedMonthlySales = monthNames.map((month, index) => {
-      const found = monthlySalesTrend.find((item) => item._id === index + 1);
+    const monthlySalesTrend = monthNames.map((month, index) => {
+      const found = monthlyTrend.find((m) => m._id === index + 1);
       return {
         month,
         sales: found ? found.totalSales : 0,
@@ -125,68 +125,89 @@ export const getDashboardStats = async (req, res) => {
       };
     });
 
-    // 3. Top 5 Best Selling Shoes (Joined sa orderinformations / shoes)
-    const topShoes = await OrderInformation.aggregate([
+    // 3. Top 5 best-selling shoes (items live inside each order)
+    const topShoes = await Order.aggregate([
+      { $match: paidMatch },
+      { $unwind: "$items" },
       {
         $group: {
-          _id: "$shoeId",
-          totalQuantitySold: { $sum: "$quantity" },
+          _id: "$items.shoeId",
+          totalQuantitySold: { $sum: "$items.quantity" },
           totalRevenueGenerated: {
-            $sum: { $multiply: ["$price", "$quantity"] },
+            $sum: { $multiply: ["$items.price", "$items.quantity"] },
           },
         },
       },
-      { $sort: { totalQuantitySold: -1 } },
+      { $sort: { totalQuantitySold: -1, totalRevenueGenerated: -1 } },
       { $limit: 5 },
       {
         $lookup: {
-          from: "shoes",
+          from: Shoe.collection.name,
           localField: "_id",
           foreignField: "_id",
-          as: "shoeDetails",
+          as: "shoe",
         },
       },
-      { $unwind: { path: "$shoeDetails", preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: "$shoe", preserveNullAndEmptyArrays: true } },
       {
         $project: {
           _id: 1,
-          name: { $ifNull: ["$shoeDetails.name", "Unknown Shoe"] },
-          brand: "$shoeDetails.brand",
+          name: { $ifNull: ["$shoe.name", "Deleted shoe"] },
+          brand: "$shoe.brand",
           totalQuantitySold: 1,
           totalRevenueGenerated: 1,
         },
       },
     ]);
 
-    // 4. Order Status Breakdown (Pie Chart data)
+    // 4. Order status breakdown (donut chart)
     const statusBreakdown = await Order.aggregate([
-      {
-        $group: {
-          _id: "$status",
-          count: { $sum: 1 },
-        },
-      },
+      { $group: { _id: "$orderStatus", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
     ]);
 
-    // 5. Recent 5 Orders
-    const recentOrders = await Order.find()
-      .sort({ createdAt: -1 })
+    // 5. Recent 5 orders (+ customer name from order information)
+    const latestOrders = await Order.find()
+      .sort({ orderDate: -1 })
       .limit(5)
-      .select(
-        "orderNumber totalAmount status createdAt paymentMethod customerName",
-      );
+      .lean();
+
+    const customers = await OrderInformation.find({
+      orderId: { $in: latestOrders.map((o) => o._id) },
+    })
+      .select("orderId firstName lastName")
+      .lean();
+
+    const customerByOrder = new Map(
+      customers.map((c) => [
+        String(c.orderId),
+        `${c.firstName} ${c.lastName}`.trim(),
+      ]),
+    );
+
+    // Keep the field names the Dashboard.jsx already expects
+    const recentOrders = latestOrders.map((o) => ({
+      _id: o._id,
+      orderNumber: o.orderReference,
+      customerName: customerByOrder.get(String(o._id)) || "Guest",
+      totalAmount: o.totalPrice,
+      status: o.orderStatus,
+      paymentStatus: o.paymentStatus,
+      createdAt: o.orderDate,
+    }));
 
     return res.status(200).json({
       success: true,
       summary: {
         totalRevenue: summary.totalRevenue,
         totalOrders: summary.totalOrders,
+        paidOrders: summary.paidOrders,
         monthlyRevenue: summary.monthlyRevenue,
         prevMonthlyRevenue: summary.prevMonthlyRevenue,
-        monthlyGrowth: Number(monthlyGrowth),
+        monthlyGrowth,
       },
       analytics: {
-        monthlySalesTrend: formattedMonthlySales,
+        monthlySalesTrend,
         topShoes,
         statusBreakdown,
       },

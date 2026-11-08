@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 
 export default function SuccessfulPayment() {
-  // Babalik sa home page pagkatapos ng 3 segundo
   useEffect(() => {
     const timer = setTimeout(() => {
       window.location.href = "/feedback";
@@ -11,10 +10,23 @@ export default function SuccessfulPayment() {
   }, []);
 
   return (
-    <div className="payment-message">
-      <h2>Payment Successful!</h2>
-      <p>Thank you for your purchase.</p>
-      <p>You will be redirected to the home page shortly...</p>
+    <div className="payment-success" role="status" aria-live="polite">
+      <div className="payment-success-card">
+        <div className="payment-success-icon" aria-hidden="true">
+          <span>✓</span>
+        </div>
+        <p className="payment-success-label">PAYMENT CONFIRMED</p>
+        <h2>Payment Successful!</h2>
+        <p className="payment-success-copy">
+          Thank you for your purchase. Your order has been confirmed.
+        </p>
+        <div className="payment-success-progress" aria-hidden="true">
+          <span></span>
+        </div>
+        <p className="payment-success-note">
+          Taking you to share your experience...
+        </p>
+      </div>
     </div>
   );
 }

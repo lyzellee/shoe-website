@@ -174,6 +174,8 @@ export default function Checkout() {
             items: cartItems.map((item) => ({
               shoeId: item._id,
               quantity: item.quantity,
+              size: item.size || "",
+              color: item.color || item.brand || "",
             })),
           }),
         },
@@ -231,6 +233,54 @@ export default function Checkout() {
         );
         return;
       }
+
+      const savedOrders = JSON.parse(
+        localStorage.getItem("shoeHubOrders") || "[]",
+      );
+      const localOrder = {
+        _id: newOrderId,
+        orderReference: orderResult.data.orderReference,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        orderStatus: "pending",
+        paymentStatus: "pending",
+        paymentMethod: paymentMethod,
+        totalPrice:
+          orderResult.data.totalPrice ||
+          cartItems.reduce(
+            (total, item) =>
+              total + Number(item.price || 0) * Number(item.quantity || 1),
+            0,
+          ),
+        customerInfo: {
+          firstName,
+          lastName,
+          address,
+          city,
+          province,
+          zipCode,
+          phone,
+          email,
+        },
+        items: cartItems.map((item) => ({
+          _id: `${newOrderId}-${item._id}`,
+          quantity: Number(item.quantity || 1),
+          size: item.size || "",
+          color: item.color || item.brand || "",
+          price: Number(item.price || 0),
+          shoeId: {
+            _id: item._id,
+            name: item.name,
+            brand: item.brand,
+            image: item.image || item.imageUrl || item.img,
+            price: Number(item.price || 0),
+          },
+        })),
+      };
+      localStorage.setItem(
+        "shoeHubOrders",
+        JSON.stringify([localOrder, ...(Array.isArray(savedOrders) ? savedOrders : [])]),
+      );
 
       // STEP 5: Ipadala ang valid order ID sa payment backend
       const paymentResponse = await fetch(

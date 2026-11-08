@@ -91,7 +91,8 @@
 }
 
 .nav-icon-heart,
-.nav-icon-cart {
+.nav-icon-cart,
+.nav-icon-order {
   position: relative;
   width: 32px;
   height: 32px;

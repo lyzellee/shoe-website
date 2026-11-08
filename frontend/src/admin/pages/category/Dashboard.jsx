@@ -342,8 +342,8 @@ export default function Dashboard() {
   }, [fetchStats]);
 
   const avgOrder = useMemo(() => {
-    if (!stats?.summary?.totalOrders) return 0;
-    return stats.summary.totalRevenue / stats.summary.totalOrders;
+    if (!stats?.summary?.paidOrders) return 0;
+    return stats.summary.totalRevenue / stats.summary.paidOrders;
   }, [stats]);
 
   const year = new Date().getFullYear();
@@ -386,7 +386,7 @@ export default function Dashboard() {
               accent
               label="Total Revenue"
               value={peso(stats.summary.totalRevenue)}
-              note="excluding cancelled"
+              note="from paid orders"
             />
             <StatCard
               label={`${monthName} Revenue`}

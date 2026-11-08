@@ -242,7 +242,7 @@ export const createPayment = async (req, res) => {
     );
 
     const attachResult = await attachResponse.json();
-    // Stop if PayMongo fails to attach the payment method
+
     if (!attachResponse.ok || !attachResult.data) {
       return res.status(400).json({
         message: "Failed to attach payment method",

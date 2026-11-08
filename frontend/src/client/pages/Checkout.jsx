@@ -380,9 +380,24 @@ export default function Checkout() {
   return (
     <div className="checkout-page">
       {isLoading ? (
-        <div className="payment-message">
-          <h2>Checking Payment...</h2>
-          <p>Please wait while we verify your payment.</p>
+        <div className="payment-verification" role="status" aria-live="polite">
+          <div className="payment-verification-card">
+            <div className="payment-verification-icon" aria-hidden="true">
+              <span className="payment-spinner"></span>
+              <span className="payment-spinner-dot"></span>
+            </div>
+            <p className="payment-verification-label">PAYMENT VERIFICATION</p>
+            <h2>Checking your payment</h2>
+            <p className="payment-verification-copy">
+              Please wait while we securely confirm your transaction.
+            </p>
+            <div className="payment-verification-progress" aria-hidden="true">
+              <span></span>
+            </div>
+            <p className="payment-verification-note">
+              Do not close or refresh this page.
+            </p>
+          </div>
         </div>
       ) : isPaymentSuccess ? (
         <SuccessfulPayment />

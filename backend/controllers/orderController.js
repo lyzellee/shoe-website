@@ -192,6 +192,104 @@ export const getAllOrder = async (req, res) => {
   }
 };
 
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { orderStatus } = req.body;
+    const allowedStatuses = ["pending", "processing", "shipped", "delivered"];
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid order ID" });
+    }
+
+    if (!allowedStatuses.includes(orderStatus)) {
+      return res.status(400).json({ message: "Invalid order status" });
+    }
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const statusOrder = {
+      pending: 0,
+      processing: 1,
+      shipped: 2,
+      delivered: 3,
+    };
+
+    if (order.orderStatus === "cancelled") {
+      return res.status(400).json({
+        message: "Cancelled orders cannot be moved to another status",
+      });
+    }
+
+    if (statusOrder[orderStatus] < statusOrder[order.orderStatus]) {
+      return res.status(400).json({
+        message: "Order status cannot move backward",
+      });
+    }
+
+    order.orderStatus = orderStatus;
+    await order.save();
+
+    return res.status(200).json({
+      message: "Order status updated successfully",
+      data: order,
+    });
+  } catch (err) {
+    console.error("UPDATE ORDER STATUS ERROR:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getCustomerOrders = async (req, res) => {
+  try {
+    const { references } = req.body;
+
+    if (!Array.isArray(references) || references.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const cleanReferences = references
+      .filter((reference) => typeof reference === "string")
+      .map((reference) => reference.trim())
+      .filter(Boolean)
+      .slice(0, 50);
+
+    const orders = await Order.aggregate([
+      {
+        $match: {
+          orderReference: { $in: cleanReferences },
+        },
+      },
+      {
+        $lookup: {
+          from: "orderschemainformations",
+          localField: "_id",
+          foreignField: "orderId",
+          as: "customerInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$customerInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+    ]);
+
+    const populatedOrders = await Order.populate(orders, {
+      path: "items.shoeId",
+    });
+
+    return res.status(200).json(populatedOrders);
+  } catch (err) {
+    console.error("GET CUSTOMER ORDERS ERROR:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export const getSingleOrder = async (req, res) => {
   try {
     const { id } = req.params;

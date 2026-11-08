@@ -23,7 +23,7 @@ import {
   updateById,
   restoreById,
 } from "../controllers/shoeController.js";
-
+import { getDashboardStats } from "../controllers/dashBoardController.js";
 import {
   createOrder,
   getAllOrder,
@@ -110,5 +110,11 @@ router.post(
 );
 router.post("/login", login);
 router.post("/register", verifyToken, allowRoles("admin"), registerUser);
+router.get(
+  "/dashboard-stats",
+  verifyToken,
+  allowRoles("admin"),
+  getDashboardStats,
+);
 
 export default router;

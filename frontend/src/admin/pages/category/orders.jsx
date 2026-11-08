@@ -57,6 +57,9 @@ export default function Orders() {
 
   const getPaymentBadge = (status) => {
     switch (status) {
+      case "processing":
+        return <Badge bg="secondary">Processing</Badge>;
+
       case "completed":
         return <Badge bg="success">Completed</Badge>;
       case "pending":

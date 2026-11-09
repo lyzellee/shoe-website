@@ -10,6 +10,7 @@ import {
   loadCustomerOrder,
 } from "./customerOrders.js";
 import "./OrderPages.css";
+import "./TrackOrder.css";
 
 const STEPS = ["pending", "processing", "shipped", "delivered"];
 const formatStatus = (status) =>
@@ -71,28 +72,22 @@ export default function TrackOrder() {
   const { reference } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
 
-  const refreshOrder = useCallback(
-    async (initial = false) => {
-      if (!initial) setRefreshing(true);
-      try {
-        setOrder(await loadCustomerOrder(reference));
-        setError("");
-      } catch (requestError) {
-        setError(requestError.message);
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [reference],
-  );
+  const refreshOrder = useCallback(async () => {
+    try {
+      setOrder(await loadCustomerOrder(reference));
+      setError("");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [reference]);
 
   useEffect(() => {
-    const initialLoadId = window.setTimeout(() => refreshOrder(true), 0);
+    const initialLoadId = window.setTimeout(() => refreshOrder(), 0);
     const intervalId = window.setInterval(() => refreshOrder(), 60000);
     return () => {
       window.clearTimeout(initialLoadId);
@@ -150,7 +145,7 @@ export default function TrackOrder() {
   const firstShoe = firstItem ? getItemShoe(firstItem) : null;
 
   return (
-    <main className="order-page">
+    <main className="order-page track-page">
       <div className="order-page-container">
         <Link className="order-back-link" to="/your-order">
           ← Back to orders
@@ -167,14 +162,6 @@ export default function TrackOrder() {
               <span className="status-dot" />
               {formatStatus(status)}
             </span>
-            <button
-              type="button"
-              className="order-action-secondary"
-              onClick={() => refreshOrder()}
-              disabled={refreshing}
-            >
-              {refreshing ? "Refreshing…" : "Refresh"}
-            </button>
           </div>
         </header>
 
@@ -344,14 +331,16 @@ function OrderRecap({ order, item, shoe }) {
       {item && (
         <div className="order-recap-item">
           {item && (
-            <img
-              src={getProductImage(shoe)}
-              alt={shoe.name || "Ordered product"}
-              onError={(event) => {
-                event.currentTarget.onerror = null;
-                event.currentTarget.src = "/product-images/product%201.png";
-              }}
-            />
+            <div className="order-recap-image">
+              <img
+                src={getProductImage(shoe)}
+                alt={shoe.name || "Ordered product"}
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = "/product-images/product%201.png";
+                }}
+              />
+            </div>
           )}
           <div>
             <strong>{shoe?.name || "Product unavailable"}</strong>

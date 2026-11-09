@@ -107,6 +107,10 @@ export default function YourOrder() {
       [...orders].sort((a, b) => {
         const dateA = new Date(getOrderDate(a) || 0).getTime() || 0;
         const dateB = new Date(getOrderDate(b) || 0).getTime() || 0;
+        // Delivered orders go to the bottom, everything else is newest first
+        const deliveredA = normalizeStatus(a.orderStatus) === "delivered";
+        const deliveredB = normalizeStatus(b.orderStatus) === "delivered";
+        if (deliveredA !== deliveredB) return deliveredA ? 1 : -1;
         return dateB - dateA;
       }),
     [orders],

@@ -30,6 +30,7 @@ import {
   getAllOrder,
   updateOrderStatus,
   getCustomerOrders,
+  cancelCustomerOrder,
   getSingleOrder,
   deleteOrderById,
   updateOrderItemQuantity,
@@ -49,6 +50,7 @@ router.get("/men", getMenShoes);
 router.get("/women", getWomenShoes);
 router.post("/orders", createOrder);
 router.post("/customer-orders", getCustomerOrders);
+router.patch("/customer-orders/:reference/cancel", cancelCustomerOrder);
 router.get("/single/:id", getSingleShoe);
 //user-feedback
 router.post("/create-userfb", createUserFeedback);
@@ -126,6 +128,14 @@ router.get(
   verifyToken,
   allowRoles("admin", "representative"),
   getDashboardStats,
+);
+
+router.patch("/customer-orders/:reference/return", requestReturn);
+router.patch(
+  "/orders/:id/return",
+  verifyToken,
+  allowRoles("admin", "representative"),
+  resolveReturn,
 );
 
 export default router;

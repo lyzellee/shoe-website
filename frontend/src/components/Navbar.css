@@ -92,7 +92,7 @@
 
 .nav-icon-heart,
 .nav-icon-cart,
-.nav-icon-order {
+.nav-icon-account {
   position: relative;
   width: 32px;
   height: 32px;
@@ -101,6 +101,90 @@
   justify-content: center;
   margin: 0 !important;
   padding: 0 !important;
+}
+
+.navbar-account {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.nav-icon-account {
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #252824;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.nav-icon-account:hover,
+.nav-icon-account.is-open {
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.nav-icon-account:focus-visible {
+  outline: 2px solid #536649;
+  outline-offset: 2px;
+}
+
+.account-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1050;
+  width: 188px;
+  padding: 5px;
+  border: 1px solid rgba(46, 47, 48, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(37, 39, 35, 0.16);
+}
+
+.account-dropdown-item {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #30322d;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.account-dropdown-item svg {
+  width: 14px;
+  color: #6d746a;
+}
+
+.account-dropdown-item:hover,
+.account-dropdown-item:focus-visible,
+.account-dropdown-item.active {
+  background: #e7eddf;
+  color: #303b2e;
+  outline: none;
+}
+
+.account-dropdown-item.active {
+  font-weight: 600;
+}
+
+.account-dropdown-item:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.account-dropdown-divider {
+  height: 1px;
+  margin: 3px 4px;
+  background: #e7e8e3;
 }
 
 .nav-count-badge {
@@ -200,5 +284,12 @@
     justify-content: center;
     gap: 14px;
     padding: 10px 0 2px;
+  }
+
+  .account-dropdown {
+    top: auto;
+    right: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(50%);
   }
 }

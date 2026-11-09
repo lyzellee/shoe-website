@@ -169,6 +169,7 @@ export default function Checkout() {
           body: JSON.stringify({
             // Gumawa ng unique order reference
             orderReference: `ORD-${Date.now()}`,
+            paymentMethod,
 
             // I-convert ang cart items sa format na kailangan ng backend
             items: cartItems.map((item) => ({
@@ -240,9 +241,14 @@ export default function Checkout() {
       const localOrder = {
         _id: newOrderId,
         orderReference: orderResult.data.orderReference,
+        customerAccessToken: orderResult.customerAccessToken,
         createdAt: new Date().toISOString(),
+        orderDate: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         orderStatus: "pending",
+        statusHistory: [
+          { status: "pending", changedAt: new Date().toISOString() },
+        ],
         paymentStatus: "pending",
         paymentMethod: paymentMethod,
         totalPrice:

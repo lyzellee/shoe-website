@@ -29,6 +29,8 @@ import Wishlist from "./client/pages/Wishlist.jsx";
 import Women from "./client/pages/Women.jsx";
 import Feedback from "./client/pages/Feedback.jsx";
 import YourOrder from "./client/pages/YourOrder.jsx";
+import OrderDetails from "./client/pages/OrderDetails.jsx";
+import TrackOrder from "./client/pages/TrackOrder.jsx";
 
 // Components
 import Navbar from "./components/Navbar";
@@ -57,6 +59,8 @@ function AppContent() {
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/feedback" element={<Feedback />} />
         <Route path="/your-order" element={<YourOrder />} />
+        <Route path="/orders/:reference/track" element={<TrackOrder />} />
+        <Route path="/orders/:reference" element={<OrderDetails />} />
 
         {/* Admin Pages with Shared Sidebar */}
         <Route element={<AdminLayout />}>

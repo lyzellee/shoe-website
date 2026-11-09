@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import Shoe from "../models/shoe.js";
 import Order from "../models/order.js";
 import Payment from "../models/payment.js";
@@ -8,12 +9,21 @@ export const createOrder = async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
-    const { orderReference, items } = req.body;
+    const { orderReference, items, paymentMethod } = req.body;
 
     // Validate order reference
     if (typeof orderReference !== "string" || orderReference.trim() === "") {
       return res.status(400).json({
         message: "Order reference is required",
+      });
+    }
+
+    if (
+      paymentMethod &&
+      !["COD", "GCash", "Card"].includes(paymentMethod)
+    ) {
+      return res.status(400).json({
+        message: "Invalid payment method",
       });
     }
 
@@ -46,6 +56,10 @@ export const createOrder = async (req, res) => {
     }
 
     let computedTotalPrice = 0;
+    const customerAccessToken = randomBytes(32).toString("hex");
+    const customerAccessTokenHash = createHash("sha256")
+      .update(customerAccessToken)
+      .digest("hex");
 
     // Validate each order item
     for (const item of items) {
@@ -123,6 +137,9 @@ export const createOrder = async (req, res) => {
           orderReference: orderReference.trim(),
           items,
           totalPrice: computedTotalPrice,
+          paymentMethod,
+          customerAccessTokenHash,
+          statusHistory: [{ status: "pending", changedAt: new Date() }],
         },
       ],
       { session },
@@ -132,9 +149,12 @@ export const createOrder = async (req, res) => {
     await session.commitTransaction();
 
     // Return success response
+    const responseOrder = newOrder[0].toObject();
+    delete responseOrder.customerAccessTokenHash;
     res.status(201).json({
       message: "Order created successfully!",
-      data: newOrder[0],
+      data: responseOrder,
+      customerAccessToken,
     });
   } catch (err) {
     // Abort transaction if an error occurs
@@ -230,7 +250,58 @@ export const updateOrderStatus = async (req, res) => {
       });
     }
 
-    order.orderStatus = orderStatus;
+    // Courier + tracking number are required before an order can be shipped
+    const statusNote =
+      typeof req.body.note === "string" ? req.body.note.trim() : "";
+    const nextCourier =
+      typeof req.body.courier === "string"
+        ? req.body.courier.trim()
+        : order.courier;
+    const nextTracking =
+      typeof req.body.trackingNumber === "string"
+        ? req.body.trackingNumber.trim()
+        : order.trackingNumber;
+
+    if (orderStatus === "shipped" && (!nextCourier || !nextTracking)) {
+      return res.status(400).json({
+        message:
+          "Courier and tracking number are required to mark an order as shipped",
+      });
+    }
+
+    if (order.orderStatus !== orderStatus) {
+      order.orderStatus = orderStatus;
+      if (!Array.isArray(order.statusHistory)) order.statusHistory = [];
+      order.statusHistory.push({
+        status: orderStatus,
+        changedAt: new Date(),
+        note: statusNote,
+      });
+
+      if (orderStatus === "delivered") {
+        order.deliveredAt = new Date();
+        // Cash on delivery is paid when the order arrives
+        if (
+          order.paymentMethod === "COD" &&
+          order.paymentStatus !== "completed"
+        ) {
+          order.paymentStatus = "completed";
+        }
+      }
+    }
+
+    const { courier, trackingNumber, estimatedDelivery } = req.body;
+    if (typeof courier === "string") order.courier = courier.trim();
+    if (typeof trackingNumber === "string") {
+      order.trackingNumber = trackingNumber.trim();
+    }
+    if (estimatedDelivery !== undefined) {
+      const parsedEstimate = new Date(estimatedDelivery);
+      if (Number.isNaN(parsedEstimate.getTime())) {
+        return res.status(400).json({ message: "Invalid estimated delivery date" });
+      }
+      order.estimatedDelivery = parsedEstimate;
+    }
     await order.save();
 
     return res.status(200).json({
@@ -264,6 +335,11 @@ export const getCustomerOrders = async (req, res) => {
         },
       },
       {
+        $project: {
+          customerAccessTokenHash: 0,
+        },
+      },
+      {
         $lookup: {
           from: "orderschemainformations",
           localField: "_id",
@@ -283,10 +359,117 @@ export const getCustomerOrders = async (req, res) => {
       path: "items.shoeId",
     });
 
-    return res.status(200).json(populatedOrders);
+    const orderIds = populatedOrders.map((order) => order._id);
+    const payments = await Payment.find({ orderId: { $in: orderIds } })
+      .select("orderId paymentMethod paymentStatus createdAt updatedAt")
+      .lean();
+    const paymentByOrderId = new Map(
+      payments.map((payment) => [payment.orderId.toString(), payment]),
+    );
+
+    return res.status(200).json(
+      populatedOrders.map((order) => ({
+        ...order,
+        paymentInfo: paymentByOrderId.get(order._id.toString()) || null,
+      })),
+    );
   } catch (err) {
     console.error("GET CUSTOMER ORDERS ERROR:", err);
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const cancelCustomerOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    const reference = req.params.reference?.trim();
+    const accessToken = req.body?.customerAccessToken;
+    if (
+      !reference ||
+      typeof accessToken !== "string" ||
+      !/^[a-f0-9]{64}$/i.test(accessToken)
+    ) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    session.startTransaction();
+    const order = await Order.findOne({ orderReference: reference })
+      .select("+customerAccessTokenHash")
+      .session(session);
+
+    const suppliedHash = createHash("sha256").update(accessToken).digest();
+    const storedHash = order?.customerAccessTokenHash
+      ? Buffer.from(order.customerAccessTokenHash, "hex")
+      : Buffer.alloc(0);
+    if (
+      !order ||
+      storedHash.length !== suppliedHash.length ||
+      !timingSafeEqual(storedHash, suppliedHash)
+    ) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: "Order not found" });
+    }
+    if (order.orderStatus !== "pending" || order.paymentStatus === "completed") {
+      await session.abortTransaction();
+      return res.status(400).json({
+        message: "Only unpaid pending orders can be cancelled",
+      });
+    }
+
+    const pendingPayment = await Payment.findOne({
+      orderId: order._id,
+      paymentStatus: "pending",
+    }).session(session);
+    if (pendingPayment) {
+      await session.abortTransaction();
+      return res.status(409).json({
+        message: "A payment is still pending. Verify its status before cancelling.",
+      });
+    }
+
+    order.orderStatus = "cancelled";
+    if (!Array.isArray(order.statusHistory)) order.statusHistory = [];
+    order.statusHistory.push({
+      status: "cancelled",
+      changedAt: new Date(),
+      note: "Cancelled by customer",
+    });
+    await order.save({ session });
+
+    for (const item of order.items) {
+      const restoredShoe = await Shoe.findByIdAndUpdate(
+        item.shoeId,
+        { $inc: { stock: item.quantity } },
+        { session },
+      );
+      if (!restoredShoe) {
+        await session.abortTransaction();
+        return res.status(409).json({
+          message: "Cannot restore stock because a product was not found",
+        });
+      }
+    }
+
+    await session.commitTransaction();
+
+    const updatedOrder = await Order.findById(order._id)
+      .populate("items.shoeId")
+      .lean();
+    const customerInfo = await OrderSchemaInformation.findOne({
+      orderId: order._id,
+    }).lean();
+
+    return res.status(200).json({
+      message: "Order cancelled successfully",
+      data: { ...updatedOrder, customerInfo },
+    });
+  } catch (err) {
+    if (session.inTransaction()) await session.abortTransaction();
+    console.error("CANCEL CUSTOMER ORDER ERROR:", err);
+    return res.status(500).json({ message: "Unable to cancel the order" });
+  } finally {
+    await session.endSession();
   }
 };
 
@@ -390,6 +573,13 @@ export const deleteOrderById = async (req, res) => {
       },
       {
         $set: { orderStatus: "cancelled" },
+        $push: {
+          statusHistory: {
+            status: "cancelled",
+            changedAt: new Date(),
+            note: "Cancelled by representative",
+          },
+        },
       },
       {
         new: true,
@@ -707,5 +897,148 @@ export const createOrderInformation = async (req, res) => {
     return res.status(500).json({
       message: "Error saving customer information",
     });
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Returns / refunds
+// ---------------------------------------------------------------------------
+const RETURN_WINDOW_DAYS = 7;
+
+// Customer asks to return a delivered order
+export const requestReturn = async (req, res) => {
+  try {
+    const reference = req.params.reference?.trim();
+    const { customerAccessToken, reason } = req.body ?? {};
+
+    if (
+      !reference ||
+      typeof customerAccessToken !== "string" ||
+      !/^[a-f0-9]{64}$/i.test(customerAccessToken)
+    ) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const cleanReason = typeof reason === "string" ? reason.trim() : "";
+    if (cleanReason.length < 5 || cleanReason.length > 500) {
+      return res.status(400).json({
+        message:
+          "Please tell us why you want to return this order (5-500 characters)",
+      });
+    }
+
+    const order = await Order.findOne({ orderReference: reference }).select(
+      "+customerAccessTokenHash",
+    );
+
+    const supplied = createHash("sha256").update(customerAccessToken).digest();
+    const stored = order?.customerAccessTokenHash
+      ? Buffer.from(order.customerAccessTokenHash, "hex")
+      : Buffer.alloc(0);
+
+    if (
+      !order ||
+      stored.length !== supplied.length ||
+      !timingSafeEqual(stored, supplied)
+    ) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (order.orderStatus !== "delivered") {
+      return res.status(400).json({
+        message: "Only delivered orders can be returned",
+      });
+    }
+
+    if (order.returnStatus) {
+      return res.status(409).json({
+        message: "A return was already requested for this order",
+      });
+    }
+
+    const deliveredAt =
+      order.deliveredAt ||
+      order.statusHistory?.find((entry) => entry.status === "delivered")
+        ?.changedAt;
+
+    if (
+      deliveredAt &&
+      Date.now() - new Date(deliveredAt).getTime() >
+        RETURN_WINDOW_DAYS * 24 * 60 * 60 * 1000
+    ) {
+      return res.status(400).json({
+        message: `Returns must be requested within ${RETURN_WINDOW_DAYS} days of delivery`,
+      });
+    }
+
+    order.returnStatus = "requested";
+    order.returnReason = cleanReason;
+    order.returnRequestedAt = new Date();
+    await order.save();
+
+    const data = order.toObject();
+    delete data.customerAccessTokenHash;
+
+    return res.status(200).json({
+      message: "Return request sent",
+      data,
+    });
+  } catch (err) {
+    console.error("REQUEST RETURN ERROR:", err);
+    return res.status(500).json({ message: "Unable to send the return request" });
+  }
+};
+
+// Representative approves, rejects, or marks a return as refunded
+export const resolveReturn = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { decision, note } = req.body ?? {};
+
+    const nextStatus = {
+      approve: "approved",
+      reject: "rejected",
+      refund: "refunded",
+    }[decision];
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid order ID" });
+    }
+
+    if (!nextStatus) {
+      return res.status(400).json({
+        message: "Decision must be approve, reject or refund",
+      });
+    }
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const allowedFrom = {
+      approved: ["requested"],
+      rejected: ["requested"],
+      refunded: ["approved"],
+    };
+
+    if (!allowedFrom[nextStatus].includes(order.returnStatus)) {
+      return res.status(400).json({
+        message: "This return can't be moved to that status",
+      });
+    }
+
+    order.returnStatus = nextStatus;
+    order.returnResolvedAt = new Date();
+    order.returnNote = typeof note === "string" ? note.trim() : "";
+    await order.save();
+
+    return res.status(200).json({
+      message: "Return updated",
+      data: order,
+    });
+  } catch (err) {
+    console.error("RESOLVE RETURN ERROR:", err);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

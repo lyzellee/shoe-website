@@ -6,6 +6,11 @@ const orderSchema = new mongoose.Schema({
     unique: true,
   },
 
+  customerAccessTokenHash: {
+    type: String,
+    select: false,
+  },
+
   items: [
     {
       shoeId: {
@@ -42,17 +47,80 @@ const orderSchema = new mongoose.Schema({
     min: 0,
   },
 
+  paymentMethod: {
+    type: String,
+    enum: ["COD", "GCash", "Card"],
+  },
+
+  shippingCost: {
+    type: Number,
+    min: 0,
+    default: 0,
+  },
+
+  discountAmount: {
+    type: Number,
+    min: 0,
+    default: 0,
+  },
+
+  courier: {
+    type: String,
+    trim: true,
+    default: "",
+  },
+
+  trackingNumber: {
+    type: String,
+    trim: true,
+    default: "",
+  },
+
+  estimatedDelivery: {
+    type: Date,
+    default: null,
+  },
+
   orderStatus: {
     type: String,
     enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
     default: "pending",
   },
+
+  statusHistory: [
+    {
+      status: {
+        type: String,
+        enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
+        required: true,
+      },
+      changedAt: {
+        type: Date,
+        default: Date.now,
+      },
+      note: {
+        type: String,
+        default: "",
+      },
+    },
+  ],
   paymentStatus: {
     type: String,
     enum: ["pending", "completed", "failed"],
     default: "pending",
   },
 
+    deliveredAt: { type: Date, default: null },
+
+  returnStatus: {
+    type: String,
+    enum: ["requested", "approved", "rejected", "refunded"],
+  },
+  returnReason: { type: String, trim: true, maxlength: 500, default: "" },
+  returnRequestedAt: { type: Date, default: null },
+  returnResolvedAt: { type: Date, default: null },
+  returnNote: { type: String, trim: true, default: "" },
+  
   orderDate: {
     type: Date,
     default: Date.now,

@@ -2,6 +2,25 @@ import mongoose from "mongoose";
 import Payment from "../models/payment.js";
 import Order from "../models/order.js";
 
+const recordOrderStatus = (order, status, note = "") => {
+  if (order.orderStatus === status) return;
+  const rank = { pending: 0, processing: 1, shipped: 2, delivered: 3 };
+  if (
+    order.orderStatus === "cancelled" ||
+    (rank[order.orderStatus] !== undefined &&
+      rank[order.orderStatus] > rank[status])
+  ) {
+    return;
+  }
+  order.orderStatus = status;
+  if (!Array.isArray(order.statusHistory)) order.statusHistory = [];
+  order.statusHistory.push({
+    status,
+    changedAt: new Date(),
+    note,
+  });
+};
+
 export const createPayment = async (req, res) => {
   try {
     const { orderId, paymentMethod } = req.body;
@@ -92,10 +111,9 @@ export const createPayment = async (req, res) => {
         existingPayment.paymentStatus = "completed";
         await existingPayment.save();
 
-        await Order.findByIdAndUpdate(order._id, {
-          paymentStatus: "completed",
-          orderStatus: "processing",
-        });
+        order.paymentStatus = "completed";
+        recordOrderStatus(order, "processing", "Payment completed");
+        await order.save();
 
         return res.status(409).json({
           message: "This order has already been paid",
@@ -269,14 +287,12 @@ export const createPayment = async (req, res) => {
 
     // Update the order if payment succeeded
     if (paymentStatus === "succeeded") {
-      await Order.findByIdAndUpdate(orderId, {
-        paymentStatus: "completed",
-        orderStatus: "processing",
-      });
+      order.paymentStatus = "completed";
+      recordOrderStatus(order, "processing", "Payment completed");
+      await order.save();
     } else if (paymentStatus === "failed") {
-      await Order.findByIdAndUpdate(orderId, {
-        paymentStatus: "failed",
-      });
+      order.paymentStatus = "failed";
+      await order.save();
     }
 
     // Log whether the customer needs to complete another action
@@ -410,13 +426,8 @@ export const getPaymentStatus = async (req, res) => {
     else if (paymentStatus === "failed" || paymentStatus === "canceled") {
       payment.paymentStatus = "failed";
       await payment.save({ session });
-      await Order.findByIdAndUpdate(
-        payment.orderId,
-        {
-          paymentStatus: "failed",
-        },
-        { session },
-      );
+      order.paymentStatus = "failed";
+      await order.save({ session });
     }
     if (session.inTransaction()) {
       await session.commitTransaction();

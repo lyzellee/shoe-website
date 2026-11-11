@@ -919,40 +919,7 @@ export default function RepresentativeDashboard() {
             </section>
           </>
         ) : (
-          <section className="representative-orders-card">
-            <div className="representative-orders-heading">
-              <div>
-                <h2>All Orders</h2>
-                <p>Use the status menu to move an order forward.</p>
-              </div>
-            </div>
-
-            <div
-              className="representative-filter-pills"
-              role="group"
-              aria-label="Filter by status"
-            >
-              {[
-                ["all", orders.length, "All"],
-                ["pending", counts.pending || 0, "Pending"],
-                ["processing", counts.processing || 0, "Processing"],
-                ["shipped", counts.shipped || 0, "Shipped"],
-                ["delivered", counts.delivered || 0, "Delivered"],
-                ["cancelled", counts.cancelled || 0, "Cancelled"],
-                ["returns", counts.returns || 0, "Returns"],
-              ].map(([value, count, label]) => (
-                <button
-                  type="button"
-                  key={value}
-                  className={activeFilter === value ? "active" : ""}
-                  aria-pressed={activeFilter === value}
-                  onClick={() => setActiveFilter(value)}
-                >
-                  {label} <span>{count}</span>
-                </button>
-              ))}
-            </div>
-
+          <section className="representative-orders-page">
             <div className="representative-toolbar" ref={toolbarRef}>
               <div className="representative-toolbar-actions">
                 <div className="representative-menu-wrap">
@@ -1080,139 +1047,168 @@ export default function RepresentativeDashboard() {
               </label>
             </div>
 
-            <div className="representative-table-wrap">
-              <table className="representative-table">
-                <thead>
-                  <tr>
-                    <th>Reference</th>
-                    <th>Date</th>
-                    <th>Customer</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th>Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan="7" className="representative-empty">
-                        Loading orders...
-                      </td>
-                    </tr>
-                  ) : visibleOrders.length === 0 ? (
-                    <tr>
-                      <td colSpan="7" className="representative-empty">
-                        No orders found.
-                      </td>
-                    </tr>
-                  ) : (
-                    visibleOrders.map((order) => {
-                      const currentIndex = STATUSES.indexOf(
-                        order.orderStatus?.toLowerCase(),
-                      );
-                      const placed = order.orderDate || order.createdAt;
-                      return (
-                        <tr key={order._id}>
-                          <td>
-                            <strong>
-                              #{order.orderReference || order._id}
-                            </strong>
-                          </td>
-                          <td>
-                            <span className="representative-date">
-                              {formatDate(placed)}
-                            </span>
-                            {formatTime(placed) && (
-                              <small className="representative-time">
-                                {formatTime(placed)}
-                              </small>
-                            )}
-                          </td>
-                          <td>{getCustomerName(order)}</td>
-                          <td>{getItemCount(order)}</td>
-                          <td>
-                            <strong>{formatPrice(order.totalPrice)}</strong>
-                          </td>
-                          <td>
-                            <select
-                              aria-label={`Status for order ${order.orderReference || order._id}`}
-                              className={`representative-status representative-status-${order.orderStatus?.toLowerCase()}`}
-                              value={
-                                order.orderStatus?.toLowerCase() || "pending"
-                              }
-                              disabled={
-                                updatingId === order._id ||
-                                order.orderStatus === "cancelled"
-                              }
-                              onChange={(event) =>
-                                handleStatusChange(order, event.target.value)
-                              }
-                            >
-                              {STATUSES.map((status, index) => (
-                                <option
-                                  key={status}
-                                  value={status}
-                                  disabled={index < currentIndex}
-                                >
-                                  {formatStatus(status)}
-                                </option>
-                              ))}
-                              {order.orderStatus === "cancelled" && (
-                                <option value="cancelled">Cancelled</option>
-                              )}
-                            </select>
-                            {order.returnStatus && (
-                              <small className="representative-return-tag">
-                                Return{" "}
-                                {RETURN_LABELS[
-                                  order.returnStatus
-                                ]?.toLowerCase()}
-                              </small>
-                            )}
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              className="representative-view"
-                              onClick={() => setSelectedOrder(order)}
-                            >
-                              View
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <footer className="representative-table-footer">
-              <span>
-                Showing {visibleOrders.length} of {filteredOrders.length} orders
-              </span>
-              <div>
-                <button
-                  type="button"
-                  aria-label="Previous page"
-                  disabled={currentPage === 1}
-                  onClick={() => setPage(currentPage - 1)}
-                >
-                  ‹
-                </button>
-                <span>
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  type="button"
-                  aria-label="Next page"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setPage(currentPage + 1)}
-                >
-                  ›
-                </button>
+            <section className="representative-orders-card">
+              <div
+                className="representative-filter-pills"
+                role="group"
+                aria-label="Filter by status"
+              >
+                {[
+                  ["all", orders.length, "All"],
+                  ["pending", counts.pending || 0, "Pending"],
+                  ["processing", counts.processing || 0, "Processing"],
+                  ["shipped", counts.shipped || 0, "Shipped"],
+                  ["delivered", counts.delivered || 0, "Delivered"],
+                  ["cancelled", counts.cancelled || 0, "Cancelled"],
+                  ["returns", counts.returns || 0, "Returns"],
+                ].map(([value, count, label]) => (
+                  <button
+                    type="button"
+                    key={value}
+                    className={activeFilter === value ? "active" : ""}
+                    aria-pressed={activeFilter === value}
+                    onClick={() => setActiveFilter(value)}
+                  >
+                    {label} <span>{count}</span>
+                  </button>
+                ))}
               </div>
-            </footer>
+
+              <div className="representative-table-wrap">
+                <table className="representative-table">
+                  <thead>
+                    <tr>
+                      <th>Reference</th>
+                      <th>Date</th>
+                      <th>Customer</th>
+                      <th>Items</th>
+                      <th>Total</th>
+                      <th>Status</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td colSpan="7" className="representative-empty">
+                          Loading orders...
+                        </td>
+                      </tr>
+                    ) : visibleOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="representative-empty">
+                          No orders found.
+                        </td>
+                      </tr>
+                    ) : (
+                      visibleOrders.map((order) => {
+                        const currentIndex = STATUSES.indexOf(
+                          order.orderStatus?.toLowerCase(),
+                        );
+                        const placed = order.orderDate || order.createdAt;
+                        return (
+                          <tr key={order._id}>
+                            <td>
+                              <strong>
+                                #{order.orderReference || order._id}
+                              </strong>
+                            </td>
+                            <td>
+                              <span className="representative-date">
+                                {formatDate(placed)}
+                              </span>
+                              {formatTime(placed) && (
+                                <small className="representative-time">
+                                  {formatTime(placed)}
+                                </small>
+                              )}
+                            </td>
+                            <td>{getCustomerName(order)}</td>
+                            <td>{getItemCount(order)}</td>
+                            <td>
+                              <strong>{formatPrice(order.totalPrice)}</strong>
+                            </td>
+                            <td>
+                              <select
+                                aria-label={`Status for order ${order.orderReference || order._id}`}
+                                className={`representative-status representative-status-${order.orderStatus?.toLowerCase()}`}
+                                value={
+                                  order.orderStatus?.toLowerCase() || "pending"
+                                }
+                                disabled={
+                                  updatingId === order._id ||
+                                  order.orderStatus === "cancelled"
+                                }
+                                onChange={(event) =>
+                                  handleStatusChange(order, event.target.value)
+                                }
+                              >
+                                {STATUSES.map((status, index) => (
+                                  <option
+                                    key={status}
+                                    value={status}
+                                    disabled={index < currentIndex}
+                                  >
+                                    {formatStatus(status)}
+                                  </option>
+                                ))}
+                                {order.orderStatus === "cancelled" && (
+                                  <option value="cancelled">Cancelled</option>
+                                )}
+                              </select>
+                              {order.returnStatus && (
+                                <small className="representative-return-tag">
+                                  Return{" "}
+                                  {RETURN_LABELS[
+                                    order.returnStatus
+                                  ]?.toLowerCase()}
+                                </small>
+                              )}
+                            </td>
+                            <td>
+                              <button
+                                type="button"
+                                className="representative-view"
+                                onClick={() => setSelectedOrder(order)}
+                              >
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <footer className="representative-table-footer">
+                <span>
+                  Showing {visibleOrders.length} of {filteredOrders.length}{" "}
+                  orders
+                </span>
+                <div>
+                  <button
+                    type="button"
+                    aria-label="Previous page"
+                    disabled={currentPage === 1}
+                    onClick={() => setPage(currentPage - 1)}
+                  >
+                    ‹
+                  </button>
+                  <span>
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Next page"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setPage(currentPage + 1)}
+                  >
+                    ›
+                  </button>
+                </div>
+              </footer>
+            </section>
           </section>
         )}
       </section>

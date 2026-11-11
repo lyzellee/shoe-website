@@ -429,32 +429,55 @@
 .representative-view:hover { background: var(--rp-soft); }
 
 /* ---------- Orders page ---------- */
+.representative-orders-page { margin-top: 28px; }
+
 .representative-orders-card {
-  margin-top: 32px;
-  padding: 24px;
+  margin-top: 16px;
   border: 1px solid var(--rp-line);
   border-radius: 14px;
   background: var(--rp-card);
+  overflow: hidden;
 }
 
-.representative-orders-heading h2 { font-size: 17px; font-weight: 600; }
-.representative-orders-heading p { margin-top: 2px; color: var(--rp-muted); font-size: 13px; }
-
-.representative-filter-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+/* status tabs sit on top of the table card */
+.representative-filter-pills {
+  display: flex;
+  gap: 4px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--rp-line);
+  overflow-x: auto;
+}
 
 .representative-filter-pills button {
-  padding: 7px 14px;
-  border: 1px solid var(--rp-line);
-  border-radius: 999px;
-  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: -1px;
+  padding: 14px 14px 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
   color: var(--rp-muted);
   font-size: 13px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
-.representative-filter-pills button:hover { color: var(--rp-ink); background: var(--rp-soft); }
-.representative-filter-pills button.active { background: var(--rp-sage); border-color: var(--rp-sage); color: #fff; }
-.representative-filter-pills button span { margin-left: 4px; opacity: 0.75; font-weight: 600; }
+.representative-filter-pills button:hover { color: var(--rp-ink); }
+.representative-filter-pills button.active { color: var(--rp-sage-dark); border-bottom-color: var(--rp-sage); font-weight: 600; }
+
+.representative-filter-pills button span {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--rp-soft);
+  color: var(--rp-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.representative-filter-pills button.active span { background: var(--rp-tint); color: var(--rp-sage-dark); }
 
 /* toolbar */
 .representative-toolbar {
@@ -463,7 +486,6 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-top: 24px;
 }
 
 .representative-toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -474,18 +496,18 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 0 14px;
+  padding: 0 16px;
   border: 1px solid var(--rp-line);
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fff;
-  color: var(--rp-ink);
+  color: #5d6c52;
   font-size: 13px;
   font-weight: 600;
 }
 
 .representative-tool-btn:hover:not(:disabled),
 .representative-tool-btn.open { background: var(--rp-soft); }
-.representative-tool-btn svg { color: var(--rp-muted); }
+.representative-tool-btn svg { color: #5d6c52; }
 
 .representative-tool-count {
   min-width: 20px;
@@ -850,3 +872,10 @@
   .representative-info-grid { grid-template-columns: minmax(0, 1fr); }
   .representative-search { width: 100%; }
 }
+
+.representative-orders-card .representative-table-wrap { margin-top: 0; }
+.representative-orders-card .representative-table th { padding-left: 20px; background: #fafafa; }
+.representative-orders-card .representative-table td:first-child,
+.representative-orders-card .representative-table th:first-child { padding-left: 24px; }
+.representative-orders-card .representative-table-footer { margin: 0; padding: 14px 24px; border-top: 1px solid var(--rp-line); }
+.representative-orders-card .representative-table tbody tr:last-child td { border-bottom: 0; }

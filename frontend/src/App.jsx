@@ -31,6 +31,7 @@ import Feedback from "./client/pages/Feedback.jsx";
 import YourOrder from "./client/pages/YourOrder.jsx";
 import OrderDetails from "./client/pages/OrderDetails.jsx";
 import TrackOrder from "./client/pages/TrackOrder.jsx";
+import SearchResults from "./client/pages/SearchResults.jsx";
 
 // Components
 import Navbar from "./components/Navbar";
@@ -61,6 +62,7 @@ function AppContent() {
         <Route path="/your-order" element={<YourOrder />} />
         <Route path="/orders/:reference/track" element={<TrackOrder />} />
         <Route path="/orders/:reference" element={<OrderDetails />} />
+        <Route path="/search" element={<SearchResults />} />
 
         {/* Admin Pages with Shared Sidebar */}
         <Route element={<AdminLayout />}>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
 import {
@@ -16,13 +16,89 @@ import {
 import ProductFilter from "../../components/ProductFilter/ProductFilter";
 import "./Men.css";
 
-// Featured images for the carousel
 const featuredImages = [
-  "/featured-images/featured 1.jpg",
-  "/featured-images/featured 2.jpg",
-  "/featured-images/featured 3.jpg",
-  "/featured-images/featured 4.jpg",
+  "/featured-images/men-carousel-page-1.jpg",
+  "/featured-images/men-carousel-page-2.jpg",
+  "/featured-images/men-carousel-page-3.jpg",
 ];
+
+// Returns "light" when the visible top part of an image is bright, otherwise "dark".
+// "focus" is the same vertical crop position the banner uses (0-100).
+// The hero title uses this to pick a readable text color.
+const detectImageTone = (src, focus = 50) =>
+  new Promise((resolve) => {
+    const image = new Image();
+
+    image.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 48;
+        canvas.height = 24;
+
+        const context = canvas.getContext("2d");
+
+        // The banner is a wide strip, so only part of the image is visible
+        const visibleHeight = Math.min(
+          image.naturalHeight,
+          image.naturalWidth / 6,
+        );
+        const top = (image.naturalHeight - visibleHeight) * (focus / 100);
+
+        // Look at the middle-top of what is visible, where the title sits
+        context.drawImage(
+          image,
+          image.naturalWidth * 0.25,
+          top,
+          image.naturalWidth * 0.5,
+          visibleHeight * 0.4,
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        );
+
+        const { data } = context.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        );
+        const toLinear = (value) => {
+          const channel = value / 255;
+          return channel <= 0.03928
+            ? channel / 12.92
+            : ((channel + 0.055) / 1.055) ** 2.4;
+        };
+        const values = [];
+
+        for (let i = 0; i < data.length; i += 4) {
+          values.push(
+            0.2126 * toLinear(data[i]) +
+              0.7152 * toLinear(data[i + 1]) +
+              0.0722 * toLinear(data[i + 2]),
+          );
+        }
+
+        const mean =
+          values.reduce((sum, value) => sum + value, 0) / values.length;
+        const spread = Math.sqrt(
+          values.reduce((sum, value) => sum + (value - mean) ** 2, 0) /
+            values.length,
+        );
+
+        // A busy area (people, shoes) is not safe for dark text, so use white
+        // text with the dark layer. A plain area uses whichever title color
+        // (white or #262a2a) has more contrast with it.
+        resolve(spread < 0.12 && mean > 0.18 ? "light" : "dark");
+      } catch {
+        // Image could not be read, so use the white title
+        resolve("dark");
+      }
+    };
+
+    image.onerror = () => resolve("dark");
+    image.src = src;
+  });
 
 // Get the correct product image URL
 const getShoeImage = (image) => {
@@ -61,6 +137,66 @@ export default function CategoryMen() {
 
   // CAROUSEL STATE
   const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [imageTones, setImageTones] = useState([]);
+  const heroRef = useRef(null);
+
+  // Check how bright each hero image is
+  useEffect(() => {
+    let cancelled = false;
+
+    Promise.all(featuredImages.map(detectImageTone)).then((tones) => {
+      if (!cancelled) setImageTones(tones);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // HERO SHRINKS WHILE SCROLLING, THEN SCROLLS AWAY WITH THE PAGE
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return undefined;
+
+    let frame = 0;
+
+    const update = () => {
+      frame = 0;
+
+      const width = window.innerWidth;
+      const expanded =
+        width <= 480 ? 220 : width <= 768 ? 260 : width <= 992 ? 340 : 440;
+      const collapsed = Math.min(
+        expanded,
+        Math.min(380, Math.max(220, window.innerHeight * 0.34)),
+      );
+      const distance = expanded - collapsed;
+      const progress =
+        distance > 0 ? Math.min(1, Math.max(0, window.scrollY / distance)) : 1;
+
+      hero.style.setProperty("--hero-h", `${expanded - distance * progress}px`);
+      hero.style.setProperty("--hero-p", String(progress));
+    };
+
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+
+    // The browser must not "fix" the scroll position while the banner changes size
+    const previousAnchor = document.documentElement.style.overflowAnchor;
+    document.documentElement.style.overflowAnchor = "none";
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+
+    return () => {
+      document.documentElement.style.overflowAnchor = previousAnchor;
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
 
   // FAVORITES STATES
   const [favorites, setFavorites] = useState(() =>
@@ -103,7 +239,7 @@ export default function CategoryMen() {
 
         return index + 1;
       });
-    }, 3000);
+    }, 4000);
 
     return () => clearInterval(interval);
   }, []);
@@ -228,7 +364,7 @@ export default function CategoryMen() {
     });
 
   return (
-    <div>
+    <div className="men-page">
       {/* NOTIFICATIONS */}
       {favoriteMessage && (
         <div className="favorite-notification">{favoriteMessage}</div>
@@ -238,14 +374,46 @@ export default function CategoryMen() {
         <div className="add-card-notification">{addCardMessage}</div>
       )}
 
-      {/* PAGE TITLE */}
-      <h1 className="title-page">MEN SECTION</h1>
+      {/* HERO CAROUSEL WITH TITLE ON TOP OF THE IMAGES */}
+      <div className="men-hero-sticky" ref={heroRef}>
+        <section
+          className="men-hero"
+          data-tone={imageTones[featuredIndex] || "dark"}
+          aria-label="Men section featured images"
+        >
+          {featuredImages.map((image, index) => (
+            <img
+              key={image}
+              className={`men-hero-slide ${featuredIndex === index ? "active" : ""}`}
+              src={image}
+              alt=""
+              aria-hidden={featuredIndex !== index}
+            />
+          ))}
 
-      <h2 className="title-description">
-        Find your everyday pair. Built to move, styled to last.
-      </h2>
+          <div className="men-hero-overlay">
+            <h1 className="men-hero-title">MEN SECTION</h1>
+            <h2 className="men-hero-description">
+              Find your everyday pair. Built to move, styled to last.
+            </h2>
+          </div>
 
-      {/* REUSABLE PRODUCT FILTER */}
+          {/* CAROUSEL DOTS */}
+          <div className="men-hero-dots">
+            {featuredImages.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                aria-label={`Show image ${index + 1}`}
+                className={featuredIndex === index ? "active" : ""}
+                onClick={() => setFeaturedIndex(index)}
+              />
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* FILTERS AND CATEGORY DROPDOWN */}
       <ProductFilter
         activeFilter={activeCategory}
         setActiveFilter={(filter) => {
@@ -255,37 +423,6 @@ export default function CategoryMen() {
         setSelectedCategory={setSelectedCategory}
         categories={menCategories}
       />
-
-      {/* FEATURED CAROUSEL */}
-      <section className="featured-section">
-        <h2 className="featured-title">Featured</h2>
-
-        <div className="featured-carousel">
-          <div
-            className="featured-track"
-            style={{
-              transform: `translateX(-${featuredIndex * 25}%)`,
-            }}
-          >
-            {[...featuredImages, ...featuredImages].map((image, index) => (
-              <div className="featured-card" key={index}>
-                <img src={image} alt={`Featured ${index + 1}`} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CAROUSEL DOTS */}
-        <div className="featured-dots">
-          {featuredImages.map((_, index) => (
-            <button
-              key={index}
-              className={featuredIndex === index ? "active" : ""}
-              onClick={() => setFeaturedIndex(index)}
-            />
-          ))}
-        </div>
-      </section>
 
       {/* PRODUCTS */}
       <div className="product-card-container">

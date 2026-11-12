@@ -1,51 +1,29 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowRightFromBracket,
-  faFileExcel,
-  faFilter,
-  faMagnifyingGlass,
-  faSort,
-  faXmark,
-} from "@fortawesome/free-solid-svg-icons";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
+// Keep this import first so the child components' CSS can override it
 import "./RepresentativeDashboard.css";
+import RepresentativeNavbar from "../../components/RepresentativeNavbar";
+import RepresentativeProductOrders from "./RepresentativeProductOrders";
+import {
+  DAY,
+  RETURN_LABELS,
+  STATUSES,
+  formatDate,
+  formatPrice,
+  formatStatus,
+  formatTime,
+  getCustomerName,
+  getItemCount,
+  getOrderTime,
+  getProductName,
+} from "./representativeUtils";
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(
   /\/api\/?$/,
   "",
 );
-const STATUSES = ["pending", "processing", "shipped", "delivered"];
-const ORDERS_PER_PAGE = 8;
-const DAY = 24 * 60 * 60 * 1000;
-
-const RETURN_LABELS = {
-  requested: "Requested",
-  approved: "Approved",
-  rejected: "Rejected",
-  refunded: "Refunded",
-};
-
-const SORT_OPTIONS = [
-  { key: "newest", label: "Newest first" },
-  { key: "oldest", label: "Oldest first" },
-  { key: "total-high", label: "Total: high to low" },
-  { key: "total-low", label: "Total: low to high" },
-  { key: "customer", label: "Customer A–Z" },
-];
-
-const PAYMENT_FILTERS = [
-  { key: "all", label: "All" },
-  { key: "paid", label: "Paid" },
-  { key: "unpaid", label: "Unpaid" },
-];
-
-const DATE_FILTERS = [
-  { key: "all", label: "All time" },
-  { key: "today", label: "Today" },
-  { key: "7d", label: "Last 7 days" },
-  { key: "30d", label: "Last 30 days" },
-];
 
 const QUEUE_TABS = [
   { key: "pending", label: "Pending" },
@@ -59,44 +37,6 @@ const QUEUE_EMPTY = {
   returns: "No return requests to review.",
 };
 
-const formatPrice = (value) =>
-  new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(
-    Number(value || 0),
-  );
-
-const formatStatus = (status) =>
-  status
-    ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
-    : "Pending";
-
-const getOrderTime = (order) =>
-  new Date(order.orderDate || order.createdAt || 0).getTime() || 0;
-
-const formatDate = (value) => {
-  const date = new Date(value);
-  if (!value || Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-PH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-};
-
-const formatTime = (value) => {
-  const date = new Date(value);
-  if (!value || Number.isNaN(date.getTime())) return "";
-  return date.toLocaleTimeString("en-PH", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-};
-
-const getCustomerName = (order) =>
-  order.customerInfo
-    ? `${order.customerInfo.firstName || ""} ${order.customerInfo.lastName || ""}`.trim() ||
-      "Customer"
-    : "Customer";
-
 const getInitials = (name) =>
   name
     .split(/\s+/)
@@ -104,13 +44,6 @@ const getInitials = (name) =>
     .slice(0, 2)
     .map((part) => part[0].toUpperCase())
     .join("") || "C";
-
-const getItemCount = (order) =>
-  order.items?.reduce((total, item) => total + Number(item.quantity || 0), 0) ||
-  0;
-
-const getProductName = (item) =>
-  (item.shoeId && item.shoeId.name) || item.name || "Product";
 
 // How long an order has been sitting in its current step
 const getSinceTime = (order, tab) => {
@@ -140,24 +73,6 @@ const getQueueAge = (order, tab) => {
   return { label, level: days >= 3 ? "high" : days >= 1 ? "mid" : "low" };
 };
 
-// Spreadsheet-safe CSV cell (blocks formula injection such as =cmd|...)
-const csvCell = (value) => {
-  let text = String(value ?? "");
-  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
-  return `"${text.replace(/"/g, '""')}"`;
-};
-
-const getDateStart = (key) => {
-  if (key === "today") {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    return start.getTime();
-  }
-  if (key === "7d") return Date.now() - 7 * DAY;
-  if (key === "30d") return Date.now() - 30 * DAY;
-  return 0;
-};
-
 export default function RepresentativeDashboard() {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState("dashboard");
@@ -168,7 +83,6 @@ export default function RepresentativeDashboard() {
   const [notice, setNotice] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [updatingId, setUpdatingId] = useState("");
-  const [page, setPage] = useState(1);
   const [shipOrder, setShipOrder] = useState(null);
   const [shipForm, setShipForm] = useState({
     courier: "",
@@ -177,13 +91,7 @@ export default function RepresentativeDashboard() {
   });
   const [confirmCancelId, setConfirmCancelId] = useState("");
   const [returnNote, setReturnNote] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortKey, setSortKey] = useState("newest");
-  const [paymentFilter, setPaymentFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
-  const [openMenu, setOpenMenu] = useState("");
   const [queueTab, setQueueTab] = useState("pending");
-  const toolbarRef = useRef(null);
   const hasLoadedRef = useRef(false);
 
   const fetchOrders = async () => {
@@ -211,25 +119,16 @@ export default function RepresentativeDashboard() {
     fetchOrders();
   }, []);
 
-  // Esc closes menus and modals; clicking outside closes the sort/filter menus
+  // Esc closes the shipping / order-details modals
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key !== "Escape") return;
-      if (openMenu) setOpenMenu("");
-      else if (shipOrder) setShipOrder(null);
+      if (shipOrder) setShipOrder(null);
       else if (selectedOrder) setSelectedOrder(null);
     };
-    const handlePointerDown = (event) => {
-      if (openMenu && !toolbarRef.current?.contains(event.target))
-        setOpenMenu("");
-    };
     document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("pointerdown", handlePointerDown);
-    };
-  }, [openMenu, shipOrder, selectedOrder]);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [shipOrder, selectedOrder]);
 
   const counts = useMemo(
     () =>
@@ -249,69 +148,6 @@ export default function RepresentativeDashboard() {
         },
       ),
     [orders],
-  );
-
-  const filteredOrders = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    const dateStart = getDateStart(dateFilter);
-
-    const matches = orders.filter((order) => {
-      const status = order.orderStatus?.toLowerCase();
-      if (activeFilter === "returns") {
-        if (!order.returnStatus) return false;
-      } else if (activeFilter !== "all" && status !== activeFilter) {
-        return false;
-      }
-      if (paymentFilter === "paid" && order.paymentStatus !== "completed")
-        return false;
-      if (paymentFilter === "unpaid" && order.paymentStatus === "completed")
-        return false;
-      if (dateFilter !== "all" && getOrderTime(order) < dateStart) return false;
-      if (query) {
-        const haystack = [
-          order.orderReference,
-          getCustomerName(order),
-          order.customerInfo?.phone,
-          order.customerInfo?.email,
-          order.courier,
-          order.trackingNumber,
-          ...(order.items || []).map(getProductName),
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        if (!haystack.includes(query)) return false;
-      }
-      return true;
-    });
-
-    const sorters = {
-      newest: (a, b) => getOrderTime(b) - getOrderTime(a),
-      oldest: (a, b) => getOrderTime(a) - getOrderTime(b),
-      "total-high": (a, b) =>
-        Number(b.totalPrice || 0) - Number(a.totalPrice || 0),
-      "total-low": (a, b) =>
-        Number(a.totalPrice || 0) - Number(b.totalPrice || 0),
-      customer: (a, b) => getCustomerName(a).localeCompare(getCustomerName(b)),
-    };
-    return [...matches].sort(sorters[sortKey] || sorters.newest);
-  }, [orders, activeFilter, searchQuery, sortKey, paymentFilter, dateFilter]);
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredOrders.length / ORDERS_PER_PAGE),
-  );
-  const currentPage = Math.min(page, totalPages);
-  const visibleOrders = filteredOrders.slice(
-    (currentPage - 1) * ORDERS_PER_PAGE,
-    currentPage * ORDERS_PER_PAGE,
-  );
-  const activeFilterCount =
-    (paymentFilter !== "all" ? 1 : 0) + (dateFilter !== "all" ? 1 : 0);
-
-  useEffect(
-    () => setPage(1),
-    [activeFilter, searchQuery, sortKey, paymentFilter, dateFilter],
   );
 
   const updateStatus = async (order, status, extra = {}) => {
@@ -470,54 +306,6 @@ export default function RepresentativeDashboard() {
     }
   };
 
-  // Download the orders currently shown (all pages) as a CSV that opens in Excel
-  const exportOrders = () => {
-    const header = [
-      "Reference",
-      "Date",
-      "Customer",
-      "Phone",
-      "Items",
-      "Total (PHP)",
-      "Payment method",
-      "Payment status",
-      "Order status",
-      "Courier",
-      "Tracking number",
-    ];
-    const rows = filteredOrders.map((order) => [
-      order.orderReference || order._id,
-      formatDate(order.orderDate || order.createdAt),
-      getCustomerName(order),
-      order.customerInfo?.phone || "",
-      getItemCount(order),
-      Number(order.totalPrice || 0).toFixed(2),
-      order.paymentMethod || "",
-      formatStatus(order.paymentStatus),
-      formatStatus(order.orderStatus),
-      order.courier || "",
-      order.trackingNumber || "",
-    ]);
-    const csv = [header, ...rows]
-      .map((row) => row.map(csvCell).join(","))
-      .join("\r\n");
-    const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    setNotice(`Exported ${rows.length} order${rows.length === 1 ? "" : "s"}.`);
-  };
-
-  const resetFilters = () => {
-    setPaymentFilter("all");
-    setDateFilter("all");
-  };
-
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -617,38 +405,11 @@ export default function RepresentativeDashboard() {
 
   return (
     <main className="representative-page">
-      <aside className="representative-sidebar">
-        <div className="representative-brand">SHOE WEBSITE</div>
-        <nav
-          className="representative-nav"
-          aria-label="Representative navigation"
-        >
-          <button
-            type="button"
-            className={activePage === "dashboard" ? "active" : ""}
-            aria-current={activePage === "dashboard" ? "page" : undefined}
-            onClick={() => setActivePage("dashboard")}
-          >
-            Dashboard
-          </button>
-          <button
-            type="button"
-            className={activePage === "orders" ? "active" : ""}
-            aria-current={activePage === "orders" ? "page" : undefined}
-            onClick={() => setActivePage("orders")}
-          >
-            Orders
-          </button>
-        </nav>
-        <button
-          type="button"
-          className="representative-logout"
-          onClick={logout}
-        >
-          <FontAwesomeIcon icon={faArrowRightFromBracket} />
-          <span>Log out</span>
-        </button>
-      </aside>
+      <RepresentativeNavbar
+        activePage={activePage}
+        onNavigate={setActivePage}
+        onLogout={logout}
+      />
 
       <section className="representative-content">
         <header className="representative-header">
@@ -919,297 +680,17 @@ export default function RepresentativeDashboard() {
             </section>
           </>
         ) : (
-          <section className="representative-orders-page">
-            <div className="representative-toolbar" ref={toolbarRef}>
-              <div className="representative-toolbar-actions">
-                <div className="representative-menu-wrap">
-                  <button
-                    type="button"
-                    className={`representative-tool-btn ${openMenu === "sort" ? "open" : ""}`}
-                    aria-haspopup="menu"
-                    aria-expanded={openMenu === "sort"}
-                    onClick={() =>
-                      setOpenMenu(openMenu === "sort" ? "" : "sort")
-                    }
-                  >
-                    <FontAwesomeIcon icon={faSort} />
-                    <span>Sort</span>
-                  </button>
-                  {openMenu === "sort" && (
-                    <div
-                      className="representative-menu"
-                      role="menu"
-                      aria-label="Sort orders"
-                    >
-                      {SORT_OPTIONS.map((option) => (
-                        <button
-                          type="button"
-                          role="menuitemradio"
-                          aria-checked={sortKey === option.key}
-                          key={option.key}
-                          className={sortKey === option.key ? "selected" : ""}
-                          onClick={() => {
-                            setSortKey(option.key);
-                            setOpenMenu("");
-                          }}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="representative-menu-wrap">
-                  <button
-                    type="button"
-                    className={`representative-tool-btn ${openMenu === "filter" ? "open" : ""}`}
-                    aria-haspopup="dialog"
-                    aria-expanded={openMenu === "filter"}
-                    onClick={() =>
-                      setOpenMenu(openMenu === "filter" ? "" : "filter")
-                    }
-                  >
-                    <FontAwesomeIcon icon={faFilter} />
-                    <span>Filter</span>
-                    {activeFilterCount > 0 && (
-                      <span className="representative-tool-count">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </button>
-                  {openMenu === "filter" && (
-                    <div
-                      className="representative-menu representative-filter-panel"
-                      role="dialog"
-                      aria-label="Filter orders"
-                    >
-                      <fieldset>
-                        <legend>Payment</legend>
-                        {PAYMENT_FILTERS.map((option) => (
-                          <label key={option.key}>
-                            <input
-                              type="radio"
-                              name="payment-filter"
-                              checked={paymentFilter === option.key}
-                              onChange={() => setPaymentFilter(option.key)}
-                            />
-                            {option.label}
-                          </label>
-                        ))}
-                      </fieldset>
-                      <fieldset>
-                        <legend>Date placed</legend>
-                        {DATE_FILTERS.map((option) => (
-                          <label key={option.key}>
-                            <input
-                              type="radio"
-                              name="date-filter"
-                              checked={dateFilter === option.key}
-                              onChange={() => setDateFilter(option.key)}
-                            />
-                            {option.label}
-                          </label>
-                        ))}
-                      </fieldset>
-                      <button
-                        type="button"
-                        className="representative-menu-reset"
-                        disabled={activeFilterCount === 0}
-                        onClick={resetFilters}
-                      >
-                        Reset filters
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  className="representative-tool-btn"
-                  onClick={exportOrders}
-                  disabled={filteredOrders.length === 0}
-                >
-                  <FontAwesomeIcon icon={faFileExcel} />
-                  <span>Export</span>
-                </button>
-              </div>
-
-              <label className="representative-search">
-                <FontAwesomeIcon icon={faMagnifyingGlass} />
-                <span className="representative-sr">Search orders</span>
-                <input
-                  type="search"
-                  placeholder="Search orders..."
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                />
-              </label>
-            </div>
-
-            <section className="representative-orders-card">
-              <div
-                className="representative-filter-pills"
-                role="group"
-                aria-label="Filter by status"
-              >
-                {[
-                  ["all", orders.length, "All"],
-                  ["pending", counts.pending || 0, "Pending"],
-                  ["processing", counts.processing || 0, "Processing"],
-                  ["shipped", counts.shipped || 0, "Shipped"],
-                  ["delivered", counts.delivered || 0, "Delivered"],
-                  ["cancelled", counts.cancelled || 0, "Cancelled"],
-                  ["returns", counts.returns || 0, "Returns"],
-                ].map(([value, count, label]) => (
-                  <button
-                    type="button"
-                    key={value}
-                    className={activeFilter === value ? "active" : ""}
-                    aria-pressed={activeFilter === value}
-                    onClick={() => setActiveFilter(value)}
-                  >
-                    {label} <span>{count}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="representative-table-wrap">
-                <table className="representative-table">
-                  <thead>
-                    <tr>
-                      <th>Reference</th>
-                      <th>Date</th>
-                      <th>Customer</th>
-                      <th>Items</th>
-                      <th>Total</th>
-                      <th>Status</th>
-                      <th>Details</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan="7" className="representative-empty">
-                          Loading orders...
-                        </td>
-                      </tr>
-                    ) : visibleOrders.length === 0 ? (
-                      <tr>
-                        <td colSpan="7" className="representative-empty">
-                          No orders found.
-                        </td>
-                      </tr>
-                    ) : (
-                      visibleOrders.map((order) => {
-                        const currentIndex = STATUSES.indexOf(
-                          order.orderStatus?.toLowerCase(),
-                        );
-                        const placed = order.orderDate || order.createdAt;
-                        return (
-                          <tr key={order._id}>
-                            <td>
-                              <strong>
-                                #{order.orderReference || order._id}
-                              </strong>
-                            </td>
-                            <td>
-                              <span className="representative-date">
-                                {formatDate(placed)}
-                              </span>
-                              {formatTime(placed) && (
-                                <small className="representative-time">
-                                  {formatTime(placed)}
-                                </small>
-                              )}
-                            </td>
-                            <td>{getCustomerName(order)}</td>
-                            <td>{getItemCount(order)}</td>
-                            <td>
-                              <strong>{formatPrice(order.totalPrice)}</strong>
-                            </td>
-                            <td>
-                              <select
-                                aria-label={`Status for order ${order.orderReference || order._id}`}
-                                className={`representative-status representative-status-${order.orderStatus?.toLowerCase()}`}
-                                value={
-                                  order.orderStatus?.toLowerCase() || "pending"
-                                }
-                                disabled={
-                                  updatingId === order._id ||
-                                  order.orderStatus === "cancelled"
-                                }
-                                onChange={(event) =>
-                                  handleStatusChange(order, event.target.value)
-                                }
-                              >
-                                {STATUSES.map((status, index) => (
-                                  <option
-                                    key={status}
-                                    value={status}
-                                    disabled={index < currentIndex}
-                                  >
-                                    {formatStatus(status)}
-                                  </option>
-                                ))}
-                                {order.orderStatus === "cancelled" && (
-                                  <option value="cancelled">Cancelled</option>
-                                )}
-                              </select>
-                              {order.returnStatus && (
-                                <small className="representative-return-tag">
-                                  Return{" "}
-                                  {RETURN_LABELS[
-                                    order.returnStatus
-                                  ]?.toLowerCase()}
-                                </small>
-                              )}
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                className="representative-view"
-                                onClick={() => setSelectedOrder(order)}
-                              >
-                                View
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              <footer className="representative-table-footer">
-                <span>
-                  Showing {visibleOrders.length} of {filteredOrders.length}{" "}
-                  orders
-                </span>
-                <div>
-                  <button
-                    type="button"
-                    aria-label="Previous page"
-                    disabled={currentPage === 1}
-                    onClick={() => setPage(currentPage - 1)}
-                  >
-                    ‹
-                  </button>
-                  <span>
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label="Next page"
-                    disabled={currentPage === totalPages}
-                    onClick={() => setPage(currentPage + 1)}
-                  >
-                    ›
-                  </button>
-                </div>
-              </footer>
-            </section>
-          </section>
+          <RepresentativeProductOrders
+            orders={orders}
+            loading={loading}
+            counts={counts}
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+            updatingId={updatingId}
+            onViewOrder={setSelectedOrder}
+            onStatusChange={handleStatusChange}
+            onNotice={setNotice}
+          />
         )}
       </section>
 

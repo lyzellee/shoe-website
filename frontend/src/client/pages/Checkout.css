@@ -727,3 +727,202 @@
 .checkout-total-row {
   margin-bottom: 0;
 }
+
+
+
+/* Tablet and below: stack form and order summary ---------------------- */
+@media (max-width: 991.98px) {
+  .checkout-containter {
+    width: 92%;
+  }
+
+  .checkout-layout {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+  }
+
+  .checkout-order-card {
+    margin-top: 24px;
+  }
+}
+
+/* Mobile --------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+  .checkout-page {
+    padding: 24px 0 48px;
+  }
+
+  .checkout-containter {
+    width: 100%;
+    padding: 0 16px;
+  }
+
+  .checkout-label {
+    font-size: 11px;
+  }
+
+  .checkout-title {
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+
+  .checkout-section-title,
+  .heckout-section-title {
+    font-size: 16px;
+  }
+
+  /* Form -------------------------------------------------------------- */
+  .checkout-form {
+    gap: 12px;
+  }
+
+  /* 16px prevents iOS from zooming in when an input is focused */
+  .checkout-page .checkout-input {
+    height: 46px;
+    font-size: 16px;
+    padding: 0 16px;
+  }
+
+  .checkout-payment-trigger {
+    min-height: 46px;
+    height: auto;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .checkout-payment-option {
+    padding: 13px 12px;
+    font-size: 14px;
+  }
+
+  /* Row spacing: wrap + vertical gap instead of tiny side-by-side fields */
+  .checkout-row {
+    --bs-gutter-x: 10px;
+    row-gap: 12px;
+  }
+
+  /* First name / Last name, Phone / Email: stay 2 columns (50/50) */
+
+  /* City on its own line, Province + ZIP share the next line */
+  .checkout-row > .col-4:first-child {
+    flex: 0 0 100%;
+    width: 100%;
+  }
+
+  .checkout-row > .col-4:not(:first-child) {
+    flex: 0 0 50%;
+    width: 50%;
+  }
+
+  /* Saved addresses */
+  .saved-addresses {
+    padding: 10px;
+  }
+
+  .saved-addresses-heading {
+    font-size: 13px;
+  }
+
+  .saved-addresses-heading span:last-child {
+    font-size: 11px;
+  }
+
+  .saved-address-option {
+    font-size: 12px;
+    padding: 12px 14px;
+  }
+
+  .saved-address-option strong {
+    font-size: 13px;
+  }
+
+  .save-address-check {
+    font-size: 13px;
+  }
+
+  .payment-title {
+    margin-top: 6px;
+    margin-bottom: 0;
+  }
+
+  /* Buttons */
+  .checkout-place-order,
+  .checkout-status-button {
+    min-height: 46px;
+    font-size: 14px;
+    border-radius: 16px;
+  }
+
+  /* Order summary ----------------------------------------------------- */
+  .checkout-order-card {
+    margin-top: 20px;
+    padding: 18px 16px 20px;
+  }
+
+  .checkout-order-title {
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+
+  .checkout-order-items {
+    gap: 14px;
+  }
+
+  .checkout-order-item {
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .checkout-product-image-wrapper {
+    width: 72px;
+    height: 56px;
+    border-radius: 10px;
+  }
+
+  .checkout-product-name {
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+
+  .checkout-product-variant {
+    font-size: 12px;
+  }
+
+  .checkout-product-price {
+    align-self: center;
+    padding-top: 0;
+    font-size: 13px;
+  }
+
+  .checkout-summary-row {
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .checkout-summary-row strong {
+    font-size: 13px;
+  }
+
+  .checkout-total-row,
+  .checkout-total-row strong {
+    font-size: 15px;
+  }
+}
+
+/* Small phones --------------------------------------------------------- */
+@media (max-width: 380px) {
+  .checkout-containter {
+    padding: 0 12px;
+  }
+
+  .checkout-order-item {
+    grid-template-columns: 60px minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .checkout-product-image-wrapper {
+    width: 60px;
+    height: 48px;
+  }
+}

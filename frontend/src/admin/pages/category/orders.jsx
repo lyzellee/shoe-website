@@ -3,6 +3,15 @@ import Badge from "react-bootstrap/Badge";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import { useState, useEffect } from "react";
+import { Form } from "react-bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faMagnifyingGlass,
+  faSort,
+  faFilter,
+  faFileExcel,
+} from "@fortawesome/free-solid-svg-icons";
+import * as XLSX from "xlsx";
 import "./orders.css";
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(
@@ -15,6 +24,14 @@ export default function Orders() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // Frontend-only search, sort and filter
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("newest-first");
+  const [filterOrderStatus, setFilterOrderStatus] = useState("");
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState("");
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -100,6 +117,75 @@ export default function Orders() {
     return 0;
   };
 
+  const getCustomerName = (order) =>
+    order.customerInfo
+      ? `${order.customerInfo.firstName} ${order.customerInfo.lastName}`
+      : "N/A";
+
+  const getOrderTime = (order) =>
+    new Date(order.createdAt || order.orderDate || 0).getTime() || 0;
+
+  const getItemCount = (order) =>
+    order.items?.reduce(
+      (total, item) => total + (Number(item.quantity) || 0),
+      0,
+    ) || 0;
+
+  const filteredOrders = orders
+    .filter((order) =>
+      `${order.orderReference} ${getCustomerName(order)} ${order.orderStatus} ${order.paymentStatus} ${order.orderDate}`
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()),
+    )
+    .filter(
+      (order) => !filterOrderStatus || order.orderStatus === filterOrderStatus,
+    )
+    .filter(
+      (order) =>
+        !filterPaymentStatus || order.paymentStatus === filterPaymentStatus,
+    )
+    .sort((a, b) => {
+      if (sortBy === "newest-first") return getOrderTime(b) - getOrderTime(a);
+      if (sortBy === "oldest-first") return getOrderTime(a) - getOrderTime(b);
+      if (sortBy === "total-asc")
+        return Number(a.totalPrice || 0) - Number(b.totalPrice || 0);
+      if (sortBy === "total-desc")
+        return Number(b.totalPrice || 0) - Number(a.totalPrice || 0);
+      if (sortBy === "customer-desc")
+        return getCustomerName(b).localeCompare(getCustomerName(a));
+      return getCustomerName(a).localeCompare(getCustomerName(b));
+    });
+
+  const handleExportExcel = () => {
+    const rows = filteredOrders.map((order) => ({
+      "Order Reference": order.orderReference || "",
+      Customer: getCustomerName(order),
+      Items: getItemCount(order),
+      "Order Status": order.orderStatus || "",
+      "Payment Status": order.paymentStatus || "",
+      Total: Number(order.totalPrice || 0),
+      Date: order.orderDate || "",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    worksheet["!cols"] = [
+      { wch: 26 },
+      { wch: 24 },
+      { wch: 8 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 12 },
+      { wch: 18 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+    XLSX.writeFile(
+      workbook,
+      `orders-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+  };
+
   return (
     <div className="orders-page">
       <div className="orders-heading">
@@ -109,8 +195,127 @@ export default function Orders() {
           <p>View and manage customer orders.</p>
         </div>
 
-        <div className="orders-count">
-          {orders.length} {orders.length === 1 ? "Order" : "Orders"}
+        <div className="orders-header-actions">
+          <div className="orders-search">
+            <FontAwesomeIcon
+              icon={faMagnifyingGlass}
+              size="sm"
+              className="orders-search-icon"
+            />
+            <Form.Control
+              type="text"
+              placeholder="Search orders..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="orders-count">
+            {orders.length} {orders.length === 1 ? "Order" : "Orders"}
+          </div>
+        </div>
+      </div>
+
+      <div className="orders-view-row">
+        <div className="orders-toolbar">
+          <div className="orders-toolbar-control">
+            <button
+              type="button"
+              className={`orders-tool-btn ${showSortMenu ? "active" : ""}`}
+              onClick={() => {
+                setShowSortMenu((current) => !current);
+                setShowFilterMenu(false);
+              }}
+            >
+              <FontAwesomeIcon icon={faSort} />
+              Sort
+            </button>
+            {showSortMenu && (
+              <div className="orders-popover orders-sort-popover">
+                <Form.Label>Sort orders by</Form.Label>
+                <Form.Select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                >
+                  <option value="newest-first">Newest First</option>
+                  <option value="oldest-first">Oldest First</option>
+                  <option value="customer-asc">Customer: A to Z</option>
+                  <option value="customer-desc">Customer: Z to A</option>
+                  <option value="total-asc">Total: Low to High</option>
+                  <option value="total-desc">Total: High to Low</option>
+                </Form.Select>
+              </div>
+            )}
+          </div>
+
+          <div className="orders-toolbar-control">
+            <button
+              type="button"
+              className={`orders-tool-btn ${
+                showFilterMenu || filterOrderStatus || filterPaymentStatus
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() => {
+                setShowFilterMenu((current) => !current);
+                setShowSortMenu(false);
+              }}
+            >
+              <FontAwesomeIcon icon={faFilter} />
+              Filter
+            </button>
+            {showFilterMenu && (
+              <div className="orders-popover orders-filter-popover">
+                <div className="orders-filter-grid">
+                  <Form.Group>
+                    <Form.Label>Order Status</Form.Label>
+                    <Form.Select
+                      value={filterOrderStatus}
+                      onChange={(e) => setFilterOrderStatus(e.target.value)}
+                    >
+                      <option value="">All statuses</option>
+                      <option value="pending">Pending</option>
+                      <option value="processing">Processing</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="cancelled">Cancelled</option>
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group>
+                    <Form.Label>Payment Status</Form.Label>
+                    <Form.Select
+                      value={filterPaymentStatus}
+                      onChange={(e) => setFilterPaymentStatus(e.target.value)}
+                    >
+                      <option value="">All payments</option>
+                      <option value="pending">Pending</option>
+                      <option value="completed">Completed</option>
+                      <option value="failed">Failed</option>
+                    </Form.Select>
+                  </Form.Group>
+                </div>
+                <button
+                  type="button"
+                  className="orders-clear-filter"
+                  onClick={() => {
+                    setFilterOrderStatus("");
+                    setFilterPaymentStatus("");
+                  }}
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="orders-tool-btn orders-export-btn"
+            onClick={handleExportExcel}
+          >
+            <FontAwesomeIcon icon={faFileExcel} />
+            Export
+          </button>
         </div>
       </div>
 
@@ -138,8 +343,8 @@ export default function Orders() {
                   Loading orders...
                 </td>
               </tr>
-            ) : orders.length > 0 ? (
-              orders.map((order) => (
+            ) : filteredOrders.length > 0 ? (
+              filteredOrders.map((order) => (
                 <tr key={order._id}>
                   <td className="orders-reference">{order.orderReference}</td>
 

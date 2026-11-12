@@ -1,10 +1,15 @@
 html,
 body,
 #root {
-    margin: 0;
-    padding: 0;
-    background-color: #f1eee6;
+  margin: 0;
+  padding: 0;
+  background-color: #f1eee6;
 }
+
+/* Per-slide background color (also used by the mobile image fade) */
+.slide-featured { --slide-bg: #f1eee6; }
+.slide-men      { --slide-bg: #efdcc6; }
+.slide-women    { --slide-bg: #f9eae4; }
 
 /* Carousel shell ------------------------------------------------------- */
 
@@ -22,8 +27,9 @@ body,
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  min-height: calc(100vh - 48px);
-  background-color: #f1eee6;
+  min-height: 100vh; /* fallback */
+  min-height: 100svh;
+  background-color: var(--slide-bg, #f1eee6);
 }
 
 /* Full-bleed image layer ---------------------------------------------- */
@@ -43,99 +49,11 @@ body,
   height: 100%;
   max-width: none;
   object-fit: cover;
-  object-position: center;
-}
-
-/* Fade the top of the two photos that contain artwork text so the
-   kicker and headline stay clean and those letters recede */
-.hero-image::before {
-  content: "";
-  display: none;
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.hero-slide-featured .hero-image::before,
-.hero-slide-women .hero-image::before {
-  display: block;
-  background: linear-gradient(
-    180deg,
-    rgba(241, 238, 230, 0.22) 0%,
-    rgba(241, 238, 230, 0.12) 38%,
-    rgba(241, 238, 230, 0) 62%
-  );
-}
-
-.hero-slide-featured .hero-image::before {
-  background: linear-gradient(
-    180deg,
-    rgba(241, 238, 230, 0.18) 0%,
-    rgba(241, 238, 230, 0.08) 32%,
-    rgba(241, 238, 230, 0) 52%
-  );
-}
-
-/* Soft cream veil so the headline stays readable over the photo */
-.hero-image::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    #f1eee6 0%,
-    rgba(241, 238, 230, 0.98) 16%,
-    rgba(241, 238, 230, 0.94) 30%,
-    rgba(241, 238, 230, 0.82) 44%,
-    rgba(241, 238, 230, 0.5) 60%,
-    rgba(241, 238, 230, 0.12) 78%,
-    rgba(241, 238, 230, 0) 100%
-  );
-}
-
-/* Keep the shoes in the best part of each frame */
-.hero-slide-featured .hero-image img,
-.hero-slide-women .hero-image img {
-  object-position: center bottom;
-}
-
-.hero-slide-featured .hero-image img {
-  object-position: 58% center;
-}
-
-.hero-slide-featured .hero-image {
-  left: 0;
-  right: 0;
-  width: 100%;
-  background: transparent;
-}
-
-.hero-image-featured {
-  left: 50%;
-  right: auto;
-  width: 100vw;
-  transform: translateX(-50%);
-}
-
-.hero-image-featured img {
-  object-fit: cover;
   object-position: center center;
 }
 
-.hero-image-featured::after {
-  background: linear-gradient(
-    90deg,
-    rgba(241, 238, 230, 0.82) 0%,
-    rgba(241, 238, 230, 0.68) 18%,
-    rgba(241, 238, 230, 0.38) 34%,
-    rgba(241, 238, 230, 0.08) 50%,
-    rgba(241, 238, 230, 0) 68%
-  );
-}
-
+.hero-image-featured,
+.hero-image-men,
 .hero-image-women {
   left: 50%;
   right: auto;
@@ -143,21 +61,24 @@ body,
   transform: translateX(-50%);
 }
 
-.hero-image-women img {
-  object-fit: cover;
-  object-position: center center;
+/* Cream veil so the headline stays readable over the photo */
+.hero-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
 }
 
-.hero-image-men {
-  left: 50%;
-  right: auto;
-  width: 100vw;
-  transform: translateX(-50%);
-}
-
-.hero-image-men img {
-  object-fit: cover;
-  object-position: center center;
+.hero-image-featured::after {
+  background: linear-gradient(
+    90deg,
+    rgba(241, 238, 230, 0.98) 0%,
+    rgba(241, 238, 230, 0.92) 12%,
+    rgba(241, 238, 230, 0.68) 28%,
+    rgba(241, 238, 230, 0.22) 46%,
+    rgba(241, 238, 230, 0) 62%
+  );
 }
 
 .hero-image-men::after {
@@ -182,15 +103,7 @@ body,
   );
 }
 
-.hero-slide-featured .hero-image::after,
-.hero-slide-featured .hero-image::before {
-  display: block;
-}
-
-.hero-slide-featured .hero-image img {
-  object-fit: cover;
-  object-position: center center;
-}
+/* Latest drop ---------------------------------------------------------- */
 
 .latest-drop-section {
   padding: 100px 0 70px;
@@ -290,33 +203,15 @@ body,
   white-space: nowrap;
 }
 
-.hero-slide-featured .hero-image::after {
-  background: linear-gradient(
-    90deg,
-    rgba(241, 238, 230, 0.98) 0%,
-    rgba(241, 238, 230, 0.92) 12%,
-    rgba(241, 238, 230, 0.68) 28%,
-    rgba(241, 238, 230, 0.22) 46%,
-    rgba(241, 238, 230, 0) 62%
-  );
-}
-
-.hero-slide-men .hero-image img {
-  object-position: center center;
-}
-
 /* Content layer ------------------------------------------------------- */
-
-.hero-container {
-  position: relative;
-  z-index: 2;
-}
 
 .hero-slide {
   position: relative;
   z-index: 2;
-  min-height: calc(100vh - 48px);
-  padding: 60px 0;
+  min-height: 100vh; /* fallback */
+  min-height: 100svh;
+  /* clears the navbar so text is never covered */
+  padding: calc(var(--nav-h, 62px) + 20px) 0 40px;
 }
 
 .hero-content {
@@ -418,22 +313,12 @@ body,
 /* Tablet -------------------------------------------------------------- */
 
 @media (max-width: 1199.98px) {
-  .hero-carousel .carousel-item,
-  .hero-slide {
-    min-height: calc(100vh - 48px);
-  }
-
   .hero-content h1 {
     font-size: 52px;
   }
 }
 
 @media (max-width: 991.98px) {
-  .hero-carousel .carousel-item,
-  .hero-slide {
-    min-height: calc(100vh - 48px);
-  }
-
   .hero-content {
     padding: 32px;
   }
@@ -442,30 +327,23 @@ body,
     font-size: 48px;
   }
 
-  .hero-image::after {
+  .hero-carousel .hero-image::after {
     background: linear-gradient(
       90deg,
-      #f1eee6 0%,
-      rgba(241, 238, 230, 0.98) 22%,
-      rgba(241, 238, 230, 0.92) 40%,
-      rgba(241, 238, 230, 0.72) 56%,
-      rgba(241, 238, 230, 0.3) 76%,
-      rgba(241, 238, 230, 0) 100%
+      var(--slide-bg) 0%,
+      color-mix(in srgb, var(--slide-bg) 92%, transparent) 40%,
+      color-mix(in srgb, var(--slide-bg) 55%, transparent) 60%,
+      transparent 100%
     );
   }
 }
 
-/* Mobile: text sits on a clean cream field and the photo fills the
-   lower part of the slide, still running edge to edge. */
+/* Mobile: text on a clean color field, FULL (uncropped) image pinned
+   to the bottom of the slide. -------------------------------------- */
 @media (max-width: 767.98px) {
-  .hero-carousel .carousel-item,
-  .hero-slide {
-    min-height: calc(100svh - 48px);
-  }
-
   .hero-slide {
     align-items: flex-start !important;
-    padding: 40px 0 0;
+    padding: calc(var(--nav-h, 56px) + 12px) 0 0;
   }
 
   .hero-content {
@@ -488,74 +366,26 @@ body,
     margin-bottom: 22px;
   }
 
-  .hero-image {
-    top: auto;
-    bottom: 0;
-    height: 100%;
-  }
-
-  .hero-image::before {
-    display: none;
-  }
-
-  .hero-image::after {
-    background: linear-gradient(
-      180deg,
-      #f1eee6 0%,
-      rgba(241, 238, 230, 0.97) 10%,
-      rgba(241, 238, 230, 0.85) 22%,
-      rgba(241, 238, 230, 0.45) 32%,
-      rgba(241, 238, 230, 0.08) 42%,
-      rgba(241, 238, 230, 0) 50%
-    );
-  }
-
-  .hero-slide-featured .hero-image img,
-  .hero-slide-women .hero-image img {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-position: 68% bottom;
-  }
-
-  .hero-slide-featured .hero-image::before {
-    display: none;
-  }
-
-  .hero-slide-featured .hero-image::after {
-    background: linear-gradient(
-      180deg,
-      rgba(241, 238, 230, 0.9) 0%,
-      rgba(241, 238, 230, 0.62) 12%,
-      rgba(241, 238, 230, 0.12) 28%,
-      rgba(241, 238, 230, 0) 42%
-    );
-  }
-
-  .hero-slide-featured .hero-image {
+  .hero-carousel .hero-image {
+    inset: auto 0 0 0;
     left: 0;
     right: 0;
     width: 100%;
-    height: 100%;
+    height: auto;
+    transform: none;
   }
 
-  .hero-slide-featured .hero-image img {
-    position: relative;
-    height: 100%;
-    object-fit: cover;
-    object-position: center bottom;
+  .hero-carousel .hero-image img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
   }
 
-  .hero-image-featured::after {
-    background: linear-gradient(
-      180deg,
-      rgba(241, 238, 230, 0.9) 0%,
-      rgba(241, 238, 230, 0.62) 12%,
-      rgba(241, 238, 230, 0.12) 28%,
-      rgba(241, 238, 230, 0) 42%
-    );
+  /* soft fade at the top edge of the photo into the slide color */
+  .hero-carousel .hero-image::after {
+    inset: 0 0 auto 0;
+    height: 30%;
+    background: linear-gradient(180deg, var(--slide-bg), transparent);
   }
 
   .latest-drop-grid {
@@ -565,10 +395,6 @@ body,
 
   .latest-drop-image {
     height: 150px;
-  }
-
-  .hero-slide-men .hero-image img {
-    object-position: center center;
   }
 
   .hero-carousel .carousel-indicators {
@@ -584,11 +410,6 @@ body,
 /* Small phones -------------------------------------------------------- */
 
 @media (max-width: 420px) {
-  .hero-carousel .carousel-item,
-  .hero-slide {
-    min-height: calc(100svh - 48px);
-  }
-
   .hero-content h1 {
     font-size: 38px;
   }

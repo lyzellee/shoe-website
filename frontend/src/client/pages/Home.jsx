@@ -4,13 +4,39 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import "./Home.css";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+// If the base URL ends with /api, uploaded images usually live on the server root
+const IMAGE_ORIGIN = API_BASE.replace(/\/api\/?$/, "").replace(/\/$/, "");
+const FALLBACK_IMAGE = "/product-images/product%201.png";
+
+const getImageSrc = (image) => {
+  if (!image) return FALLBACK_IMAGE;
+  if (/^(https?:|data:)/.test(image)) return image;
+  return `${IMAGE_ORIGIN}${image.startsWith("/") ? "" : "/"}${image}`;
+};
+
 function Home() {
   const navigate = useNavigate();
   const [latestShoes, setLatestShoes] = useState([]);
 
+  // Measure the real navbar height so hero text never sits under it
+  useEffect(() => {
+    const nav = document.querySelector(".custom-navbar");
+    if (!nav) return;
+    const setNavHeight = () =>
+      document.documentElement.style.setProperty(
+        "--nav-h",
+        `${nav.offsetHeight}px`,
+      );
+    setNavHeight();
+    const ro = new ResizeObserver(setNavHeight);
+    ro.observe(nav);
+    return () => ro.disconnect();
+  }, []);
+
   useEffect(() => {
     axios
-      .get(`${import.meta.env.VITE_API_BASE_URL}/all`)
+      .get(`${API_BASE}/all`)
       .then((response) => setLatestShoes(response.data.slice(0, 4)))
       .catch(() => setLatestShoes([]));
   }, []);
@@ -19,7 +45,7 @@ function Home() {
     <>
       <Carousel className="hero-carousel">
         {/* Slide 1 - Explore Collection */}
-        <Carousel.Item>
+        <Carousel.Item className="slide-featured">
           <div className="hero-image hero-image-featured">
             <img
               src="/featured-images/sage-green-sneaker-studio.png"
@@ -27,7 +53,7 @@ function Home() {
             />
           </div>
           <Container>
-            <Row className="align-items-center hero-slide hero-slide-featured">
+            <Row className="align-items-center hero-slide">
               <Col md={6} className="hero-content">
                 <p className="hero-label">NEW SEASON / 2026</p>
 
@@ -53,7 +79,7 @@ function Home() {
         </Carousel.Item>
 
         {/* Slide 2 - Men's Collection */}
-        <Carousel.Item>
+        <Carousel.Item className="slide-men">
           <div className="hero-image hero-image-men">
             <img
               src="/featured-images/men-sneaker-studio.jpe"
@@ -61,7 +87,7 @@ function Home() {
             />
           </div>
           <Container>
-            <Row className="align-items-center hero-slide hero-slide-men">
+            <Row className="align-items-center hero-slide">
               <Col md={6} className="hero-content">
                 <p className="hero-label">MEN'S COLLECTION</p>
 
@@ -87,7 +113,7 @@ function Home() {
         </Carousel.Item>
 
         {/* Slide 3 - Women's Collection */}
-        <Carousel.Item>
+        <Carousel.Item className="slide-women">
           <div className="hero-image hero-image-women">
             <img
               src="/featured-images/women-sneaker-studio.png"
@@ -95,7 +121,7 @@ function Home() {
             />
           </div>
           <Container>
-            <Row className="align-items-center hero-slide hero-slide-women">
+            <Row className="align-items-center hero-slide">
               <Col md={6} className="hero-content">
                 <p className="hero-label">WOMEN'S COLLECTION</p>
 
@@ -146,12 +172,12 @@ function Home() {
                 <div className="latest-drop-image">
                   {shoe.productStatus && <span>{shoe.productStatus}</span>}
                   <img
-                    src={
-                      shoe.image
-                        ? `${import.meta.env.VITE_API_URL}${shoe.image.startsWith("/") ? "" : "/"}${shoe.image}`
-                        : "/product-images/product%201.png"
-                    }
+                    src={getImageSrc(shoe.image)}
                     alt={shoe.name || "Shoe"}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = FALLBACK_IMAGE;
+                    }}
                   />
                 </div>
                 <p>{shoe.gender || shoe.category}</p>

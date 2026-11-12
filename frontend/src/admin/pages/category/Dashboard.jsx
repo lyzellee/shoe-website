@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "./Dashboard.css";
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
-const API_URL = `${API_BASE}/dashboard-stats`;
+// Works whether VITE_API_BASE_URL is "http://localhost:5000" or "http://localhost:5000/api"
+const API_ROOT = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"
+).replace(/\/api\/?$/, "");
+const API_URL = `${API_ROOT}/api/dashboard-stats`;
 
 const peso = (n = 0) =>
   `₱${Number(n).toLocaleString("en-PH", { maximumFractionDigits: 0 })}`;
@@ -359,9 +361,6 @@ export default function Dashboard() {
         </div>
         <div className="dash-header-actions">
           <span className="dash-chip">{year}</span>
-          <button className="dash-btn" onClick={fetchStats} disabled={loading}>
-            {loading ? "Refreshing…" : "Refresh"}
-          </button>
         </div>
       </header>
 

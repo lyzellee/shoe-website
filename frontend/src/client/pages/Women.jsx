@@ -156,29 +156,76 @@ export default function Women() {
     };
   }, []);
 
-  // HERO SHRINKS WHILE SCROLLING, THEN SCROLLS AWAY WITH THE PAGE
+  // HERO FILLS THE SCREEN, SHRINKS WHILE SCROLLING, THEN SCROLLS AWAY WITH ITS STAGE
   useEffect(() => {
-    const hero = heroRef.current;
-    if (!hero) return undefined;
+    const stage = heroRef.current;
+    const page = stage ? stage.parentElement : null;
+    if (!stage || !page) return undefined;
 
     let frame = 0;
+
+    // Height of a fixed/sticky navbar, so the hero sticks right under it
+    const getNavbarOffset = () => {
+      let element = document.querySelector(".navbar, header");
+
+      while (element && element !== document.body) {
+        const { position } = window.getComputedStyle(element);
+
+        if (position === "fixed" || position === "sticky") {
+          return element.getBoundingClientRect().height;
+        }
+
+        element = element.parentElement;
+      }
+
+      return 0;
+    };
 
     const update = () => {
       frame = 0;
 
+      // Size the banner keeps after scrolling (the page title stays visible)
       const width = window.innerWidth;
-      const expanded =
-        width <= 480 ? 220 : width <= 768 ? 260 : width <= 992 ? 340 : 440;
-      const collapsed = Math.min(
-        expanded,
-        Math.min(380, Math.max(220, window.innerHeight * 0.34)),
+      const collapsed = width <= 480 ? 170 : width <= 768 ? 200 : 250;
+      const edge = width <= 768 ? 10 : 16; // same space above and below the banner
+
+      const navbar = getNavbarOffset();
+      const pageTop = page.getBoundingClientRect().top + window.scrollY;
+
+      // Space between the navbar and the page start, removed so the top gap is always "edge"
+      const lead = navbar > 0 ? pageTop - navbar : 0;
+      const stageTop = navbar > 0 ? navbar : pageTop;
+
+      const stageHeight = Math.max(
+        collapsed + edge * 2,
+        window.innerHeight - stageTop,
       );
+      const expanded = stageHeight - edge * 2;
       const distance = expanded - collapsed;
+
       const progress =
         distance > 0 ? Math.min(1, Math.max(0, window.scrollY / distance)) : 1;
+      const shrink = distance * progress;
 
-      hero.style.setProperty("--hero-h", `${expanded - distance * progress}px`);
-      hero.style.setProperty("--hero-p", String(progress));
+      stage.style.setProperty("--stage-h", `${stageHeight}px`);
+      stage.style.setProperty("--stage-lead", `${-lead}px`);
+      stage.style.setProperty("--hero-edge", `${edge}px`);
+      stage.style.setProperty("--hero-h", `${Math.round(expanded - shrink)}px`);
+      stage.style.setProperty("--hero-p", progress.toFixed(3));
+
+      // 0 while the banner is stuck, 1 once it has fully scrolled away (used for the fade)
+      const sticky = stage.firstElementChild;
+      const stickyHeight = sticky ? sticky.offsetHeight : collapsed + edge * 2;
+      const stageBottom = stage.getBoundingClientRect().bottom;
+      const leave = Math.min(
+        1,
+        Math.max(0, (navbar + stickyHeight - stageBottom) / stickyHeight),
+      );
+      stage.style.setProperty("--hero-out", leave.toFixed(3));
+      stage.style.setProperty("--hero-top", `${navbar}px`);
+
+      // Enough page height to scroll through the whole shrink
+      page.style.minHeight = `${window.innerHeight + distance + 40}px`;
     };
 
     const onScroll = () => {
@@ -195,6 +242,7 @@ export default function Women() {
 
     return () => {
       document.documentElement.style.overflowAnchor = previousAnchor;
+      page.style.minHeight = "";
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       if (frame) window.cancelAnimationFrame(frame);
@@ -297,53 +345,59 @@ export default function Women() {
       )}
 
       {/* HERO CAROUSEL WITH TITLE ON TOP OF THE IMAGES */}
-      <div className="women-hero-sticky" ref={heroRef}>
-        <section
-          className="women-hero"
-          data-tone={imageTones[featuredIndex] || "dark"}
-          aria-label="Women section featured images"
-        >
-          {featuredImages.map((image, index) => (
-            <img
-              key={image.src}
-              className={`women-hero-slide ${featuredIndex === index ? "active" : ""}`}
-              style={{ objectPosition: `center ${image.focus}%` }}
-              src={image.src}
-              alt=""
-              aria-hidden={featuredIndex !== index}
-            />
-          ))}
-
-          <div className="women-hero-overlay">
-            <h1 className="women-hero-title">WOMEN SECTION</h1>
-            <h2 className="women-hero-description">
-              Find your everyday pair. Built to move, styled to last.
-            </h2>
-          </div>
-
-          {/* CAROUSEL DOTS */}
-          <div className="women-hero-dots">
-            {featuredImages.map((_, index) => (
-              <button
-                key={index}
-                type="button"
-                aria-label={`Show image ${index + 1}`}
-                className={featuredIndex === index ? "active" : ""}
-                onClick={() => setFeaturedIndex(index)}
+      <div className="women-hero-stage" ref={heroRef}>
+        <div className="women-hero-sticky">
+          <section
+            className="women-hero"
+            data-tone={imageTones[featuredIndex] || "dark"}
+            aria-label="Women section featured images"
+          >
+            {featuredImages.map((image, index) => (
+              <img
+                key={image.src}
+                className={`women-hero-slide ${featuredIndex === index ? "active" : ""}`}
+                style={{ objectPosition: `center ${image.focus}%` }}
+                src={image.src}
+                alt=""
+                aria-hidden={featuredIndex !== index}
               />
             ))}
-          </div>
-        </section>
+
+            <div className="women-hero-overlay">
+              <div className="women-hero-text">
+                <h1 className="women-hero-title">WOMEN SECTION</h1>
+                <h2 className="women-hero-description">
+                  Find your everyday pair. Built to move, styled to last.
+                </h2>
+              </div>
+            </div>
+
+            {/* CAROUSEL DOTS */}
+            <div className="women-hero-dots">
+              {featuredImages.map((_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  aria-label={`Show image ${index + 1}`}
+                  className={featuredIndex === index ? "active" : ""}
+                  onClick={() => setFeaturedIndex(index)}
+                />
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
 
       {/* FILTERS AND CATEGORY DROPDOWN */}
-      <ProductFilter
-        activeFilter={activeCategory}
-        setActiveFilter={setActiveCategory}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        categories={womenCategories}
-      />
+      <div className="women-filter-wrap">
+        <ProductFilter
+          activeFilter={activeCategory}
+          setActiveFilter={setActiveCategory}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          categories={womenCategories}
+        />
+      </div>
 
       <div className="product-card-container">
         {filteredShoes.map((shoe) => (

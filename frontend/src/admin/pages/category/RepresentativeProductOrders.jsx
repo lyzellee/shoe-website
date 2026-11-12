@@ -18,7 +18,7 @@ import {
   getItemCount,
   getOrderTime,
   getProductName,
-} from "./representativeUtils";
+} from "./RepresentativeUtils";
 import "./RepresentativeProductOrders.css";
 
 const ORDERS_PER_PAGE = 8;

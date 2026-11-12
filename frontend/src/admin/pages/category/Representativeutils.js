@@ -1,6 +1,5 @@
 // Shared constants + helpers for the representative pages
 // (used by RepresentativeDashboard and RepresentativeProductOrders)
-
 export const STATUSES = ["pending", "processing", "shipped", "delivered"];
 export const DAY = 24 * 60 * 60 * 1000;
 

@@ -10,11 +10,14 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   padding: 48px 25px 32px;
   background: #fff;
   border-right: 1px solid var(--rp-line);
+  overflow-y: auto;
 }
 
 .representative-brand {
@@ -87,6 +90,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    width: 100%;
     height: 56px;
     padding: 0 16px;
     background: #fff;
@@ -116,15 +120,15 @@
     letter-spacing: 1px;
   }
 
+  /* Pinned to the top AND bottom of the screen, so it is always full height */
   .representative-sidebar {
     position: fixed;
     top: 0;
-    left: 0;
     bottom: 0;
+    left: 0;
     z-index: 200;
     width: min(280px, 82vw);
-    height: 100vh;
-    height: 100dvh;
+    height: auto;
     padding: 64px 20px 24px;
     border-right: 1px solid var(--rp-line);
     overflow-y: auto;
@@ -177,7 +181,10 @@
 
   .representative-sidebar-backdrop {
     position: fixed;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     z-index: 150;
     display: block;
     background: rgba(17, 24, 39, 0.45);

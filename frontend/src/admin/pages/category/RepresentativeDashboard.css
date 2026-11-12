@@ -1,9 +1,19 @@
-/* The global `html, body, #root` rule (Home.css) paints everything cream.
-   Override it while the dashboard is on screen. */
 html:has(.representative-page),
 body:has(.representative-page),
 #root:has(.representative-page) {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left;
   background-color: #f4f5f6;
+}
+
+html:has(.representative-page),
+body:has(.representative-page) {
+  overflow-x: hidden;
 }
 
 .representative-page {
@@ -24,7 +34,10 @@ body:has(.representative-page),
 
   width: 100%;
   max-width: 100%;
+  margin: 0;
+  overflow-x: clip;
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   grid-template-columns: 218px minmax(0, 1fr);
   background: var(--rp-bg);
@@ -60,6 +73,9 @@ body:has(.representative-page),
 /* ---------- Content + header ---------- */
 .representative-content {
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
   padding: 40px 40px 64px;
 }
 
@@ -574,7 +590,7 @@ body:has(.representative-page),
 @media (max-width: 820px) {
   /* The sidebar becomes a drawer (RepresentativeNavbar.css), so the
      page is a single column with the top bar above the content */
-  .representative-page { display: block; }
+  .representative-page { display: block; width: 100%; }
 
   .representative-content { padding: 20px 16px 40px; }
 

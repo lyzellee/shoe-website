@@ -728,8 +728,6 @@
   margin-bottom: 0;
 }
 
-
-
 /* Tablet and below: stack form and order summary ---------------------- */
 @media (max-width: 991.98px) {
   .checkout-containter {
@@ -741,8 +739,11 @@
     row-gap: 8px;
   }
 
+  /* "Your order" goes first, then Delivery, then Payment (last in the form) */
   .checkout-order-card {
-    margin-top: 24px;
+    order: -1;
+    margin-top: 0;
+    margin-bottom: 16px;
   }
 }
 
@@ -855,7 +856,8 @@
 
   /* Order summary ----------------------------------------------------- */
   .checkout-order-card {
-    margin-top: 20px;
+    margin-top: 0;
+    margin-bottom: 12px;
     padding: 18px 16px 20px;
   }
 

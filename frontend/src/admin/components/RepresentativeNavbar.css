@@ -1,0 +1,185 @@
+/* Mobile-only controls are hidden on desktop */
+.representative-topbar,
+.representative-sidebar-close,
+.representative-sidebar-backdrop {
+  display: none;
+}
+
+/* ---------- Sidebar (desktop) ---------- */
+.representative-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 48px 25px 32px;
+  background: #fff;
+  border-right: 1px solid var(--rp-line);
+}
+
+.representative-brand {
+  padding: 0 14px 56px;
+  color: var(--rp-brand);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.representative-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.representative-nav button {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--rp-muted);
+  font-weight: 400;
+  text-align: left;
+}
+
+.representative-nav button:hover {
+  background: var(--rp-soft);
+  color: var(--rp-ink);
+}
+
+.representative-nav button.active {
+  background: var(--rp-tint);
+  color: #333333;
+  font-weight: 500;
+}
+
+/* Log out: plain text + icon, no square */
+.representative-logout {
+  margin-top: auto;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--rp-muted);
+  font-weight: 500;
+}
+
+.representative-logout:hover {
+  background: none;
+  color: #b42318;
+}
+
+.representative-logout:hover span {
+  text-decoration: underline;
+}
+
+/* ---------- Mobile / tablet: hamburger + slide-in drawer ---------- */
+@media (max-width: 820px) {
+  .representative-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 56px;
+    padding: 0 16px;
+    background: #fff;
+    border-bottom: 1px solid var(--rp-line);
+  }
+
+  .representative-hamburger {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--rp-line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--rp-ink);
+    font-size: 18px;
+  }
+
+  .representative-hamburger:hover {
+    background: var(--rp-soft);
+  }
+
+  .representative-topbar-brand {
+    color: var(--rp-brand);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .representative-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 200;
+    width: min(280px, 82vw);
+    height: 100vh;
+    height: 100dvh;
+    padding: 64px 20px 24px;
+    border-right: 1px solid var(--rp-line);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform 0.25s ease,
+      visibility 0s linear 0.25s;
+  }
+
+  .representative-sidebar.open {
+    transform: translateX(0);
+    visibility: visible;
+    box-shadow: 0 0 40px rgba(17, 24, 39, 0.25);
+    transition: transform 0.25s ease;
+  }
+
+  .representative-brand {
+    padding: 0 12px 28px;
+  }
+
+  .representative-nav button {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .representative-logout {
+    padding: 12px;
+  }
+
+  .representative-sidebar-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--rp-muted);
+    font-size: 18px;
+  }
+
+  .representative-sidebar-close:hover {
+    background: var(--rp-soft);
+    color: var(--rp-ink);
+  }
+
+  .representative-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    display: block;
+    background: rgba(17, 24, 39, 0.45);
+  }
+}

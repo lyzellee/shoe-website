@@ -14,6 +14,11 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import * as XLSX from "xlsx";
 import "./stockShoes.css";
+// Works whether VITE_API_BASE_URL is "http://localhost:5000" or "http://localhost:5000/api"
+const API_ROOT = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"
+).replace(/\/api\/?$/, "");
+const API = `${API_ROOT}/api`;
 /*import ListAllShoe from "./src/pages/category/listAllShoe";*/
 
 export default function stockShoes() {
@@ -56,7 +61,7 @@ export default function stockShoes() {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL}/update/${selectedShoe._id}`,
+        `${API}/update/${selectedShoe._id}`,
         {
           name: name,
           brand: brand,
@@ -88,7 +93,7 @@ export default function stockShoes() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.delete(`http://localhost:5000/api/${id}`, {
+      const response = await axios.delete(`${API}/${id}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       setShowDeleteModal(false);
@@ -106,7 +111,7 @@ export default function stockShoes() {
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
-        `http://localhost:5000/api/restore/${id}`,
+        `${API}/restore/${id}`,
         {},
         {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -126,9 +131,7 @@ export default function stockShoes() {
   const fetchShoes = async () => {
     try {
       const respond = await axios.get(
-        inventoryView === "deleted"
-          ? "http://localhost:5000/api/all?deleted=true"
-          : "http://localhost:5000/api/all",
+        inventoryView === "deleted" ? `${API}/all?deleted=true` : `${API}/all`,
       );
       setShoes(respond.data);
     } catch (err) {

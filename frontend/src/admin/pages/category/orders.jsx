@@ -72,6 +72,9 @@ export default function Orders() {
     fetchOrders();
   }, []);
 
+  const capitalize = (text = "") =>
+    text ? text.charAt(0).toUpperCase() + text.slice(1).toLowerCase() : "";
+
   const getPaymentBadge = (status) => {
     switch (status) {
       case "completed":
@@ -85,7 +88,7 @@ export default function Orders() {
       case "failed":
         return <Badge bg="danger">Failed</Badge>;
       default:
-        return <Badge bg="secondary">{status || "Unknown"}</Badge>;
+        return <Badge bg="secondary">{capitalize(status) || "Unknown"}</Badge>;
     }
   };
 

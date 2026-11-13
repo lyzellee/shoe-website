@@ -392,3 +392,62 @@
     min-width: 100%;
   }
 }
+
+/* ===== Mobile responsiveness additions ===== */
+.shoe-wrap,
+.shoe-form-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.shoe-title,
+.shoe-description,
+.shoe-form-header h5 {
+  overflow-wrap: anywhere;
+}
+
+.shoe-image-preview img {
+  max-width: 100%;
+}
+
+.shoe-size-heading {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 576px) {
+  .shoe-heading {
+    margin-bottom: 22px;
+  }
+
+  .shoe-form-header {
+    margin-bottom: 22px;
+    padding-bottom: 16px;
+  }
+
+  .shoe-form-card input[type="file"].form-control {
+    height: auto;
+    min-height: 56px;
+    line-height: 1.4;
+  }
+}
+
+@media (max-width: 360px) {
+  .shoe-form-card {
+    padding: 18px 14px;
+  }
+
+  .shoe-page .shoe-form-card button.shoe-size-button {
+    flex-basis: 40px !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    font-size: 12px !important;
+  }
+
+  .shoe-image-preview img {
+    width: 100%;
+    height: 140px;
+  }
+}

@@ -53,4 +53,5 @@ const orderSchemaInformation = new mongoose.Schema(
   },
 );
 
+orderSchemaInformation.index({ orderId: 1 }, { unique: true });
 export default mongoose.model("OrderSchemaInformation", orderSchemaInformation);

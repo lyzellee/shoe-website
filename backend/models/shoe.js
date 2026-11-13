@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 
 const shoeSchema = new mongoose.Schema(
@@ -95,5 +94,6 @@ shoeSchema.index(
     collation: { locale: "en", strength: 2 },
   },
 );
+shoeSchema.index({ isDeleted: 1, gender: 1, updatedAt: -1 });
 
 export default mongoose.model("Shoe", shoeSchema);

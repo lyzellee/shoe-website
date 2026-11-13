@@ -1,9 +1,10 @@
 import mongoose from "mongoose";
 import Shoe from "../models/shoe.js";
+import { Readable } from "node:stream";
+import cloudinary from "../config/cloudinary.js";
 
 // Helper: Escape special characters when searching for an exact shoe name
-const escapeRegex = (value) =>
-  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // Helper: Convert FormData sizes into an array of numbers
 const parseSizes = (sizes) => {
@@ -30,13 +31,35 @@ const parseSizes = (sizes) => {
 
   return [...new Set(parsedSizes.map(Number))].sort((a, b) => a - b);
 };
+const uploadToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "shoe-website/shoes",
+        resource_type: "image",
+        background_removal: "cloudinary_ai", // <-- IDAGDAG: Kusang buburahin ang background
+        transformation: [
+          { effect: "trim:10" }, // <-- IDAGDAG: Gugupitin ang sobrang transparent space sa gilid para pantay lahat
+          { width: 800, height: 600, crop: "pad", background: "transparent" }, // <-- IDAGDAG: Pare-parehong canvas size (800x600)
+          { fetch_format: "png", quality: "auto" }, // <-- IDAGDAG: Transparent PNG + auto-compress
+        ],
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      },
+    );
 
+    Readable.from([buffer]).pipe(uploadStream);
+  });
+};
 
 //createShoe
 export const createShoe = async (req, res) => {
   try {
-    const { name, brand, price, stock, productStatus, color, description } = req.body;
-    
+    const { name, brand, price, stock, productStatus, color, description } =
+      req.body;
+
     const shoeGender =
       typeof req.body.gender === "string"
         ? req.body.gender.trim().toLowerCase()
@@ -127,7 +150,7 @@ export const createShoe = async (req, res) => {
     if (!["running", "sports", "casual", "lifestyle"].includes(shoeCategory)) {
       return res.status(400).json({
         message: "Category must be running, sports, casual, or lifestyle",
-     });
+      });
     }
 
     // STEP 9: Validate product status
@@ -169,6 +192,11 @@ export const createShoe = async (req, res) => {
       });
     }
 
+    // Upload only after duplicate validation
+    const uploadedImage = req.file
+      ? await uploadToCloudinary(req.file.buffer)
+      : null;
+
     // STEP 12: Save shoe to database
     const newShoe = await Shoe.create({
       name: name.trim(),
@@ -183,9 +211,8 @@ export const createShoe = async (req, res) => {
           : normalizedStatus,
       sizes: shoeSizes,
       color: typeof color === "string" ? color.trim() : "",
-      description:
-        typeof description === "string" ? description.trim() : "",
-      image: req.file ? `/uploads/${req.file.filename}` : "",
+      description: typeof description === "string" ? description.trim() : "",
+      image: uploadedImage?.secure_url || "",
     });
 
     return res.status(201).json({
@@ -203,9 +230,7 @@ export const getAllShoes = async (req, res) => {
   try {
     const showDeleted = req.query.deleted === "true";
     const shoes = await Shoe.find(
-      showDeleted
-        ? { isDeleted: true }
-        : { isDeleted: { $ne: true } },
+      showDeleted ? { isDeleted: true } : { isDeleted: { $ne: true } },
     ).sort({ updatedAt: -1 });
     res.status(200).json(shoes);
   } catch (err) {
@@ -451,7 +476,7 @@ export const updateById = async (req, res) => {
       req.body.category = req.body.category.trim().toLowerCase();
     }
 
-        // Prepare the data before updating
+    // Prepare the data before updating
     const updateData = { ...req.body };
 
     // Convert price and stock into numbers
@@ -509,7 +534,7 @@ export const updateById = async (req, res) => {
     if (req.file) {
       updateData.image = `/uploads/${req.file.filename}`;
     }
-    
+
     const updateShoes = await Shoe.findByIdAndUpdate(id, updateData, {
       returnDocument: "after",
       runValidators: true,

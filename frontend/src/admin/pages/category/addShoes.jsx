@@ -16,7 +16,7 @@ export default function AddShoes() {
   const [gender, setGender] = useState("");
   const [category, setCategory] = useState("");
   const [stock, setStock] = useState();
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // NEW FIELDS
   const [productStatus, setProductStatus] = useState("");
   const [sizes, setSizes] = useState([]);
@@ -85,7 +85,8 @@ export default function AddShoes() {
   // 2. Submit function na tumatawag sa backend endpoint
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    if (isSubmitting) return; // <-- DITO
+    setIsSubmitting(true);
     try {
       const formData = new FormData();
 
@@ -370,8 +371,14 @@ export default function AddShoes() {
 
             {/* SUBMIT BUTTON */}
             <div className="shoe-form-actions">
-              <Button type="submit" className="shoe-btn">
-                Add Product
+              <Button
+                type="submit"
+                className="shoe-btn"
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? "Processing & Removing Background..."
+                  : "Add Product"}
               </Button>
             </div>
           </Form>

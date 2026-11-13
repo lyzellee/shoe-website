@@ -1,6 +1,7 @@
 import express from "express";
 import { verifyToken, allowRoles } from "../middleware/authMiddleware.js";
 import upload from "../middleware/upload.js";
+import validateImage from "../middleware/validateImage.js";
 
 import { getDashboardStats } from "../controllers/dashBoardController.js";
 import {
@@ -120,6 +121,7 @@ router.post(
   verifyToken,
   allowRoles("admin"),
   upload.single("image"),
+  validateImage,
   createShoe,
 );
 router.post("/login", login);

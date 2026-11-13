@@ -5,9 +5,7 @@ import path from "path";
 import connectDB from "./config/db.js";
 import shoeRoutes from "./routes/shoes.js";
 import helmet from "helmet";
-import dotenv from "dotenv";
 
-dotenv.config();
 const app = express();
 
 // Middlewares
@@ -17,10 +15,9 @@ app.use(
   }),
 );
 const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  process.env.FRONTEND_URL,
-  "https://shoe-website-beige-rho.vercel.app",
+  ...(process.env.NODE_ENV === "production"
+    ? [process.env.FRONTEND_URL]
+    : ["http://localhost:5173", "http://localhost:3000"]),
 ].filter(Boolean);
 
 app.use(
@@ -29,8 +26,7 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json());
-
+app.use(express.json({ limit: "100kb" }));
 // Serve uploaded shoe images
 app.use("/uploads", express.static(path.resolve("uploads")));
 

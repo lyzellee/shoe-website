@@ -37,11 +37,10 @@ const uploadToCloudinary = (buffer) => {
       {
         folder: "shoe-website/shoes",
         resource_type: "image",
-        background_removal: "cloudinary_ai", // <-- IDAGDAG: Kusang buburahin ang background
         transformation: [
-          { effect: "trim:10" }, // <-- IDAGDAG: Gugupitin ang sobrang transparent space sa gilid para pantay lahat
-          { width: 800, height: 600, crop: "pad", background: "transparent" }, // <-- IDAGDAG: Pare-parehong canvas size (800x600)
-          { fetch_format: "png", quality: "auto" }, // <-- IDAGDAG: Transparent PNG + auto-compress
+          { effect: "trim:10" },
+          { width: 800, height: 600, crop: "pad", background: "transparent" },
+          { fetch_format: "png", quality: "auto" },
         ],
       },
       (error, result) => {
@@ -191,11 +190,21 @@ export const createShoe = async (req, res) => {
         message: "Shoe with the same name already exists",
       });
     }
+    console.log("BACKEND RECEIVED:", {
+      originalname: req.file?.originalname,
+      mimetype: req.file?.mimetype,
+      size: req.file?.size,
+    });
 
     // Upload only after duplicate validation
     const uploadedImage = req.file
       ? await uploadToCloudinary(req.file.buffer)
       : null;
+    console.log("CLOUDINARY RESULT:", {
+      url: uploadedImage?.secure_url,
+      publicId: uploadedImage?.public_id,
+      format: uploadedImage?.format,
+    });
 
     // STEP 12: Save shoe to database
     const newShoe = await Shoe.create({

@@ -3,6 +3,7 @@ import { Form, Button, Container, Dropdown, Col, Row } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Addshoes.css";
+import { removeBackground } from "@imgly/background-removal";
 
 const availableSizes = [4, 5, 6, 7, 8, 9, 10, 11, 12];
 
@@ -87,6 +88,7 @@ export default function AddShoes() {
     e.preventDefault();
     if (isSubmitting) return; // <-- DITO
     setIsSubmitting(true);
+
     try {
       const formData = new FormData();
 
@@ -102,17 +104,25 @@ export default function AddShoes() {
       formData.append("description", description);
 
       if (image) {
-        formData.append("image", image);
+        const transparentBlob = await removeBackground(image);
+        const imageToUpload = new File([transparentBlob], "shoe.png", {
+          type: "image/png",
+        });
+        formData.append("image", imageToUpload);
       }
 
       // Keep your existing admin token authentication
       const token = localStorage.getItem("token");
 
-      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/shoes`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/shoes`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       alert("Successfully added shoe!");
       resetForm();

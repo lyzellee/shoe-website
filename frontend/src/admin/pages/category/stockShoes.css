@@ -652,3 +652,76 @@
     width: 100%;
   }
 }
+/* ===== Mobile fixes ===== */
+.inventory-tool-btn,
+.inventory-trashed-btn {
+  white-space: nowrap;
+}
+
+@media (max-width: 576px) {
+  /* Search bar no longer collapses */
+  .admin-search {
+    flex: 0 0 auto;
+    width: 100%;
+    height: 42px;
+    min-height: 42px;
+  }
+
+  .admin-search .form-control {
+    font-size: 13px;
+  }
+
+  .admin-add-btn {
+    flex: 0 0 auto;
+    min-width: 0;
+    height: 42px;
+  }
+
+  /* Toolbar: 2x2 grid so it ends at the table's right edge */
+  .inventory-view-row {
+    margin: 0 0 16px;
+  }
+
+  .inventory-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .inventory-toolbar-control {
+    position: static;
+  }
+
+  .inventory-tool-btn,
+  .inventory-trashed-btn {
+    width: 100%;
+    height: 40px;
+    justify-content: center;
+  }
+
+  /* Popovers stay within the screen */
+  .inventory-popover,
+  .inventory-filter-popover {
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    min-width: 0;
+    width: auto;
+  }
+
+  .inventory-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Update modal: single column */
+  .admin-modal-body {
+    grid-template-columns: 1fr;
+    padding: 18px 16px;
+  }
+
+  .admin-modal-header,
+  .admin-modal-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

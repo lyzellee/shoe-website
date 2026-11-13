@@ -110,7 +110,7 @@ const orderSchema = new mongoose.Schema({
     default: "pending",
   },
 
-    deliveredAt: { type: Date, default: null },
+  deliveredAt: { type: Date, default: null },
 
   returnStatus: {
     type: String,
@@ -120,10 +120,15 @@ const orderSchema = new mongoose.Schema({
   returnRequestedAt: { type: Date, default: null },
   returnResolvedAt: { type: Date, default: null },
   returnNote: { type: String, trim: true, default: "" },
-  
+
   orderDate: {
     type: Date,
     default: Date.now,
   },
 });
+// Para sa dashboard stats (paidMatch + date range filters)
+orderSchema.index({ orderStatus: 1, paymentStatus: 1, orderDate: -1 });
+
+// Para sa recent orders sort at order status donut chart
+orderSchema.index({ orderDate: -1 });
 export default mongoose.model("Order", orderSchema);

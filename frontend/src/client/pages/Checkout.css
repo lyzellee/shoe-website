@@ -1,4 +1,3 @@
-
 /* CHECKOUT PAGE*/
 
 .checkout-page{
@@ -627,8 +626,12 @@
   min-width: 0;
 }
 
-/* Shoe image background */
+/* Shoe image background
+   ADDED: --img-pad is the ONE padding value of this image box
+   (top = bottom = left = right). The box itself has no padding.
+   To change the space around the shoe, change this one number only. */
 .checkout-product-image-wrapper {
+  --img-pad: 5px; /* ADDED: single padding */
   width: 86px;
   height: 45px;
   display: flex;
@@ -639,12 +642,18 @@
   background-color: #dcd9c8;
 }
 
-/* Shoe image */
+/* Shoe image
+   ADDED: the image fills the box and var(--img-pad) is the same on all four
+   sides. object-fit: contain fits any uploaded size inside it: big images
+   shrink, small images are zoomed in, nothing is cropped or stretched. */
 .checkout-product-image {
   display: block;
   width: 100%;
   height: 100%;
+  box-sizing: border-box;
+  padding: var(--img-pad);
   object-fit: contain;
+  object-position: center;
   mix-blend-mode: multiply;
 }
 
@@ -876,7 +885,9 @@
     align-items: center;
   }
 
+  /* ADDED: phone size. Only --img-pad and the box size change. */
   .checkout-product-image-wrapper {
+    --img-pad: 5px;
     width: 72px;
     height: 56px;
     border-radius: 10px;
@@ -923,7 +934,9 @@
     gap: 10px;
   }
 
+  /* ADDED: small phone size. Same rule, smaller --img-pad. */
   .checkout-product-image-wrapper {
+    --img-pad: 4px;
     width: 60px;
     height: 48px;
   }

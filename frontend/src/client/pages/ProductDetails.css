@@ -1,4 +1,3 @@
-
 /* PRODUCT PAGE */
 
 .product-page-container {
@@ -71,33 +70,36 @@
 
 /* MAIN PRODUCT IMAGE */
 
+/* ADDED: --img-pad is the ONE padding value of this image box
+   (top = bottom = left = right). Change this number only. */
 .product-page-container .product-image-container {
+  --img-pad: 44px;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   width: 100%;
-  height: 278px;
+  height: 320px; /* fixed, so the box is always the same size */
   min-width: 0;
   margin: 0;
-  padding: 13px;
+  padding: 0;
   overflow: hidden;
   border-radius: 17px;
   background: #dcd9c8;
 }
 
+/* ADDED: the image fills the box and var(--img-pad) is the same on all four
+   sides. object-fit: contain fits any uploaded size inside it: big images
+   shrink, small images are zoomed in, nothing is cropped.
+   44px is taller than the badges (about 34px), so there is no overlap. */
 .product-page-container .product-image {
   display: block;
-  width: 120%;
-  height: 120%;
-  max-width: none;
-  max-height: none;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0;
+  padding: var(--img-pad);
   object-fit: contain;
   object-position: center;
-  padding: 0;
-  margin: 0;
-  transform: scale(1.15);
-  
 }
 
 /* Main image badges */
@@ -443,13 +445,14 @@
 
 /* Recommendation image panel */
 
+/* ADDED: --img-pad is the ONE padding value of this card image
+   (top = bottom = left = right). Change this number only. */
 .product-page-container .recommendation-image-container {
+  --img-pad: 40px;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   width: 100%;
-  aspect-ratio: 1.64 / 1;
+  aspect-ratio: 1.4 / 1; /* same box size for every card */
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -458,11 +461,15 @@
   cursor: pointer;
 }
 
+/* ADDED: same rule as the main image. One padding on all four sides,
+   object-fit: contain shrinks big uploads and zooms small ones.
+   40px is taller than the badge and the heart/plus buttons (about 36px). */
 .product-page-container .recommendation-image {
   display: block;
   width: 100%;
   height: 100%;
   margin: 0;
+  padding: var(--img-pad);
   object-position: center;
   object-fit: contain;
   transition: transform 0.3s ease;
@@ -584,9 +591,42 @@
 }
 
 @media (max-width: 768px) {
+  /* ADDED: phone size. Only --img-pad and the box height change. */
+  .product-page-container .product-image-container {
+    --img-pad: 40px;
+    height: 280px;
+  }
+
   .product-page-container .recommendations-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 22px 16px;
+  }
+
+  /* cards are narrower on phones, so the box gets taller to keep room for the shoe */
+  /* ADDED: phone size. Smaller badge and buttons fit inside the 32px padding. */
+  .product-page-container .recommendation-image-container {
+    --img-pad: 32px;
+    aspect-ratio: 1 / 1;
+  }
+
+  .product-page-container .recommendation-badge {
+    top: 8px;
+    left: 8px;
+    padding: 5px 8px;
+    font-size: 9px;
+  }
+
+  .product-page-container .recommendation-icons {
+    top: 8px;
+    right: 6px;
+    gap: 4px;
+  }
+
+  .product-page-container .recommendation-icons button {
+    width: 22px;
+    height: 22px;
+    min-height: 22px;
+    font-size: 15px;
   }
 
   .product-page-container .recommendation-meta {

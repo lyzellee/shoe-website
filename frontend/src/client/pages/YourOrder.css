@@ -1,11 +1,3 @@
-/* =====================================================================
-   YourOrder.css
-   Clean, organized version of the Your Orders page.
-   Everything is scoped under .your-orders-page so the shared class names
-   (order-status, order-tracker, tracker-step...) don't change how
-   OrderDetails and TrackOrder look.
-   ===================================================================== */
-
 .your-orders-page {
   --yo-bg: #f3f1ea;
   --yo-card: #f9f7f1;
@@ -318,24 +310,31 @@
 
 .your-orders-page .order-product:last-child { border-bottom: 0; }
 
-/* image container: fixed square, image is never stretched or cropped */
+/* IMAGE BOX
+   ADDED: --img-pad is the ONE padding value of this image box
+   (top = bottom = left = right). The box itself has no padding.
+   To change the space around the shoe, change this one number only. */
 .your-orders-page .order-product-image {
+  --img-pad: 8px; /* ADDED: single padding */
   width: 72px;
   height: 72px;
   flex: 0 0 72px;
   overflow: hidden;
-  display: grid;
-  place-items: center;
-  padding: 8px;
   border-radius: 12px;
   background: #ece9de;
 }
 
+/* ADDED: the image fills the box and var(--img-pad) is the same on all four
+   sides. object-fit: contain fits any uploaded size inside it: big images
+   shrink, small images are zoomed in, nothing is cropped or stretched. */
 .your-orders-page .order-product-image img {
   display: block;
   width: 100%;
   height: 100%;
+  box-sizing: border-box;
+  padding: var(--img-pad);
   object-fit: contain;
+  object-position: center;
   mix-blend-mode: multiply;
 }
 
@@ -590,7 +589,8 @@
   .your-orders-page .order-card-header { padding: 18px 16px; }
   .your-orders-page .order-products { margin: 0 16px; }
   .your-orders-page .order-product { grid-template-columns: 64px minmax(0, 1fr); gap: 14px; }
-  .your-orders-page .order-product-image { width: 64px; height: 64px; flex-basis: 64px; padding: 6px; }
+  /* ADDED: phone size. Only --img-pad and the box size change. */
+  .your-orders-page .order-product-image { --img-pad: 6px; width: 64px; height: 64px; flex-basis: 64px; }
   .your-orders-page .order-line-total { grid-column: 2; }
   .your-orders-page .order-tracker { margin: 20px 16px 22px; }
   .your-orders-page .tracker-label { font-size: 11px; }

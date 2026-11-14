@@ -136,13 +136,21 @@
   border-top: 1px solid #e8e3d8;
 }
 .order-detail-item:first-child { border-top: 0; }
+
+/* ADDED: --img-pad is the ONE padding value of this thumbnail
+   (top = bottom = left = right). object-fit: contain fits any uploaded size
+   inside it: big images shrink, small images are zoomed in, nothing is cropped. */
 .order-detail-item > img {
+  --img-pad: 7px;
   width: 58px;
   height: 58px;
   flex: 0 0 58px;
+  box-sizing: border-box;
+  padding: var(--img-pad);
   border-radius: 7px;
   background: #e7e4d9;
   object-fit: contain;
+  object-position: center;
   mix-blend-mode: multiply;
 }
 .order-detail-item-copy { flex: 1; min-width: 0; }
@@ -299,7 +307,21 @@
 
 .order-recap-panel { height: fit-content; }
 .order-recap-item { display: flex; align-items: center; gap: 9px; padding: 9px 0; border-top: 1px solid #e8e3d8; }
-.order-recap-item img { width: 44px; height: 44px; border-radius: 6px; background: #e7e4d9; object-fit: contain; }
+
+/* ADDED: same rule as the order items. One --img-pad on all four sides,
+   object-fit: contain shrinks big uploads and zooms small ones. */
+.order-recap-item img {
+  --img-pad: 5px;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  box-sizing: border-box;
+  padding: var(--img-pad);
+  border-radius: 6px;
+  background: #e7e4d9;
+  object-fit: contain;
+  object-position: center;
+}
 .order-recap-item div { display: grid; gap: 4px; }
 .order-recap-item strong { font-size: 10px; }
 .order-recap-item span { color: #77776f; font-size: 9px; }
@@ -331,7 +353,8 @@
   .order-detail-aside { grid-template-columns: 1fr; }
   .order-panel { padding: 14px; }
   .order-detail-header h1,.order-track-header h1 { font-size: 18px; }
-  .order-detail-item > img { width: 48px; height: 48px; flex-basis: 48px; }
+  /* ADDED: phone size. Only --img-pad and the box size change. */
+  .order-detail-item > img { --img-pad: 6px; width: 48px; height: 48px; flex-basis: 48px; }
   .order-tracker-large { margin-right: 0; margin-left: 0; }
   .order-tracker-large .tracker-label { font-size: 8px; }
   .order-shipment-grid { grid-template-columns: 1fr; }

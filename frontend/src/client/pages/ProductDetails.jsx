@@ -16,6 +16,7 @@ import {
 import "./ProductDetails.css";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}`;
+const SERVER_URL = API_URL.replace(/\/api\/?$/, "");
 
 // Get the product from different possible API response formats
 function unwrapProduct(data) {
@@ -45,9 +46,8 @@ function getImage(item) {
     return image;
   }
 
-  return `${API_URL}${image.startsWith("/") ? "" : "/"}${image}`;
+  return `${SERVER_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 }
-
 // Get and format the product price
 function getPrice(item) {
   const price = Number(item?.price ?? item?.sellingPrice ?? 0);

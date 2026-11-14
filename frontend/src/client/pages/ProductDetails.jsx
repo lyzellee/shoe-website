@@ -15,28 +15,8 @@ import {
 } from "../../components/AddToCartItems.jsx";
 import "./ProductDetails.css";
 
-const API_URL = (
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://shoe-website-x78a.onrender.com/api"
-).replace(/\/+$/, "");
-
-const BASE_URL = API_URL.replace(/\/api\/?$/, "");
-
-// Get the product from different possible API response formats
-function unwrapProduct(data) {
-  return data?.shoe || data?.product || data?.data || data;
-}
-
-// Get the product list from the API response
-function unwrapProducts(data) {
-  const result = data?.shoes || data?.products || data?.data || data;
-  return Array.isArray(result) ? result : [];
-}
-
-// Get the product name
-function getName(item) {
-  return item?.name || item?.shoeName || item?.title || "Unnamed Shoe";
-}
+const API_URL = `${import.meta.env.VITE_API_BASE_URL}`;
+const SERVER_URL = API_URL.replace(/\/api\/?$/, "");
 
 // Get the product image
 function getImage(item) {
@@ -55,7 +35,7 @@ function getImage(item) {
     return image;
   }
 
-  return `${BASE_URL}${image.startsWith("/") ? "" : "/"}${image}`;
+  return `${SERVER_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 }
 
 // Get and format the product price

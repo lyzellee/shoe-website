@@ -50,6 +50,19 @@ import {
   registerUser,
   updateInformation,
 } from "../controllers/authController.js";
+
+import {
+  createShoe,
+  deleteById,
+  getAllShoes,
+  getMenShoes,
+  getSingleShoe,
+  getWomenShoes,
+  updateById,
+  restoreById,
+  permanentDeleteById, // <-- add
+} from "../controllers/shoeController.js";
+
 //client
 const router = express.Router();
 router.get("/all", getAllShoes);
@@ -115,6 +128,13 @@ router.patch(
   verifyToken,
   allowRoles("admin", "representative"),
   restoreById,
+);
+
+router.delete(
+  "/permanent/:id",
+  verifyToken,
+  allowRoles("admin"),
+  permanentDeleteById,
 );
 
 router.get(

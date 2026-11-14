@@ -614,3 +614,35 @@ export const getSingleShoe = async (req, res) => {
     });
   }
 };
+
+export const permanentDeleteById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid shoe ID",
+      });
+    }
+
+    // Only allow permanent deletion of shoes that are already soft-deleted
+    const deletedShoe = await Shoe.findOneAndDelete({
+      _id: id,
+      isDeleted: true,
+    });
+
+    if (!deletedShoe) {
+      return res.status(404).json({
+        message: "Trashed shoe not found",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Shoe permanently deleted",
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "Error permanently deleting shoe",
+    });
+  }
+};

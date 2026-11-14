@@ -9,6 +9,7 @@ import {
   faSort,
   faFilter,
   faFileExcel,
+  faTrashCan,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link } from "react-router-dom";
 import axios from "axios";
@@ -27,6 +28,8 @@ export default function stockShoes() {
   const [selectedShoe, setSelectedShoe] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [shoeToDelete, setShoeToDelete] = useState(null);
+  const [showPermanentModal, setShowPermanentModal] = useState(false);
+  const [shoeToPermanentDelete, setShoeToPermanentDelete] = useState(null);
   const [inventoryView, setInventoryView] = useState("active");
 
   const [name, setName] = useState("");
@@ -121,6 +124,26 @@ export default function stockShoes() {
     } catch (error) {
       console.error("Error restoring shoe", error);
       alert(error.response?.data?.message || "Error restoring shoe.");
+    }
+  };
+
+  const handlePermanentDelete = async (id) => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API}/permanent/${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      setShowPermanentModal(false);
+      setShoeToPermanentDelete(null);
+      setLoading(false);
+      fetchShoes();
+    } catch (error) {
+      console.error("Error permanently deleting shoe", error);
+      setLoading(false);
+      alert(
+        error.response?.data?.message || "Error permanently deleting shoe.",
+      );
     }
   };
 
@@ -433,15 +456,30 @@ export default function stockShoes() {
 
                       <td className="admin-cell-actions">
                         {inventoryView === "deleted" ? (
-                          <button
-                            type="button"
-                            className="admin-icon-btn admin-icon-btn-update"
-                            onClick={() => handleRestore(shoe._id)}
-                            title="Restore product"
-                            aria-label={`Restore ${shoe.name}`}
-                          >
-                            <FontAwesomeIcon icon={faRotateLeft} />
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              className="admin-icon-btn admin-icon-btn-update"
+                              onClick={() => handleRestore(shoe._id)}
+                              title="Restore product"
+                              aria-label={`Restore ${shoe.name}`}
+                            >
+                              <FontAwesomeIcon icon={faRotateLeft} />
+                            </button>
+
+                            <button
+                              type="button"
+                              className="admin-icon-btn admin-icon-btn-delete"
+                              onClick={() => {
+                                setShoeToPermanentDelete(shoe);
+                                setShowPermanentModal(true);
+                              }}
+                              title="Delete permanently"
+                              aria-label={`Permanently delete ${shoe.name}`}
+                            >
+                              <FontAwesomeIcon icon={faTrashCan} />
+                            </button>
+                          </>
                         ) : (
                           <>
                             <button
@@ -684,6 +722,48 @@ export default function stockShoes() {
             disabled={loading}
           >
             {loading ? "Deleting..." : "Delete"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Permanent Delete Modal */}
+      <Modal
+        show={showPermanentModal}
+        onHide={() => {
+          setShowPermanentModal(false);
+          setShoeToPermanentDelete(null);
+        }}
+        centered
+        dialogClassName="admin-delete-modal"
+      >
+        <Modal.Header closeButton className="admin-modal-header">
+          <Modal.Title className="admin-modal-title">
+            Delete Permanently
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="admin-delete-modal-body">
+          <p>
+            Are you sure you want to permanently delete{" "}
+            <strong>{shoeToPermanentDelete?.name || "this product"}</strong>?
+          </p>
+          <span>This cannot be undone.</span>
+        </Modal.Body>
+        <Modal.Footer className="admin-modal-footer">
+          <Button
+            className="admin-delete-cancel-btn"
+            onClick={() => {
+              setShowPermanentModal(false);
+              setShoeToPermanentDelete(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            className="admin-delete-confirm-btn"
+            onClick={() => handlePermanentDelete(shoeToPermanentDelete._id)}
+            disabled={loading}
+          >
+            {loading ? "Deleting..." : "Delete Forever"}
           </Button>
         </Modal.Footer>
       </Modal>

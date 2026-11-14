@@ -63,7 +63,12 @@
   width: 100%;
 }
 
+/* IMAGE BOX
+   ADDED: --img-pad is the ONE padding value of this image box
+   (top = bottom = left = right). To change the space around the shoe,
+   change this one number only. The box itself has no padding. */
 .card-image-box {
+  --img-pad: 14px; /* ADDED: single padding */
   width: 220px;
   height: 140px;
   flex-shrink: 0;
@@ -72,11 +77,17 @@
   overflow: hidden;
 }
 
+/* ADDED: the image fills the box and var(--img-pad) is the same on all four
+   sides. object-fit: contain fits any uploaded size inside it: big images
+   shrink, small images are zoomed in, nothing is cropped or stretched. */
 .cart-product-image {
+  display: block;
   width: 100%;
   height: 100%;
+  box-sizing: border-box;
+  padding: var(--img-pad);
   object-fit: contain;
-  display: block;
+  object-position: center;
 }
 
 .cart-product-details {
@@ -398,7 +409,10 @@
     gap: 12px;
   }
 
+  /* ADDED: phone size. Only --img-pad and the box size change,
+     the image follows the new padding automatically. */
   .card-image-box {
+    --img-pad: 8px;
     width: 105px;
     height: 105px;
     border-radius: 16px;

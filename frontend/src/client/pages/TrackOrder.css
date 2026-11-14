@@ -1,10 +1,3 @@
-/* =====================================================================
-   TrackOrder.css  (new file, imported by TrackOrder.jsx)
-   Fully styles the Track Order page on its own, so it no longer depends
-   on OrderPages.css or YourOrder.css. Everything is scoped under
-   .track-page, so Order Details and Your Orders are not affected.
-   ===================================================================== */
-
 .track-page {
   --tp-bg: #f3f1ea;
   --tp-card: #f9f7f1;
@@ -302,24 +295,31 @@
   border-top: 1px solid var(--tp-soft);
 }
 
-/* image container: fixed square, image never stretched or cropped */
+/* IMAGE BOX
+   ADDED: --img-pad is the ONE padding value of this image box
+   (top = bottom = left = right). The box itself has no padding.
+   To change the space around the shoe, change this one number only. */
 .track-page .order-recap-image {
+  --img-pad: 8px; /* ADDED: single padding */
   flex: 0 0 72px;
   width: 72px;
   height: 72px;
   overflow: hidden;
-  display: grid;
-  place-items: center;
-  padding: 8px;
   border-radius: 12px;
   background: #ece9de;
 }
 
+/* ADDED: the image fills the box and var(--img-pad) is the same on all four
+   sides. object-fit: contain fits any uploaded size inside it: big images
+   shrink, small images are zoomed in, nothing is cropped or stretched. */
 .track-page .order-recap-image img {
   display: block;
   width: 100%;
   height: 100%;
+  box-sizing: border-box;
+  padding: var(--img-pad);
   object-fit: contain;
+  object-position: center;
   mix-blend-mode: multiply;
 }
 
@@ -390,4 +390,6 @@
   .track-page .tracker-line { top: 14px; right: calc(50% + 22px); width: calc(100% - 44px); }
   .track-page .tracker-label { font-size: 11px; }
   .track-page .tracker-step small { font-size: 10px; }
+  /* ADDED: phone size. Only --img-pad and the box size change. */
+  .track-page .order-recap-image { --img-pad: 6px; flex-basis: 64px; width: 64px; height: 64px; }
 }

@@ -153,7 +153,8 @@ body,
 
 .latest-drop-image {
   position: relative;
-  height: 180px;
+  --img-pad: 36px; /* ADDED: ONE padding for this image box (top = bottom = left = right) */
+  height: 200px; /* fixed box, so every card is the same size */
   margin-bottom: 10px;
   overflow: hidden;
   border-radius: 18px;
@@ -172,10 +173,18 @@ body,
   text-transform: capitalize;
 }
 
+/* ADDED: the image fills the box and the padding (var(--img-pad)) is the same
+   on all four sides. object-fit: contain fits any uploaded size inside it:
+   big images shrink, small images are zoomed in, nothing is cropped.
+   36px is taller than the status tag (about 33px), so there is no overlap. */
 .latest-drop-image img {
+  display: block;
   width: 100%;
   height: 100%;
+  box-sizing: border-box;
+  padding: var(--img-pad);
   object-fit: contain;
+  object-position: center;
   transition: transform 0.25s ease;
 }
 
@@ -393,8 +402,10 @@ body,
     gap: 20px 14px;
   }
 
+  /* ADDED: phone size. Only the --img-pad number changes, the image follows. */
   .latest-drop-image {
-    height: 150px;
+    --img-pad: 34px;
+    height: 170px;
   }
 
   .hero-carousel .carousel-indicators {

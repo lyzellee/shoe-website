@@ -8,6 +8,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { getFavoriteId, readFavorites, removeFavorite } from "../favorites.js";
 import "./Wishlist.css";
+const API_URL = import.meta.env.VITE_API_BASE_URL;
+const SERVER_URL = API_URL.replace(/\/api\/?$/, "");
 
 export default function Wishlist() {
   const [favorites, setFavorites] = useState(readFavorites);
@@ -26,8 +28,14 @@ export default function Wishlist() {
         const response = await axios.get(
           `${import.meta.env.VITE_API_BASE_URL}/all`,
         );
-        const currentShoes = Array.isArray(response.data) ? response.data : [];
+        const responseData = response.data;
 
+        const currentShoes = Array.isArray(responseData)
+          ? responseData
+          : responseData?.data ||
+            responseData?.shoes ||
+            responseData?.products ||
+            [];
         if (!isCurrent) return;
 
         const mergedFavorites = savedFavorites
@@ -88,11 +96,19 @@ export default function Wishlist() {
   };
 
   // Get the product image
-  const getImage = (shoe) =>
-    shoe.image ||
-    shoe.imageUrl ||
-    shoe.img ||
-    "/product-images/product%201.png";
+  const getImage = (shoe) => {
+    const image =
+      shoe?.image ||
+      shoe?.imageUrl ||
+      shoe?.img ||
+      "/product-images/product 1.png";
+
+    if (image.startsWith("http://") || image.startsWith("https://")) {
+      return image;
+    }
+
+    return `${SERVER_URL}${image.startsWith("/") ? "" : "/"}${image}`;
+  };
 
   return (
     <main className="wishlist-page">

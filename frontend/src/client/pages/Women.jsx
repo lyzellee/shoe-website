@@ -108,7 +108,12 @@ const detectImageTone = (src, focus = 50) =>
 
 const getShoeImage = (image) => {
   if (!image) return "/product-images/product 1.png";
-  if (image.startsWith("http://") || image.startsWith("https://")) {
+  if (
+    image.startsWith("http://") ||
+    image.startsWith("https://") ||
+    image.startsWith("data:") ||
+    image.startsWith("/product-images/")
+  ) {
     return image;
   }
 

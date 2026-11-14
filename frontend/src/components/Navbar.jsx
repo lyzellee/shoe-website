@@ -2,6 +2,7 @@ import { Navbar as BootstrapNavbar, Nav, Container } from "react-bootstrap";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart } from "@fortawesome/free-regular-svg-icons";
+import { faUserShield } from "@fortawesome/free-solid-svg-icons";
 import {
   faMagnifyingGlass,
   faCartShopping,
@@ -317,6 +318,19 @@ function Navbar() {
                     >
                       <FontAwesomeIcon icon={faReceipt} />
                       <span>Your Orders</span>
+                    </Link>
+                    <div
+                      className="account-dropdown-divider"
+                      role="separator"
+                    />
+                    <Link
+                      className="account-dropdown-item account-dropdown-admin"
+                      to="/admin/login"
+                      role="menuitem"
+                      onClick={() => setIsAccountMenuOpen(false)}
+                    >
+                      <FontAwesomeIcon icon={faUserShield} />
+                      <span>Admin Login</span>
                     </Link>
                   </div>
                 )}

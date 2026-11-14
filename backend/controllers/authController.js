@@ -128,3 +128,64 @@ export const registerUser = async (req, res) => {
     });
   }
 };
+
+export const updateInformation = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    // Find currently logged-in admin
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "Admin account not found",
+      });
+    }
+
+    // Update name
+    if (name) {
+      user.name = name.trim();
+    }
+
+    // Update email
+    if (email) {
+      const normalizedEmail = email.toLowerCase().trim();
+
+      const existingUser = await User.findOne({
+        email: normalizedEmail,
+        _id: { $ne: user._id },
+      });
+
+      if (existingUser) {
+        return res.status(409).json({
+          message: "Email already exists",
+        });
+      }
+
+      user.email = normalizedEmail;
+    }
+
+    // Update password
+    if (password) {
+      user.password = await bcrypt.hash(password, 10);
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "Admin information updated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("UPDATE ADMIN ERROR:", error);
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};

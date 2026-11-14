@@ -15,11 +15,23 @@ const paymentOptions = [
 
 const SAVED_ADDRESSES_KEY = "savedCheckoutAddresses";
 
+const SERVER_URL = `${import.meta.env.VITE_API_BASE_URL || ""}`.replace(
+  /\/api\/?$/,
+  "",
+);
+
 const getCheckoutImage = (item) => {
   const image = item?.image || item?.imageUrl || item?.img;
   if (!image) return "/product-images/product%201.png";
-  if (image.startsWith("http://") || image.startsWith("https://")) return image;
-  return `${import.meta.env.VITE_API_BASE_URL}${image.startsWith("/") ? "" : "/"}${image}`;
+  if (
+    image.startsWith("http://") ||
+    image.startsWith("https://") ||
+    image.startsWith("data:") ||
+    image.startsWith("/product-images/")
+  ) {
+    return image;
+  }
+  return `${SERVER_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 };
 
 const readSavedAddresses = () => {
@@ -285,7 +297,10 @@ export default function Checkout() {
       };
       localStorage.setItem(
         "shoeHubOrders",
-        JSON.stringify([localOrder, ...(Array.isArray(savedOrders) ? savedOrders : [])]),
+        JSON.stringify([
+          localOrder,
+          ...(Array.isArray(savedOrders) ? savedOrders : []),
+        ]),
       );
 
       // STEP 5: Ipadala ang valid order ID sa payment backend

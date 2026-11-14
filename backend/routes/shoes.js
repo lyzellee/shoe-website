@@ -59,7 +59,12 @@ router.get("/single/:id", getSingleShoe);
 router.post("/create-userfb", createUserFeedback);
 router.get("/get-userfb", getAllUserFeedback);
 
-router.delete("/delete-userfb/:id", deleteUserFeedback);
+router.delete(
+  "/delete-userfb/:id",
+  verifyToken,
+  allowRoles("admin", "representative"),
+  deleteUserFeedback,
+);
 
 //tester-feedback
 router.post("/create-testfb", createTesterFeedback);

@@ -15,7 +15,12 @@ import {
 } from "../../components/AddToCartItems.jsx";
 import "./ProductDetails.css";
 
-const API_URL = `${import.meta.env.VITE_API_BASE_URL}`;
+const API_URL = (
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://shoe-website-x78a.onrender.com/api"
+).replace(/\/+$/, "");
+
+const BASE_URL = API_URL.replace(/\/api\/?$/, "");
 
 // Get the product from different possible API response formats
 function unwrapProduct(data) {
@@ -41,11 +46,16 @@ function getImage(item) {
     item?.img ||
     "/product-images/product 1.png";
 
-  if (image.startsWith("http://") || image.startsWith("https://")) {
+  if (
+    image.startsWith("http://") ||
+    image.startsWith("https://") ||
+    image.startsWith("data:") ||
+    image.startsWith("/product-images/")
+  ) {
     return image;
   }
 
-  return `${API_URL}${image.startsWith("/") ? "" : "/"}${image}`;
+  return `${BASE_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 }
 
 // Get and format the product price

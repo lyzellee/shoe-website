@@ -24,6 +24,7 @@ import {
   getWomenShoes,
   updateById,
   restoreById,
+  permanentDeleteById, // <-- add
 } from "../controllers/shoeController.js";
 
 import {
@@ -51,17 +52,6 @@ import {
   updateInformation,
 } from "../controllers/authController.js";
 
-import {
-  createShoe,
-  deleteById,
-  getAllShoes,
-  getMenShoes,
-  getSingleShoe,
-  getWomenShoes,
-  updateById,
-  restoreById,
-  permanentDeleteById, // <-- add
-} from "../controllers/shoeController.js";
 
 //client
 const router = express.Router();

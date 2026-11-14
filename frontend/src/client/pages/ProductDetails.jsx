@@ -16,7 +16,22 @@ import {
 import "./ProductDetails.css";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}`;
-const SERVER_URL = API_URL.replace(/\/api\/?$/, "");
+
+// Get the product from different possible API response formats
+function unwrapProduct(data) {
+  return data?.shoe || data?.product || data?.data || data;
+}
+
+// Get the product list from the API response
+function unwrapProducts(data) {
+  const result = data?.shoes || data?.products || data?.data || data;
+  return Array.isArray(result) ? result : [];
+}
+
+// Get the product name
+function getName(item) {
+  return item?.name || item?.shoeName || item?.title || "Unnamed Shoe";
+}
 
 // Get the product image
 function getImage(item) {
@@ -26,16 +41,11 @@ function getImage(item) {
     item?.img ||
     "/product-images/product 1.png";
 
-  if (
-    image.startsWith("http://") ||
-    image.startsWith("https://") ||
-    image.startsWith("data:") ||
-    image.startsWith("/product-images/")
-  ) {
+  if (image.startsWith("http://") || image.startsWith("https://")) {
     return image;
   }
 
-  return `${SERVER_URL}${image.startsWith("/") ? "" : "/"}${image}`;
+  return `${API_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 }
 
 // Get and format the product price

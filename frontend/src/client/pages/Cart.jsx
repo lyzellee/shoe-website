@@ -5,11 +5,23 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPen } from "@fortawesome/free-solid-svg-icons";
 import "./Cart.css";
 
+const SERVER_URL = `${import.meta.env.VITE_API_BASE_URL || ""}`.replace(
+  /\/api\/?$/,
+  "",
+);
+
 const getCartImage = (shoe) => {
   const image = shoe?.image || shoe?.imageUrl || shoe?.img;
   if (!image) return "/product-images/product%201.png";
-  if (image.startsWith("http://") || image.startsWith("https://")) return image;
-  return `${import.meta.env.VITE_API_URL}${image.startsWith("/") ? "" : "/"}${image}`;
+  if (
+    image.startsWith("http://") ||
+    image.startsWith("https://") ||
+    image.startsWith("data:") ||
+    image.startsWith("/product-images/")
+  ) {
+    return image;
+  }
+  return `${SERVER_URL}${image.startsWith("/") ? "" : "/"}${image}`;
 };
 
 export default function Cart() {

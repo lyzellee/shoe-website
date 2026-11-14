@@ -45,7 +45,11 @@ import {
   getPaymentStatus,
 } from "../controllers/paymentController.js";
 
-import { login, registerUser } from "../controllers/authController.js";
+import {
+  login,
+  registerUser,
+  updateInformation,
+} from "../controllers/authController.js";
 //client
 const router = express.Router();
 router.get("/all", getAllShoes);
@@ -131,6 +135,12 @@ router.post(
 );
 router.post("/login", login);
 router.post("/register", verifyToken, allowRoles("admin"), registerUser);
+router.put(
+  "/update-information",
+  verifyToken,
+  allowRoles("admin", "representative"),
+  updateInformation,
+);
 
 router.get(
   "/dashboard-stats",

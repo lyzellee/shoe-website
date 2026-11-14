@@ -281,7 +281,7 @@ export default function Women() {
 
   useEffect(() => {
     axios
-      .get(`${BASE_URL}/api/all`)
+      .get(`${BASE_URL}/api/women`)
       .then((response) => setShoes(response.data))
       .catch((error) => console.error("Error fetching shoes:", error));
   }, []);

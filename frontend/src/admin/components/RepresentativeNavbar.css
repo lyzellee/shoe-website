@@ -5,13 +5,26 @@
   display: none;
 }
 
-/* ---------- Sidebar (desktop) ---------- */
+/* ---------- Sidebar slot (desktop) ----------
+   The <aside> only reserves the sidebar's column in the page layout.
+   The visible sidebar is the fixed panel inside it. */
 .representative-sidebar {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  height: 100dvh;
+  position: relative;
   min-height: 0;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+/* ---------- Sidebar panel (desktop) ----------
+   Fixed to the screen: always full height, never scrolls away or gets cut. */
+.representative-sidebar-panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  width: var(--rp-sidebar-w, 272px);
   display: flex;
   flex-direction: column;
   padding: 48px 25px 32px;
@@ -120,8 +133,13 @@
     letter-spacing: 1px;
   }
 
-  /* Pinned to the top AND bottom of the screen, so it is always full height */
+  /* The slot takes no space on mobile; only the drawer panel is used */
   .representative-sidebar {
+    display: contents;
+  }
+
+  /* Pinned to the top AND bottom of the screen, so it is always full height */
+  .representative-sidebar-panel {
     position: fixed;
     top: 0;
     bottom: 0;
@@ -139,7 +157,7 @@
       visibility 0s linear 0.25s;
   }
 
-  .representative-sidebar.open {
+  .representative-sidebar-panel.open {
     transform: translateX(0);
     visibility: visible;
     box-shadow: 0 0 40px rgba(17, 24, 39, 0.25);

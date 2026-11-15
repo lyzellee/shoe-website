@@ -78,6 +78,8 @@ export default function RepresentativeNavbar({
         </button>
         <span className="representative-topbar-brand">SHOE WEBSITE</span>
       </div>
+      {/* Keeps page content from hiding under the fixed top bar */}
+      <div className="representative-topbar-spacer" aria-hidden="true" />
 
       {menuOpen && (
         <div

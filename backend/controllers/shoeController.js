@@ -190,21 +190,11 @@ export const createShoe = async (req, res) => {
         message: "Shoe with the same name already exists",
       });
     }
-    console.log("BACKEND RECEIVED:", {
-      originalname: req.file?.originalname,
-      mimetype: req.file?.mimetype,
-      size: req.file?.size,
-    });
 
     // Upload only after duplicate validation
     const uploadedImage = req.file
       ? await uploadToCloudinary(req.file.buffer)
       : null;
-    console.log("CLOUDINARY RESULT:", {
-      url: uploadedImage?.secure_url,
-      publicId: uploadedImage?.public_id,
-      format: uploadedImage?.format,
-    });
 
     // STEP 12: Save shoe to database
     const newShoe = await Shoe.create({
@@ -270,7 +260,6 @@ export const getWomenShoes = async (req, res) => {
       gender: "women",
       isDeleted: { $ne: true },
     });
-    console.log("Women's shoes fetched successfully:", womenShoes);
     res.status(200).json(womenShoes);
   } catch (err) {
     res.status(500).json({
@@ -353,7 +342,7 @@ export const updateById = async (req, res) => {
   try {
     const { id } = req.params;
     // Validate request body
-    if (Object.keys(req.body).length === 0) {
+    if (Object.keys(req.body).length === 0 && !req.file) {
       return res.status(400).json({
         message: "Please provide at least one field to update",
       });
@@ -370,6 +359,7 @@ export const updateById = async (req, res) => {
       "sizes",
       "color",
       "description",
+      "image",
     ];
 
     const invalidFields = Object.keys(req.body).filter(
@@ -541,7 +531,9 @@ export const updateById = async (req, res) => {
 
     // Add the new image path if an image was uploaded
     if (req.file) {
-      updateData.image = `/uploads/${req.file.filename}`;
+      const uploadedImage = await uploadToCloudinary(req.file.buffer);
+
+      updateData.image = uploadedImage.secure_url;
     }
 
     const updateShoes = await Shoe.findByIdAndUpdate(id, updateData, {

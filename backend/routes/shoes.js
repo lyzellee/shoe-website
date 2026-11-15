@@ -52,7 +52,6 @@ import {
   updateInformation,
 } from "../controllers/authController.js";
 
-
 //client
 const router = express.Router();
 router.get("/all", getAllShoes);
@@ -84,6 +83,7 @@ router.put(
   verifyToken,
   allowRoles("admin", "representative"),
   upload.single("image"),
+  validateImage,
   updateById,
 );
 

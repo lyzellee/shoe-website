@@ -33,6 +33,26 @@ function Navbar() {
   const searchPanelRef = useRef(null);
   const searchTriggerRef = useRef(null);
   const searchInputRef = useRef(null);
+  const menuToggleRef = useRef(null);
+
+  // True whenever the hamburger icon is actually visible (any size that
+  // collapses the menu), so it always matches what the user sees.
+  const isMobileView = () =>
+    !!menuToggleRef.current &&
+    window.getComputedStyle(menuToggleRef.current).display !== "none";
+
+  // Closes the mobile menu (used when a link is clicked) - mobile only
+  const closeMenu = () => {
+    if (isMobileView()) setIsMenuOpen(false);
+  };
+
+  // Mobile only: close everything whenever the page changes
+  useEffect(() => {
+    if (!isMobileView()) return;
+    setIsMenuOpen(false);
+    setIsAccountMenuOpen(false);
+    setIsSearchOpen(false);
+  }, [location.pathname]);
 
   // Tighten and solidify the floating bar once the page scrolls
   useEffect(() => {
@@ -176,6 +196,12 @@ function Navbar() {
 
   const isHomePage = location.pathname === "/";
 
+  // Used by the account dropdown links
+  const closeAccountAndMenu = () => {
+    setIsAccountMenuOpen(false);
+    closeMenu(); // only closes the main menu on mobile
+  };
+
   return (
     <>
       <BootstrapNavbar
@@ -189,11 +215,17 @@ function Navbar() {
       >
         <Container fluid className="navbar-pill">
           {/* Logo (text only) */}
-          <BootstrapNavbar.Brand as={Link} to="/" className="navbar-logo">
+          <BootstrapNavbar.Brand
+            as={Link}
+            to="/"
+            className="navbar-logo"
+            onClick={closeMenu}
+          >
             SHOE HUB
           </BootstrapNavbar.Brand>
 
           <BootstrapNavbar.Toggle
+            ref={menuToggleRef}
             aria-controls="main-navbar"
             className="navbar-menu-toggle"
           />
@@ -204,23 +236,23 @@ function Navbar() {
           >
             {/* Navigation Links */}
             <Nav className="navbar-main-links mx-lg-auto">
-              <Nav.Link as={NavLink} to="/" end>
+              <Nav.Link as={NavLink} to="/" end onClick={closeMenu}>
                 Home
               </Nav.Link>
 
-              <Nav.Link as={NavLink} to="/men">
+              <Nav.Link as={NavLink} to="/men" onClick={closeMenu}>
                 Men
               </Nav.Link>
 
-              <Nav.Link as={NavLink} to="/women">
+              <Nav.Link as={NavLink} to="/women" onClick={closeMenu}>
                 Women
               </Nav.Link>
 
-              <Nav.Link as={NavLink} to="/kids">
+              <Nav.Link as={NavLink} to="/kids" onClick={closeMenu}>
                 Kids
               </Nav.Link>
 
-              <Nav.Link as={NavLink} to="/accessories">
+              <Nav.Link as={NavLink} to="/accessories" onClick={closeMenu}>
                 Accessories
               </Nav.Link>
             </Nav>
@@ -244,6 +276,7 @@ function Navbar() {
                 to="/wishlist"
                 className="nav-icon-heart"
                 aria-label="Wishlist"
+                onClick={closeMenu}
               >
                 <FontAwesomeIcon icon={faHeart} />
                 {favoriteCount > 0 && (
@@ -256,6 +289,7 @@ function Navbar() {
                 to="/cart"
                 className="nav-icon-cart"
                 aria-label="Cart"
+                onClick={closeMenu}
               >
                 <FontAwesomeIcon icon={faCartShopping} />
                 {cartCount > 0 && (
@@ -301,7 +335,7 @@ function Navbar() {
                       className={`account-dropdown-item ${isAccountPage ? "active" : ""}`}
                       to="/account"
                       role="menuitem"
-                      onClick={() => setIsAccountMenuOpen(false)}
+                      onClick={closeAccountAndMenu}
                     >
                       <FontAwesomeIcon icon={faUser} />
                       <span>Your Account</span>
@@ -314,7 +348,7 @@ function Navbar() {
                       className={`account-dropdown-item ${isOrdersPage ? "active" : ""}`}
                       to="/your-order"
                       role="menuitem"
-                      onClick={() => setIsAccountMenuOpen(false)}
+                      onClick={closeAccountAndMenu}
                     >
                       <FontAwesomeIcon icon={faReceipt} />
                       <span>Your Orders</span>
@@ -327,7 +361,7 @@ function Navbar() {
                       className="account-dropdown-item account-dropdown-admin"
                       to="/admin/login"
                       role="menuitem"
-                      onClick={() => setIsAccountMenuOpen(false)}
+                      onClick={closeAccountAndMenu}
                     >
                       <FontAwesomeIcon icon={faUserShield} />
                       <span>Admin Login</span>

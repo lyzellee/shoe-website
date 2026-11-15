@@ -1,6 +1,6 @@
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPen } from "@fortawesome/free-solid-svg-icons";
 import "./Cart.css";
@@ -33,6 +33,45 @@ export default function Cart() {
   const [editingItemId, setEditingItemId] = useState("");
   const [editSize, setEditSize] = useState("");
   const [editColor, setEditColor] = useState("");
+  useEffect(() => {
+    const refreshCartImages = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/all`,
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch latest shoes");
+        }
+
+        const shoes = await response.json();
+
+        if (!Array.isArray(shoes)) return;
+
+        const updatedCart = cartItems.map((item) => {
+          const latestShoe = shoes.find((shoe) => shoe._id === item._id);
+
+          if (!latestShoe) return item;
+
+          return {
+            ...item,
+            ...latestShoe,
+            quantity: item.quantity,
+            size: item.size,
+            color: item.color ?? latestShoe.color,
+          };
+        });
+
+        setCartItems(updatedCart);
+        localStorage.setItem("cart", JSON.stringify(updatedCart));
+        window.dispatchEvent(new Event("cartUpdated"));
+      } catch (error) {
+        console.error("Unable to refresh cart:", error);
+      }
+    };
+
+    refreshCartImages();
+  }, []);
 
   // I-save ang updated cart sa state at localStorage
   const updateCart = (updatedCart) => {

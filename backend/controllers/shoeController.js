@@ -541,7 +541,9 @@ export const updateById = async (req, res) => {
 
     // Add the new image path if an image was uploaded
     if (req.file) {
-      updateData.image = `/uploads/${req.file.filename}`;
+      const uploadedImage = await uploadToCloudinary(req.file.buffer);
+
+      updateData.image = uploadedImage.secure_url;
     }
 
     const updateShoes = await Shoe.findByIdAndUpdate(id, updateData, {

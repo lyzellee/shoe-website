@@ -15,6 +15,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import * as XLSX from "xlsx";
 import "./stockShoes.css";
+import { removeBackground } from "@imgly/background-removal";
 // Works whether VITE_API_BASE_URL is "http://localhost:5000" or "http://localhost:5000/api"
 const API_ROOT = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"
@@ -42,6 +43,7 @@ export default function stockShoes() {
   const [sizes, setSizes] = useState("");
   const [description, setDescription] = useState("");
   const [productStatus, setProductStatus] = useState("");
+  const [image, setImage] = useState(null);
 
   const [loading, setLoading] = useState(false);
 
@@ -63,27 +65,45 @@ export default function stockShoes() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
+
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("brand", brand);
+      formData.append("price", price);
+      formData.append("stock", stock);
+      formData.append("gender", gender);
+      formData.append("category", category);
+      formData.append("color", color);
+      formData.append("sizes", sizes);
+      formData.append("description", description);
+      formData.append("productStatus", productStatus);
+
+      // I-append lang ang image kung may piniling bagong file
+      if (image) {
+        const transparentBlob = await removeBackground(image);
+
+        const imageToUpload = new File([transparentBlob], "shoe.png", {
+          type: "image/png",
+        });
+
+        formData.append("image", imageToUpload);
+      }
+
       const response = await axios.put(
         `${API}/update/${selectedShoe._id}`,
+        formData,
         {
-          name: name,
-          brand: brand,
-          price: price,
-          stock: stock,
-          gender: gender,
-          category: category,
-          color: color,
-          sizes: sizes,
-          description: description,
-          productStatus: productStatus,
-        },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "Content-Type": "multipart/form-data",
+          },
         },
       );
+
       if (response.status === 200) {
-        console.log("Update Succesfully");
+        console.log("Update Successfully");
         setShowModal(false);
+        setImage(null);
         fetchShoes();
         setLoading(false);
       }
@@ -501,6 +521,7 @@ export default function stockShoes() {
                                 );
                                 setDescription(shoe.description || "");
                                 setProductStatus(shoe.productStatus || "");
+                                setImage(null);
                                 setShowModal(true);
                               }}
                               title="Update product"
@@ -670,6 +691,14 @@ export default function stockShoes() {
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+            />
+          </Form.Group>
+          <Form.Group className="admin-field admin-field-full">
+            <Form.Label>Update Image (Optional)</Form.Label>
+            <Form.Control
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImage(e.target.files[0])}
             />
           </Form.Group>
         </Modal.Body>

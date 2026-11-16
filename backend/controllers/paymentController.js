@@ -121,7 +121,7 @@ export const createPayment = async (req, res) => {
       }
 
       // Previous payment failed, so allow a retry
-      if (actualStatus === "failed") {
+      if (actualStatus === "failed" || actualStatus === "canceled") {
         existingPayment.paymentStatus = "failed";
         await existingPayment.save();
 

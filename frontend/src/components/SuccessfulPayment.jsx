@@ -3,7 +3,7 @@ import { useEffect } from "react";
 export default function SuccessfulPayment() {
   useEffect(() => {
     const timer = setTimeout(() => {
-      window.location.href = "/feedback";
+      window.location.replace = "/feedback";
     }, 3000);
 
     return () => clearTimeout(timer);

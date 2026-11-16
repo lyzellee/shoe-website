@@ -402,6 +402,9 @@ export default function Checkout() {
   // STEP 3: CREATE PAYMENT REQUEST
 
   const handlePayment = async () => {
+    if (isLoading) return;
+
+    setIsLoading(true);
     const {
       firstName,
       lastName,
@@ -633,6 +636,8 @@ export default function Checkout() {
     } catch (error) {
       console.error("Error:", error);
       alert("Something went wrong. Please check your backend.");
+    } finally {
+      setIsLoading(false);
     }
   };
 

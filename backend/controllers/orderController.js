@@ -18,10 +18,7 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    if (
-      paymentMethod &&
-      !["COD", "GCash", "Card"].includes(paymentMethod)
-    ) {
+    if (paymentMethod && !["COD", "GCash", "Card"].includes(paymentMethod)) {
       return res.status(400).json({
         message: "Invalid payment method",
       });
@@ -34,7 +31,7 @@ export const createOrder = async (req, res) => {
       });
     }
     // Limit the number of different item entries per order
-    if (items.length > 5) {
+    if (items.length > 20) {
       return res.status(400).json({
         message: "An order cannot contain more than 5 item entries",
       });
@@ -298,7 +295,9 @@ export const updateOrderStatus = async (req, res) => {
     if (estimatedDelivery !== undefined) {
       const parsedEstimate = new Date(estimatedDelivery);
       if (Number.isNaN(parsedEstimate.getTime())) {
-        return res.status(400).json({ message: "Invalid estimated delivery date" });
+        return res
+          .status(400)
+          .json({ message: "Invalid estimated delivery date" });
       }
       order.estimatedDelivery = parsedEstimate;
     }
@@ -410,7 +409,10 @@ export const cancelCustomerOrder = async (req, res) => {
       await session.abortTransaction();
       return res.status(404).json({ message: "Order not found" });
     }
-    if (order.orderStatus !== "pending" || order.paymentStatus === "completed") {
+    if (
+      order.orderStatus !== "pending" ||
+      order.paymentStatus === "completed"
+    ) {
       await session.abortTransaction();
       return res.status(400).json({
         message: "Only unpaid pending orders can be cancelled",
@@ -424,7 +426,8 @@ export const cancelCustomerOrder = async (req, res) => {
     if (pendingPayment) {
       await session.abortTransaction();
       return res.status(409).json({
-        message: "A payment is still pending. Verify its status before cancelling.",
+        message:
+          "A payment is still pending. Verify its status before cancelling.",
       });
     }
 
@@ -985,7 +988,9 @@ export const requestReturn = async (req, res) => {
     });
   } catch (err) {
     console.error("REQUEST RETURN ERROR:", err);
-    return res.status(500).json({ message: "Unable to send the return request" });
+    return res
+      .status(500)
+      .json({ message: "Unable to send the return request" });
   }
 };
 

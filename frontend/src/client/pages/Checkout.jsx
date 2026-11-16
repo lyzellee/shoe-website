@@ -1,24 +1,108 @@
-import { useState, useEffect, useRef } from "react";
-import { Form, Button, Row, Col } from "react-bootstrap";
+import { useState, useEffect } from "react";
+import { Form, Button, Row, Col, Modal } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
+import {
+  faChevronLeft,
+  faChevronRight,
+  faPen,
+  faPlus,
+} from "@fortawesome/free-solid-svg-icons";
 import "./Checkout.css";
 import { getCart } from "../../components/AddToCartItems.jsx";
 import SuccessfulPayment from "../../components/SuccessfulPayment.jsx";
 
 const paymentOptions = [
-  { value: "COD", label: "Cash on Delivery (COD)" },
-  { value: "GCash", label: "GCash" },
-  { value: "Card", label: "Card" },
+  {
+    value: "COD",
+    label: "Cash on Delivery (COD)",
+    description: "Pay in cash when your order arrives",
+  },
+  {
+    value: "GCash",
+    label: "GCash",
+    description: "Pay securely with your GCash wallet",
+  },
+  {
+    value: "Card",
+    label: "Card",
+    description: "Pay with a credit or debit card",
+  },
 ];
 
 const SAVED_ADDRESSES_KEY = "savedCheckoutAddresses";
+const DEFAULT_ADDRESS_KEY = "defaultCheckoutAddressId";
+const ADDRESS_LABELS = ["Home", "Work", "Other"];
 
 const SERVER_URL = `${import.meta.env.VITE_API_BASE_URL || ""}`.replace(
   /\/api\/?$/,
   "",
 );
+
+// TERMS AND POLICIES CONTENT (draft)
+
+const TERMS_SECTIONS = [
+  {
+    heading: "Privacy Policy",
+    blocks: [
+      {
+        title: "Information we collect",
+        text: "When you place an order, we collect your name, delivery address, phone number, and email address, along with the items you ordered and the payment method you chose.",
+      },
+      {
+        title: "How we use it",
+        text: "We use your information only to process and deliver your order, to send order updates, and to respond to your concerns.",
+      },
+      {
+        title: "Who we share it with",
+        text: "We share only what is needed with our courier partners (to deliver your order) and our payment provider, PayMongo (to process GCash and card payments). We do not sell your personal information. We do not store your card details.",
+      },
+      {
+        title: "Storage and security",
+        text: "Your order details are stored in our database. Saved addresses are stored in your own browser on this device, and you can edit or delete them at any time on the checkout page.",
+      },
+      {
+        title: "Your rights",
+        text: "Under the Data Privacy Act of 2012 (RA 10173), you may ask to access, correct, or delete your personal information. Contact us at [shoehub@gmail.com].",
+      },
+    ],
+  },
+  {
+    heading: "Terms and Conditions",
+    blocks: [
+      {
+        title: "Orders and prices",
+        text: "All prices are in Philippine pesos (₱). An order is confirmed once it is successfully created in our system. We may cancel an order if an item is out of stock or the details provided are incorrect.",
+      },
+      {
+        title: "Payment",
+        text: "You may pay by Cash on Delivery, GCash, or Card. GCash and card payments are processed securely by PayMongo.",
+      },
+      {
+        title: "Shipping and delivery",
+        text: "Shipping is currently free. Delivery times are estimates and may vary by location. Please make sure your address and phone number are correct so the courier can reach you.",
+      },
+      {
+        title: "Cancellations",
+        text: "You may cancel your order before it is shipped. Contact us at [your email address or phone number] as soon as possible.",
+      },
+      {
+        title: "Returns and refunds",
+        text: "You may request a return within [7] days of receiving your order if the item is unused and in its original packaging, or if it arrived damaged or incorrect. Approved refunds are sent through the original payment method within [7–14] business days.",
+      },
+      {
+        title: "Contact us",
+        text: "[Shoe Hub] · [shoehub@gmail.com]",
+      },
+    ],
+  },
+];
+
+const formatPrice = (value) =>
+  `₱${Number(value || 0).toLocaleString("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 
 const getCheckoutImage = (item) => {
   const image = item?.image || item?.imageUrl || item?.img;
@@ -45,37 +129,132 @@ const readSavedAddresses = () => {
   }
 };
 
+const readDefaultAddressId = () => {
+  try {
+    return localStorage.getItem(DEFAULT_ADDRESS_KEY) || "";
+  } catch {
+    return "";
+  }
+};
+
+// Dalawang address ay duplicate kung pareho ang address, city, ZIP, at phone.
+const normalize = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+const isSameAddress = (a, b) =>
+  normalize(a.address) === normalize(b.address) &&
+  normalize(a.city) === normalize(b.city) &&
+  normalize(a.zipCode) === normalize(b.zipCode) &&
+  normalize(a.phone) === normalize(b.phone);
+
+const EMPTY_FORM = {
+  firstName: "",
+  lastName: "",
+  address: "",
+  city: "",
+  province: "",
+  zipCode: "",
+  phone: "",
+  email: "",
+};
+
 export default function Checkout() {
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState("");
   const [orderItems, setOrderItems] = useState(() => getCart());
-  const paymentDropdownRef = useRef(null);
-  const paymentTriggerRef = useRef(null);
-  const paymentListboxRef = useRef(null);
-  const [isPaymentMenuOpen, setIsPaymentMenuOpen] = useState(false);
-  const [activePaymentIndex, setActivePaymentIndex] = useState(0);
   const [orderId, setOrderId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
   // Delivery information na tina-type ng customer.
   // Bawat property ay katumbas ng isang input field.
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    address: "",
-    city: "",
-    province: "",
-    zipCode: "",
-    phone: "",
-    email: "",
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
   const [savedAddresses, setSavedAddresses] = useState(readSavedAddresses);
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [saveCurrentAddress, setSaveCurrentAddress] = useState(true);
 
-  // =====================================================
+  // Bago: terms modal, saved address management, summary
+  const [showTerms, setShowTerms] = useState(false);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [defaultAddressId, setDefaultAddressId] =
+    useState(readDefaultAddressId);
+  const [editingAddressId, setEditingAddressId] = useState("");
+  const [editLabel, setEditLabel] = useState("");
+  const [addressMessage, setAddressMessage] = useState("");
+  const [isAddressListOpen, setIsAddressListOpen] = useState(false);
+  const [editDefault, setEditDefault] = useState(false);
+  const [isAddressPageOpen, setIsAddressPageOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia("(max-width: 767.98px)").matches,
+  );
+
+  // Alamin kung mobile ang screen (para sa Address Selection page)
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 767.98px)");
+    const handleQueryChange = (event) => {
+      setIsMobile(event.matches);
+      if (!event.matches) setIsAddressPageOpen(false);
+    };
+    query.addEventListener("change", handleQueryChange);
+    return () => query.removeEventListener("change", handleQueryChange);
+  }, []);
+
+  // Huwag mag-scroll ang checkout sa likod habang bukas ang Address Selection
+  useEffect(() => {
+    if (isAddressPageOpen && isMobile) {
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }
+  }, [isAddressPageOpen, isMobile]);
+
+  // Mobile: bubukas ang buong page. Desktop: dropdown na listahan.
+  const toggleAddressList = () => {
+    if (isMobile) {
+      setIsAddressPageOpen(true);
+    } else {
+      setIsAddressListOpen((open) => !open);
+    }
+  };
+
+  // Address na kasalukuyang napili (ipinapakita sa saved address card)
+  const selectedSavedAddress = savedAddresses.find(
+    (saved) => saved.id === selectedAddressId,
+  );
+
+  // Laman ng isang saved address row (pangalan, label, address, phone)
+  const renderAddressContent = (saved) => (
+    <>
+      <span className="saved-address-top">
+        <strong>
+          {saved.firstName} {saved.lastName}
+        </strong>
+        {saved.label && (
+          <span className="saved-address-badge">{saved.label}</span>
+        )}
+        {defaultAddressId === saved.id && (
+          <span className="saved-address-badge is-default">Default</span>
+        )}
+      </span>
+      <span>
+        {saved.address}, {saved.city}, {saved.province} {saved.zipCode}
+      </span>
+      <span>{saved.phone}</span>
+    </>
+  );
+
+  // Order totals (isang beses lang kinukuwenta)
+  const subtotal = orderItems.reduce(
+    (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 1),
+    0,
+  );
+  const itemCount = orderItems.reduce(
+    (sum, item) => sum + Number(item.quantity || 1),
+    0,
+  );
+
   // STEP 2: HANDLE DELIVERY INPUTS
-  // =====================================================
 
   // Tumatakbo kapag may binago ang customer sa input.
   const handleChange = (e) => {
@@ -92,6 +271,15 @@ export default function Checkout() {
     }));
   };
 
+  // Tanggalin ang sobrang space kapag umalis sa input
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    const trimmed = value.trim();
+    if (trimmed !== value) {
+      setFormData((previousData) => ({ ...previousData, [name]: trimmed }));
+    }
+  };
+
   const selectSavedAddress = (address) => {
     setSelectedAddressId(address.id);
     setFormData({
@@ -106,9 +294,112 @@ export default function Checkout() {
     });
   };
 
-  // =====================================================
+  // Awtomatikong piliin ang default address pagbukas ng checkout
+  useEffect(() => {
+    const defaultAddress = savedAddresses.find(
+      (saved) => saved.id === defaultAddressId,
+    );
+    if (defaultAddress) {
+      selectSavedAddress(defaultAddress);
+    }
+    // Isang beses lang tatakbo pagbukas ng page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // SAVED ADDRESS MANAGEMENT
+
+  const persistAddresses = (list) => {
+    localStorage.setItem(SAVED_ADDRESSES_KEY, JSON.stringify(list));
+    setSavedAddresses(list);
+  };
+
+  const useNewAddress = () => {
+    setSelectedAddressId("");
+    setEditingAddressId("");
+    setEditLabel("");
+    setAddressMessage("");
+    setIsAddressListOpen(false);
+    setFormData(EMPTY_FORM);
+  };
+
+  const startEditAddress = (address) => {
+    selectSavedAddress(address);
+    setEditingAddressId(address.id);
+    setEditLabel(address.label || "");
+    setEditDefault(defaultAddressId === address.id);
+    setIsAddressListOpen(false);
+    setAddressMessage("");
+  };
+
+  const cancelEditAddress = () => {
+    setEditingAddressId("");
+    setEditLabel("");
+    setAddressMessage("");
+  };
+
+  const updateSavedAddress = () => {
+    const isDuplicate = savedAddresses.some(
+      (saved) =>
+        saved.id !== editingAddressId && isSameAddress(saved, formData),
+    );
+    if (isDuplicate) {
+      setAddressMessage("This address is already saved.");
+      return;
+    }
+
+    persistAddresses(
+      savedAddresses.map((saved) =>
+        saved.id === editingAddressId
+          ? { ...saved, ...formData, label: editLabel }
+          : saved,
+      ),
+    );
+
+    if (editDefault) {
+      setAsDefaultAddress(editingAddressId);
+    } else if (defaultAddressId === editingAddressId) {
+      localStorage.removeItem(DEFAULT_ADDRESS_KEY);
+      setDefaultAddressId("");
+    }
+
+    cancelEditAddress();
+  };
+
+  const deleteSavedAddress = (id) => {
+    if (!window.confirm("Delete this saved address?")) return;
+
+    persistAddresses(savedAddresses.filter((saved) => saved.id !== id));
+
+    if (defaultAddressId === id) {
+      localStorage.removeItem(DEFAULT_ADDRESS_KEY);
+      setDefaultAddressId("");
+    }
+    if (selectedAddressId === id) setSelectedAddressId("");
+    if (editingAddressId === id) cancelEditAddress();
+  };
+
+  const setAsDefaultAddress = (id) => {
+    localStorage.setItem(DEFAULT_ADDRESS_KEY, id);
+    setDefaultAddressId(id);
+  };
+
+  // Mga aksyon sa Address Selection page (mobile)
+  const selectFromAddressPage = (saved) => {
+    selectSavedAddress(saved);
+    setIsAddressPageOpen(false);
+  };
+
+  const editFromAddressPage = (saved) => {
+    startEditAddress(saved);
+    setIsAddressPageOpen(false);
+  };
+
+  const addNewFromAddressPage = () => {
+    useNewAddress();
+    setIsAddressPageOpen(false);
+  };
+
   // STEP 3: CREATE PAYMENT REQUEST
-  // =====================================================
 
   const handlePayment = async () => {
     const {
@@ -345,9 +636,7 @@ export default function Checkout() {
     }
   };
 
-  // =====================================================
   // STEP 4: GET PAYMENT STATUS
-  // =====================================================
 
   const checkPaymentStatus = async () => {
     if (!paymentIntentId) {
@@ -384,38 +673,8 @@ export default function Checkout() {
       setIsLoading(false);
     }
   };
-  const handlePaymentMenuKeyDown = (event) => {
-    if (event.key === "Escape") {
-      setIsPaymentMenuOpen(false);
-      paymentTriggerRef.current?.focus();
-      return;
-    }
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
 
-      setActivePaymentIndex((index) => (index + 1) % paymentOptions.length);
-    }
-
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-
-      setActivePaymentIndex(
-        (index) => (index - 1 + paymentOptions.length) % paymentOptions.length,
-      );
-    }
-
-    if (event.key === "Enter") {
-      event.preventDefault();
-
-      setPaymentMethod(paymentOptions[activePaymentIndex].value);
-      setIsPaymentMenuOpen(false);
-      paymentTriggerRef.current?.focus();
-    }
-  };
-
-  // =====================================================
   // STEP 5: GET PAYMENT INTENT ID FROM RETURN URL
-  // =====================================================
 
   // Halimbawa ng URL:
   // http://localhost:5173/checkout?payment_intent_id=pi_123
@@ -428,9 +687,7 @@ export default function Checkout() {
   console.log("Current URL:", window.location.href);
   console.log("Payment Intent ID:", paymentIntentId);
 
-  // =====================================================
   // STEP 6: CHECK STATUS AFTER RETURNING TO CHECKOUT
-  // =====================================================
 
   useEffect(() => {
     // Kapag may Payment Intent ID sa URL,
@@ -444,9 +701,7 @@ export default function Checkout() {
     // sa isang beses dahil sa React Strict Mode.
   }, [paymentIntentId]);
 
-  // =====================================================
   // STEP 7: DISPLAY CHECKOUT FORM
-  // =====================================================
 
   return (
     <div className="checkout-page">
@@ -494,29 +749,81 @@ export default function Checkout() {
                   <div className="saved-addresses">
                     <div className="saved-addresses-heading">
                       <span>Saved addresses</span>
-                      <span>Choose an address</span>
                     </div>
-                    {savedAddresses.map((savedAddress) => (
+
+                    {/* Napiling address + > button para buksan ang listahan */}
+                    <div
+                      className={`saved-address-option saved-address-row ${
+                        selectedSavedAddress ? "selected" : ""
+                      }`}
+                    >
                       <button
                         type="button"
-                        key={savedAddress.id}
-                        className={`saved-address-option ${
-                          selectedAddressId === savedAddress.id
-                            ? "selected"
-                            : ""
-                        }`}
-                        onClick={() => selectSavedAddress(savedAddress)}
+                        className="saved-address-select"
+                        onClick={toggleAddressList}
                       >
-                        <strong>
-                          {savedAddress.firstName} {savedAddress.lastName}
-                        </strong>
-                        <span>
-                          {savedAddress.address}, {savedAddress.city},{" "}
-                          {savedAddress.province} {savedAddress.zipCode}
-                        </span>
-                        <span>{savedAddress.phone}</span>
+                        {selectedSavedAddress ? (
+                          renderAddressContent(selectedSavedAddress)
+                        ) : (
+                          <span className="saved-address-placeholder">
+                            Choose a saved address
+                          </span>
+                        )}
                       </button>
-                    ))}
+                      <button
+                        type="button"
+                        className={`saved-address-toggle${
+                          isAddressListOpen ? " is-open" : ""
+                        }`}
+                        aria-label="Show saved addresses"
+                        aria-expanded={isAddressListOpen}
+                        onClick={toggleAddressList}
+                      >
+                        <FontAwesomeIcon icon={faChevronRight} />
+                      </button>
+                    </div>
+
+                    {/* Listahan ng lahat ng saved address, may Edit sa kanan */}
+                    {isAddressListOpen && (
+                      <div className="saved-address-list">
+                        {savedAddresses.map((savedAddress) => (
+                          <div
+                            key={savedAddress.id}
+                            className={`saved-address-option saved-address-row ${
+                              selectedAddressId === savedAddress.id
+                                ? "selected"
+                                : ""
+                            }`}
+                          >
+                            <button
+                              type="button"
+                              className="saved-address-select"
+                              onClick={() => {
+                                selectSavedAddress(savedAddress);
+                                setIsAddressListOpen(false);
+                              }}
+                            >
+                              {renderAddressContent(savedAddress)}
+                            </button>
+                            <button
+                              type="button"
+                              className="saved-address-edit"
+                              aria-label="Edit address"
+                              onClick={() => startEditAddress(savedAddress)}
+                            >
+                              <FontAwesomeIcon icon={faPen} />
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          className="saved-addresses-new"
+                          onClick={useNewAddress}
+                        >
+                          Use a new address
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -529,6 +836,8 @@ export default function Checkout() {
                       placeholder="First Name"
                       value={formData.firstName}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      autoComplete="given-name"
                       className="checkout-input"
                     />
                   </Col>
@@ -540,21 +849,26 @@ export default function Checkout() {
                       placeholder="Last Name"
                       value={formData.lastName}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      autoComplete="family-name"
                       className="checkout-input"
                     />
                   </Col>
                 </Row>
 
                 {/* Address */}
-                <Form.Control
-                  type="text"
-                  name="address"
-                  placeholder="Address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  className="checkout-input checkout-address"
-                  required
-                />
+                <div>
+                  <Form.Control
+                    type="text"
+                    name="address"
+                    placeholder="Address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    autoComplete="street-address"
+                    className="checkout-input checkout-address"
+                  />
+                </div>
 
                 {/* City, Province & ZIP Code */}
                 <Row className="checkout-row">
@@ -565,8 +879,9 @@ export default function Checkout() {
                       placeholder="City"
                       value={formData.city}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      autoComplete="address-level2"
                       className="checkout-input"
-                      required
                     />
                   </Col>
 
@@ -577,8 +892,9 @@ export default function Checkout() {
                       placeholder="Province"
                       value={formData.province}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      autoComplete="address-level1"
                       className="checkout-input"
-                      required
                     />
                   </Col>
 
@@ -589,8 +905,10 @@ export default function Checkout() {
                       placeholder="ZIP code"
                       value={formData.zipCode}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      inputMode="numeric"
+                      autoComplete="postal-code"
                       className="checkout-input"
-                      required
                     />
                   </Col>
                 </Row>
@@ -604,8 +922,10 @@ export default function Checkout() {
                       placeholder="Phone"
                       value={formData.phone}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      inputMode="numeric"
+                      autoComplete="tel"
                       className="checkout-input"
-                      required
                     />
                   </Col>
 
@@ -616,119 +936,131 @@ export default function Checkout() {
                       placeholder="Email Address"
                       value={formData.email}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      autoComplete="email"
                       className="checkout-input"
-                      required
                     />
                   </Col>
                 </Row>
 
-                <Form.Check
-                  type="checkbox"
-                  className="save-address-check"
-                  checked={saveCurrentAddress}
-                  onChange={(event) =>
-                    setSaveCurrentAddress(event.target.checked)
-                  }
-                  label="Save this address for next time"
-                />
+                {editingAddressId ? (
+                  <div className="saved-address-editor">
+                    <p className="saved-address-editor-title">
+                      Editing a saved address
+                    </p>
+                    <Form.Select
+                      value={editLabel}
+                      onChange={(event) => setEditLabel(event.target.value)}
+                      className="checkout-input saved-address-label-select"
+                      aria-label="Address label"
+                    >
+                      <option value="">No label</option>
+                      {ADDRESS_LABELS.map((label) => (
+                        <option key={label} value={label}>
+                          {label}
+                        </option>
+                      ))}
+                    </Form.Select>
+                    <Form.Check
+                      type="checkbox"
+                      className="save-address-check"
+                      checked={editDefault}
+                      onChange={(event) => setEditDefault(event.target.checked)}
+                      label="Set as default address"
+                    />
+                    {addressMessage && (
+                      <p className="checkout-field-message">{addressMessage}</p>
+                    )}
+                    <div className="saved-address-editor-buttons">
+                      <Button
+                        type="button"
+                        className="saved-address-save"
+                        onClick={updateSavedAddress}
+                      >
+                        Update address
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline-dark"
+                        className="saved-address-cancel"
+                        onClick={cancelEditAddress}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                    <button
+                      type="button"
+                      className="saved-address-delete"
+                      onClick={() => deleteSavedAddress(editingAddressId)}
+                    >
+                      Delete this address
+                    </button>
+                  </div>
+                ) : (
+                  <Form.Check
+                    type="checkbox"
+                    className="save-address-check"
+                    checked={saveCurrentAddress}
+                    onChange={(event) =>
+                      setSaveCurrentAddress(event.target.checked)
+                    }
+                    label="Save this address for next time"
+                  />
+                )}
 
-                {/* Payment Method */}
-                <h2 className="heckout-section-title payment-title">Payment</h2>
+                {/* Payment Method (radio buttons) */}
+                <h2 className="checkout-section-title payment-title">
+                  Payment
+                </h2>
 
                 <div
-                  className="checkout-payment-dropdown"
-                  ref={paymentDropdownRef}
-                  onBlur={(event) => {
-                    if (!event.currentTarget.contains(event.relatedTarget)) {
-                      setIsPaymentMenuOpen(false);
-                    }
-                  }}
+                  className="checkout-payment-group"
+                  role="radiogroup"
+                  aria-label="Payment method"
                 >
-                  <button
-                    ref={paymentTriggerRef}
-                    type="button"
-                    className="checkout-input checkout-payment-trigger"
-                    aria-label="Payment method"
-                    aria-haspopup="listbox"
-                    aria-expanded={isPaymentMenuOpen}
-                    aria-controls={
-                      isPaymentMenuOpen ? "checkout-payment-options" : undefined
-                    }
-                    onClick={() => {
-                      setActivePaymentIndex(
-                        Math.max(
-                          0,
-                          paymentOptions.findIndex(
-                            (option) => option.value === paymentMethod,
-                          ),
-                        ),
-                      );
-                      setIsPaymentMenuOpen((open) => !open);
-                    }}
-                    onKeyDown={(event) => {
-                      if (
-                        event.key === "ArrowDown" ||
-                        event.key === "ArrowUp" ||
-                        event.key === "Enter" ||
-                        event.key === " "
-                      ) {
-                        event.preventDefault();
-                        setActivePaymentIndex(
-                          Math.max(
-                            0,
-                            paymentOptions.findIndex(
-                              (option) => option.value === paymentMethod,
-                            ),
-                          ),
-                        );
-                        setIsPaymentMenuOpen(true);
-                      }
-                    }}
-                  >
-                    <span>
-                      {paymentOptions.find(
-                        (option) => option.value === paymentMethod,
-                      )?.label || "Choose payment method"}
-                    </span>
-                    <span
-                      className="checkout-payment-chevron"
-                      aria-hidden="true"
-                    />
-                  </button>
+                  {paymentOptions.map((option) => {
+                    const isSelected = paymentMethod === option.value;
 
-                  {isPaymentMenuOpen && (
-                    <div
-                      id="checkout-payment-options"
-                      ref={paymentListboxRef}
-                      className="checkout-payment-options"
-                      role="listbox"
-                      aria-label="Payment method"
-                      aria-activedescendant={`checkout-payment-option-${activePaymentIndex}`}
-                      tabIndex={0}
-                      onKeyDown={handlePaymentMenuKeyDown}
-                    >
-                      {paymentOptions.map((option, index) => (
-                        <div
-                          id={`checkout-payment-option-${index}`}
-                          key={option.value}
-                          className={`checkout-payment-option${
-                            paymentMethod === option.value ? " is-selected" : ""
-                          }${activePaymentIndex === index ? " is-active" : ""}`}
-                          role="option"
-                          aria-selected={paymentMethod === option.value}
-                          onMouseEnter={() => setActivePaymentIndex(index)}
-                          onClick={() => {
-                            setPaymentMethod(option.value);
-                            setIsPaymentMenuOpen(false);
-                            paymentTriggerRef.current?.focus();
-                          }}
-                        >
-                          {option.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                    return (
+                      <label
+                        key={option.value}
+                        className={`checkout-payment-option${
+                          isSelected ? " is-selected" : ""
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value={option.value}
+                          checked={isSelected}
+                          onChange={() => setPaymentMethod(option.value)}
+                        />
+                        <span className="checkout-radio" aria-hidden="true" />
+                        <span className="checkout-payment-text">
+                          <span className="checkout-payment-label">
+                            {option.label}
+                          </span>
+                          <span className="checkout-payment-desc">
+                            {option.description}
+                          </span>
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
+
+                {/* Terms and Policies (link na nagbubukas ng modal) */}
+                <p className="checkout-terms-note">
+                  By continuing, you agree to our{" "}
+                  <button
+                    type="button"
+                    className="checkout-privacy-link"
+                    onClick={() => setShowTerms(true)}
+                  >
+                    Terms and Policies
+                  </button>
+                  .
+                </p>
 
                 {/* Place Order */}
                 <Button
@@ -756,103 +1088,245 @@ export default function Checkout() {
             </section>
 
             {/* RIGHT: Order summary */}
-            <aside className="checkout-order-card">
-              <h2 className="checkout-order-title">Your order</h2>
+            <aside
+              className={`checkout-order-card${isSummaryOpen ? " is-open" : ""}`}
+            >
+              {/* Toggle: lalabas lang sa tablet at mobile */}
+              <button
+                type="button"
+                className="checkout-summary-toggle"
+                aria-expanded={isSummaryOpen}
+                onClick={() => setIsSummaryOpen((open) => !open)}
+              >
+                <span>{isSummaryOpen ? "Hide" : "Show"} order summary</span>
+                <strong>{formatPrice(subtotal)}</strong>
+              </button>
 
-              <div className="checkout-order-items">
-                {orderItems.map((item, index) => (
-                  <div
-                    className="checkout-order-item"
-                    key={item._id || item.shoeId || index}
+              <div className="checkout-order-body">
+                <div className="checkout-order-head">
+                  <h2 className="checkout-order-title">
+                    Your order
+                    <span className="checkout-order-count">
+                      {" "}
+                      ({itemCount} {itemCount === 1 ? "item" : "items"})
+                    </span>
+                  </h2>
+                  <button
+                    type="button"
+                    className="checkout-edit-cart"
+                    onClick={() => navigate("/cart")}
                   >
-                    <div className="checkout-product-image-wrapper">
-                      <img
-                        src={getCheckoutImage(item)}
-                        alt={item.name || "Shoe"}
-                        className="checkout-product-image"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src =
-                            "/product-images/product%201.png";
-                        }}
-                      />
-                    </div>
+                    Edit cart
+                  </button>
+                </div>
 
-                    <div className="checkout-product-details">
-                      <p className="checkout-product-name">
-                        {item.name || item.shoeName || "Shoe"}
-                        {" x "}
-                        {item.quantity || 1}
+                <div className="checkout-order-items">
+                  {orderItems.map((item, index) => (
+                    <div
+                      className="checkout-order-item"
+                      key={item._id || item.shoeId || index}
+                    >
+                      <div className="checkout-product-image-wrapper">
+                        <img
+                          src={getCheckoutImage(item)}
+                          alt={item.name || "Shoe"}
+                          className="checkout-product-image"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src =
+                              "/product-images/product%201.png";
+                          }}
+                        />
+                      </div>
+
+                      <div className="checkout-product-details">
+                        <p className="checkout-product-name">
+                          {item.name || item.shoeName || "Shoe"}
+                          {" x "}
+                          {item.quantity || 1}
+                        </p>
+
+                        <p className="checkout-product-variant">
+                          Size: {item.size || "N/A"}
+                          {" · "}
+                          {item.color || item.brand || ""}
+                        </p>
+                      </div>
+
+                      <p className="checkout-product-price">
+                        {formatPrice(
+                          Number(item.price || 0) * Number(item.quantity || 1),
+                        )}
                       </p>
-
-                      <p className="checkout-product-variant">
-                        Size: {item.size || "N/A"}
-                        {" · "}
-                        {item.color || item.brand || ""}
-                      </p>
                     </div>
+                  ))}
+                </div>
 
-                    <p className="checkout-product-price">
-                      P{" "}
-                      {(
-                        Number(item.price || 0) * Number(item.quantity || 1)
-                      ).toFixed(2)}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                <div className="checkout-summary-divider" />
 
-              <div className="checkout-summary-divider" />
+                {/* Subtotal */}
+                <div className="checkout-summary-row">
+                  <span>Subtotal</span>
+                  <strong>{formatPrice(subtotal)}</strong>
+                </div>
 
-              {/* Subtotal */}
-              <div className="checkout-summary-row">
-                <span>Subtotal</span>
-                <strong>
-                  P{" "}
-                  {orderItems
-                    .reduce(
-                      (sum, item) =>
-                        sum +
-                        Number(item.price || 0) * Number(item.quantity || 1),
-                      0,
-                    )
-                    .toFixed(2)}
-                </strong>
-              </div>
+                {/* Shipping */}
+                <div className="checkout-summary-row">
+                  <span>Shipping Fee</span>
+                  <strong>Free</strong>
+                </div>
 
-              {/* Shipping */}
-              <div className="checkout-summary-row">
-                <span>Shipping Fee</span>
-                <strong>Free</strong>
-              </div>
+                {/* Voucher */}
+                <div className="checkout-summary-row">
+                  <span>Voucher</span>
+                  <strong></strong>
+                </div>
 
-              {/* Voucher */}
-              <div className="checkout-summary-row">
-                <span>Voucher</span>
-                <strong></strong>
-              </div>
+                <div className="checkout-summary-divider checkout-total-divider" />
 
-              <div className="checkout-summary-divider checkout-total-divider" />
-
-              {/* Total */}
-              <div className="checkout-summary-row checkout-total-row">
-                <span>Total</span>
-                <strong>
-                  P{" "}
-                  {orderItems
-                    .reduce(
-                      (sum, item) =>
-                        sum +
-                        Number(item.price || 0) * Number(item.quantity || 1),
-                      0,
-                    )
-                    .toFixed(2)}
-                </strong>
+                {/* Total */}
+                <div className="checkout-summary-row checkout-total-row">
+                  <span>Total</span>
+                  <strong>{formatPrice(subtotal)}</strong>
+                </div>
               </div>
             </aside>
           </div>
         </div>
       )}
+
+      {/* ADDRESS SELECTION PAGE (mobile lang) */}
+      {isAddressPageOpen && isMobile && (
+        <div
+          className="address-page"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Address selection"
+        >
+          <header className="address-page-header">
+            <button
+              type="button"
+              className="address-page-back"
+              aria-label="Back to checkout"
+              onClick={() => setIsAddressPageOpen(false)}
+            >
+              <FontAwesomeIcon icon={faChevronLeft} />
+            </button>
+            <h2 className="address-page-title">Address Selection</h2>
+          </header>
+
+          <div className="address-page-label">Address</div>
+
+          <div
+            className="address-page-list"
+            role="radiogroup"
+            aria-label="Saved addresses"
+          >
+            {savedAddresses.map((saved) => {
+              const isSelected = selectedAddressId === saved.id;
+              return (
+                <div className="address-page-item" key={saved.id}>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    className="address-page-select"
+                    onClick={() => selectFromAddressPage(saved)}
+                  >
+                    <span
+                      className={`address-page-radio${
+                        isSelected ? " is-selected" : ""
+                      }`}
+                      aria-hidden="true"
+                    />
+                    <span className="address-page-info">
+                      <span className="address-page-name-row">
+                        <strong className="address-page-name">
+                          {saved.firstName} {saved.lastName}
+                        </strong>
+                        <span className="address-page-phone">
+                          {saved.phone}
+                        </span>
+                      </span>
+                      <span className="address-page-line">{saved.address}</span>
+                      <span className="address-page-line">
+                        {saved.city}, {saved.province} {saved.zipCode}
+                      </span>
+                      {(defaultAddressId === saved.id || saved.label) && (
+                        <span className="address-page-badges">
+                          {defaultAddressId === saved.id && (
+                            <span className="address-page-badge is-default">
+                              Default
+                            </span>
+                          )}
+                          {saved.label && (
+                            <span className="address-page-badge">
+                              {saved.label}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="address-page-edit"
+                    onClick={() => editFromAddressPage(saved)}
+                  >
+                    Edit
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="address-page-footer">
+            <button
+              type="button"
+              className="address-page-add"
+              onClick={addNewFromAddressPage}
+            >
+              <FontAwesomeIcon icon={faPlus} /> Add a new address
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TERMS AND POLICIES MODAL */}
+      <Modal
+        show={showTerms}
+        onHide={() => setShowTerms(false)}
+        centered
+        scrollable
+        size="lg"
+        dialogClassName="terms-modal"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Terms and Policies</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {TERMS_SECTIONS.map((section) => (
+            <section key={section.heading} className="terms-section">
+              <h3 className="terms-heading">{section.heading}</h3>
+              {section.blocks.map((block) => (
+                <div key={block.title} className="terms-block">
+                  <h4>{block.title}</h4>
+                  <p>{block.text}</p>
+                </div>
+              ))}
+            </section>
+          ))}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            type="button"
+            className="terms-close-button"
+            onClick={() => setShowTerms(false)}
+          >
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

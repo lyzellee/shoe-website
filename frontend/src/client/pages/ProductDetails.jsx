@@ -191,6 +191,23 @@ function ProductDetails() {
     setCartMessage(`${getName(item)} added to your cart.`);
   }
 
+  // Buy this product only: add it with the selected size, then go to checkout
+  function handleCheckout(item) {
+    if (selectedSize === null) {
+      setCartMessage("Please select an available size first.");
+      return;
+    }
+
+    const updatedCart = addToCart({
+      ...item,
+      size: selectedSize,
+      color: shoeColor,
+    });
+
+    setCartItems(updatedCart.map((cartItem) => cartItem._id));
+    navigate("/checkout");
+  }
+
   // Add or remove a recommended product, following the Men page behavior
   function handleRecommendationCart(item) {
     const savedCart = getCart();
@@ -338,13 +355,13 @@ function ProductDetails() {
         <div className="product-info">
           <h1 className="product-title">{getName(shoe)}</h1>
 
-          <p className="product-price">{formatPrice(shoe)}</p>
-
           <p className="product-description">
             {typeof shoe.description === "string" && shoe.description.trim()
               ? shoe.description.trim()
               : "No description available for this shoe."}
           </p>
+
+          <p className="product-price">{formatPrice(shoe)}</p>
 
           <div className="product-divider" />
 
@@ -382,28 +399,41 @@ function ProductDetails() {
 
           {/* Product actions */}
           <div className="product-actions">
+            {/* Add to Cart and Save side by side */}
+            <div className="product-actions-row">
+              <button
+                type="button"
+                className="add-to-cart-button"
+                disabled={addingToCart || availableSizes.length === 0}
+                onClick={() => handleAddToCart(shoe)}
+              >
+                {addingToCart ? "Adding..." : "Add to Cart"}
+              </button>
+
+              <button
+                type="button"
+                className={`wishlist-button ${
+                  isFavorite(favorites, shoe) ? "favorite" : ""
+                }`}
+                aria-pressed={isFavorite(favorites, shoe)}
+                onClick={() => handleFavorite(shoe)}
+              >
+                <span aria-hidden="true">
+                  {isFavorite(favorites, shoe) ? "♥" : "♡"}
+                </span>
+
+                {isFavorite(favorites, shoe) ? "Saved" : "Save"}
+              </button>
+            </div>
+
+            {/* Checkout button below (buy this one product only) */}
             <button
               type="button"
-              className="add-to-cart-button"
-              disabled={addingToCart || availableSizes.length === 0}
-              onClick={() => handleAddToCart(shoe)}
+              className="checkout-button"
+              disabled={availableSizes.length === 0}
+              onClick={() => handleCheckout(shoe)}
             >
-              {addingToCart ? "Adding..." : "Add to Cart"}
-            </button>
-
-            <button
-              type="button"
-              className={`wishlist-button ${
-                isFavorite(favorites, shoe) ? "favorite" : ""
-              }`}
-              aria-pressed={isFavorite(favorites, shoe)}
-              onClick={() => handleFavorite(shoe)}
-            >
-              <span aria-hidden="true">
-                {isFavorite(favorites, shoe) ? "♥" : "♡"}
-              </span>
-
-              {isFavorite(favorites, shoe) ? "Saved" : "Save"}
+              Checkout
             </button>
           </div>
 

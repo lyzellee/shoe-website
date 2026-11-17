@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Form, Button, Row, Col, Modal } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
@@ -32,6 +32,7 @@ const paymentOptions = [
 
 const SAVED_ADDRESSES_KEY = "savedCheckoutAddresses";
 const DEFAULT_ADDRESS_KEY = "defaultCheckoutAddressId";
+const BUY_NOW_KEY = "buyNowItem";
 const ADDRESS_LABELS = ["Home", "Work", "Other"];
 
 const SERVER_URL = `${import.meta.env.VITE_API_BASE_URL || ""}`.replace(
@@ -161,8 +162,40 @@ const EMPTY_FORM = {
 
 export default function Checkout() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // BUY NOW: kapag galing sa Product Details ang customer, ang product lang
+  // na iyon ang ico-checkout (hindi ginagalaw ang cart).
+  // Sine-save sa sessionStorage para hindi mawala pagbalik galing PayMongo.
+  const [buyNowItem] = useState(() => {
+    try {
+      const fromState = location.state?.buyNow;
+      if (fromState) {
+        sessionStorage.setItem(BUY_NOW_KEY, JSON.stringify(fromState));
+        return fromState;
+      }
+
+      // Pagbalik galing PayMongo: ibalik ang Buy Now item
+      const returning = new URLSearchParams(window.location.search).get(
+        "payment_intent_id",
+      );
+      if (returning) {
+        const saved = sessionStorage.getItem(BUY_NOW_KEY);
+        return saved ? JSON.parse(saved) : null;
+      }
+
+      // Normal na cart checkout: linisin ang lumang Buy Now item
+      sessionStorage.removeItem(BUY_NOW_KEY);
+    } catch {
+      // ignore storage errors
+    }
+    return null;
+  });
+
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [orderItems, setOrderItems] = useState(() => getCart());
+  const [orderItems, setOrderItems] = useState(() =>
+    buyNowItem ? [buyNowItem] : getCart(),
+  );
   const [orderId, setOrderId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
@@ -404,7 +437,6 @@ export default function Checkout() {
   const handlePayment = async () => {
     if (isLoading) return;
 
-    setIsLoading(true);
     const {
       firstName,
       lastName,
@@ -415,21 +447,29 @@ export default function Checkout() {
       phone,
       email,
     } = formData;
+
     // STEP 1: Check kung may napiling payment method
     if (!paymentMethod) {
       alert("Please select a payment method.");
       return;
     }
 
-    // STEP 2: Kunin ang cart items sa localStorage
+    // STEP 2: Buy Now item lang, o buong cart kung galing sa Cart page
     const savedCart = localStorage.getItem("cart");
-    const cartItems = savedCart ? JSON.parse(savedCart) : [];
+    const cartItems = buyNowItem
+      ? [buyNowItem]
+      : savedCart
+        ? JSON.parse(savedCart)
+        : [];
 
-    // Check kung may laman ang cart
+    // Check kung may laman
     if (cartItems.length === 0) {
       alert("Your cart is empty.");
       return;
     }
+
+    // Saka lang i-on ang loading kapag pasado na sa mga validation
+    setIsLoading(true);
 
     if (saveCurrentAddress) {
       const addressExists = savedAddresses.some(
@@ -669,7 +709,14 @@ export default function Checkout() {
 
       if (status === "succeeded") {
         setIsPaymentSuccess(true);
-        localStorage.removeItem("cart");
+
+        if (buyNowItem) {
+          // Buy Now: huwag galawin ang cart
+          sessionStorage.removeItem(BUY_NOW_KEY);
+        } else {
+          localStorage.removeItem("cart");
+        }
+
         setOrderItems([]);
       }
     } catch (error) {
@@ -737,8 +784,8 @@ export default function Checkout() {
           <button
             type="button"
             className="checkout-back-button"
-            aria-label="Back to cart"
-            onClick={() => navigate("/cart")}
+            aria-label={buyNowItem ? "Back" : "Back to cart"}
+            onClick={() => navigate(buyNowItem ? -1 : "/cart")}
           >
             <FontAwesomeIcon icon={faChevronLeft} />
           </button>
@@ -1116,13 +1163,17 @@ export default function Checkout() {
                       ({itemCount} {itemCount === 1 ? "item" : "items"})
                     </span>
                   </h2>
-                  <button
-                    type="button"
-                    className="checkout-edit-cart"
-                    onClick={() => navigate("/cart")}
-                  >
-                    Edit cart
-                  </button>
+
+                  {/* Walang Edit cart sa Buy Now mode */}
+                  {!buyNowItem && (
+                    <button
+                      type="button"
+                      className="checkout-edit-cart"
+                      onClick={() => navigate("/cart")}
+                    >
+                      Edit cart
+                    </button>
+                  )}
                 </div>
 
                 <div className="checkout-order-items">

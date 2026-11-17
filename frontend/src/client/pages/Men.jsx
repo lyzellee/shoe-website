@@ -442,7 +442,7 @@ export default function CategoryMen() {
 
             <div className="men-hero-overlay">
               <div className="men-hero-text">
-                <h1 className="men-hero-title">MEN SECTION</h1>
+                <h1 className="men-hero-title">MEN'S SECTION</h1>
                 <h2 className="men-hero-description">
                   Find your everyday pair. Built to move, styled to last.
                 </h2>

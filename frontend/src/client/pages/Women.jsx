@@ -370,7 +370,7 @@ export default function Women() {
 
             <div className="women-hero-overlay">
               <div className="women-hero-text">
-                <h1 className="women-hero-title">WOMEN SECTION</h1>
+                <h1 className="women-hero-title">WOMEN'S SECTION</h1>
                 <h2 className="women-hero-description">
                   Find your everyday pair. Built to move, styled to last.
                 </h2>

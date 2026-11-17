@@ -1,5 +1,6 @@
 .men-page {
   display: flow-root; /* para stable ang pagsukat ng page top */
+  --page-gutter: 110px; /* iisang gilid para sa filter at mga product card */
 }
 
 /* Full-width page: some global styles (body flex / #root) can shrink the page on phones,
@@ -16,6 +17,36 @@ body:has(.men-page) {
 /* tinanggal ang negative margin na humihila sa products sa ilalim ng hero */
 .men-filter-wrap {
   margin: 0;
+  /* parehong gilid ng .product-card-container, kaya laging align */
+  padding: 0 var(--page-gutter);
+  box-sizing: border-box;
+}
+
+/* Ang loob ng filter (pills + Category dropdown) ay sumusunod
+   sa gilid ng card container, kahit mag-zoom in o zoom out */
+.men-filter-wrap > * {
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+  box-sizing: border-box;
+}
+
+/* Ang ProductFilter ay may Bootstrap <Container> sa loob na may sariling
+   max-width (hal. 1320px) at 12px side padding. Ito ang dahilan kung bakit
+   hindi nag-aalign. Dito lang sa Men page natin inaalis, kaya hindi apektado
+   ang ibang page na gumagamit ng ProductFilter. */
+.men-filter-wrap .category-navbar {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.men-filter-wrap .category-navbar > .container {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 /* STAGE: kasing-taas ng screen; dito lang magse-stick ang hero */
@@ -240,7 +271,8 @@ body:has(.men-page) {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 30px;
-  padding: 20px 110px;
+  /* parehong gilid ng .men-filter-wrap */
+  padding: 20px var(--page-gutter);
 }
 
 .product-card {
@@ -424,9 +456,12 @@ body:has(.men-page) {
 
 /* RESPONSIVE */
 @media (max-width: 992px) {
+  .men-page {
+    --page-gutter: 40px;
+  }
+
   .product-card-container {
     grid-template-columns: repeat(3, 1fr);
-    padding: 20px 40px;
   }
 
   .featured-section {
@@ -440,6 +475,10 @@ body:has(.men-page) {
 }
 
 @media (max-width: 768px) {
+  .men-page {
+    --page-gutter: 20px;
+  }
+
   .men-hero-sticky {
     --hero-pad: 40px;
     padding-left: 12px;
@@ -453,7 +492,6 @@ body:has(.men-page) {
   .product-card-container {
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
-    padding: 20px;
   }
 
   .featured-section {
@@ -468,11 +506,14 @@ body:has(.men-page) {
 }
 
 @media (max-width: 480px) {
+  .men-page {
+    --page-gutter: 18px;
+  }
+
   .product-card-container {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     /* more space between the cards: 28px between rows, 16px between columns */
     gap: 28px 16px;
-    padding: 20px 18px;
   }
 
   .product-image-container {
@@ -520,7 +561,8 @@ body:has(.men-page) {
   /* filter row: the pills wrap to a new line instead of running off the screen */
   .men-filter-wrap {
     margin: 0;
-    padding: 8px 8px 0;
+    /* same side gap as the cards, 8px only on top */
+    padding: 8px var(--page-gutter) 0;
   }
 
   .men-filter-wrap > *,

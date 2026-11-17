@@ -191,21 +191,23 @@ function ProductDetails() {
     setCartMessage(`${getName(item)} added to your cart.`);
   }
 
-  // Buy this product only: add it with the selected size, then go to checkout
+  // Buy this product only: do NOT touch the cart, pass the item to checkout
   function handleCheckout(item) {
     if (selectedSize === null) {
       setCartMessage("Please select an available size first.");
       return;
     }
 
-    const updatedCart = addToCart({
-      ...item,
-      size: selectedSize,
-      color: shoeColor,
+    navigate("/checkout", {
+      state: {
+        buyNow: {
+          ...item,
+          size: selectedSize,
+          color: shoeColor,
+          quantity: 1,
+        },
+      },
     });
-
-    setCartItems(updatedCart.map((cartItem) => cartItem._id));
-    navigate("/checkout");
   }
 
   // Add or remove a recommended product, following the Men page behavior
